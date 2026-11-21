@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.15 — Neon Card Identity</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.16 — Neon Card Intelligence</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -712,15 +712,24 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sqcard .cardIdentity+*{pointer-events:none}
 @media(max-width:650px){.sqcard .cardIdentity{font-size:7px;padding:1px 2px;letter-spacing:0}}
 @media(prefers-reduced-motion:reduce){.sqcard .cardIdentity{animation:none}}
+
+/* v2.8.16 card tactical ribbon, never covers square gameplay or blocks clicks */
+.cardIntel{display:flex;align-items:center;gap:9px 14px;flex-wrap:wrap;background:linear-gradient(96deg,#fffdf9,#fff4e8 45%,#f4ebff);border:1px solid #bd91e4;border-left:4px solid #9d3ce9;padding:8px 12px;margin:8px 0;box-shadow:0 0 13px #aa5af240,inset 0 0 8px #ff932618;color:#4e3a59;font:800 11px/1.45 monospace;min-height:42px}
+.cardIntel #intelName{color:#8431bb;flex:0 1 auto;max-width:100%;overflow-wrap:anywhere}
+.cardIntel #intelFacts{font-weight:600;flex:1 1 270px;color:#654d72}
+.cardIntel #intelDecision{color:#704783;flex:1 1 230px;max-width:100%;overflow-wrap:anywhere}
+.cardIntel.intelReady{border-left-color:#fd7816;box-shadow:0 0 13px #ff871b66}.cardIntel.intelReady #intelDecision{color:#ac4d00}
+.cardIntel.intelBlocked{border-left-color:#8a42c5}.cardIntel.intelBlocked #intelDecision{color:#872eb0}
+@media(max-width:650px){.cardIntel{gap:3px 10px;padding:6px 8px;font-size:10px}.cardIntel #intelFacts,.cardIntel #intelDecision{flex-basis:100%}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.15 · BONE WHITE / NEON CARD IDENTITY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.16 · BONE WHITE / NEON CARD INTELLIGENCE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
 <div class="divider"><span>⚔ COMBAT</span><span id="combatEnergy" class="combatEnergy" aria-hidden="true"></span><small id="combatFeed" aria-live="polite">Ready defender blocks first · otherwise direct BF / MF damage</small><span id="gameResult"></span></div>
 <div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Player RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="pInstalled">0</b></span><span>COMMITTED <b id="pCommitted">0</b></span><span>AVAILABLE <b id="pAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="pRamCommitted" class="ramCommitted"></i><i id="pRamAvailable" class="ramAvailable"></i></div><div id="pFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="pLanes"></div><svg id="pPathways" class="energyPathways" aria-hidden="true"></svg></div>
 </section>
-<div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
+<aside id="cardIntel" class="cardIntel" aria-label="Card tactical information"><strong id="intelName">CARD INTELLIGENCE</strong><span id="intelFacts">Hover or focus a card for cost, target, and tactical status.</span><span id="intelDecision">Tactical readout</span></aside><div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
 <section class="hand-area"><div class="hand-heading"><strong id="handLabel">YOUR HAND</strong><span id="handStatus"></span></div><div id="hand" class="hand"></div></section>
 <div class="foot"><section class="info"><h2>HOW TO PLAY</h2><p id="message"></p></section><section class="info"><h2>EVENT LOG</h2><ol class="log" id="events"></ol></section></div>
 <p class="notice">Square-card practice rules: install RAM or draw, deploy within available RAM (up to five characters), attack once per ready character, then end your turn. This simplified trainer is not the complete official card game. Original catalog artwork is loaded from external source URLs.</p>
@@ -850,11 +859,44 @@ function schedulePathways(){
 }
 /* UI: actual square buttons are bound to legal engine actions. */
 function cardIdentity(c){const type=c.t||'unknown',target=c.hit==='MAINFRAME'?'MF':c.hit==='BIOFRAME'?'BF':null;const tag=type==='character'?(target||'UNIT'):type==='program'?'CODE':type==='gear'?'GEAR':type==='mainframe'?'CORE':type==='ram'?'RAM':'CARD';return {type,target,tag,level:Math.max(0,Math.min(3,Math.floor((Number(c.a)||0)/3)))}} 
+function intelDetails(n,u,side,slot,isHand){
+ const c=card(n),p=state[side],cp=cost(c),target=c.hit==='MAINFRAME'?'MAINFRAME':c.hit==='BIOFRAME'?'BIOFRAME':'NO DIRECT TARGET';let status;
+ if(isHand){
+  if(mode!=='human'||state.active!=='p')status='SPECTATOR · Card shown for reference.';
+  else if(state.done)status='MATCH FINISHED';
+  else if(state.phase!==1)status='WAIT · Deploy during phase 2.';
+  else if(p.units.length>=5)status='BLOCKED · Five squares already occupied.';
+  else if(cp>free(p))status='BLOCKED · Need '+(cp-free(p))+' additional available RAM.';
+  else status='READY · Click to deploy to square '+(p.units.length+1)+'.';
+ }else if(state.done)status='MATCH FINISHED';
+ else if(side!==state.active)status='WAIT · Opponent turn.';
+ else if(state.phase!==2)status='WAIT · Attacks occur during combat phase.';
+ else if(u.used)status='EXHAUSTED · Already attacked this turn.';
+ else if((c.a||0)<=0)status='NO ATTACK · This card cannot attack.';
+ else if(mode==='human'&&side==='p'){
+  const prediction=predictedTarget(state,'p',slot);
+  status=prediction?(prediction.kind==='blocked'?'READY · '+prediction.defender+' blocks: '+prediction.damage+' damage / '+prediction.retaliation+' retaliation.':'READY · Direct '+prediction.meter+' hit for '+prediction.damage+'.'):'WAIT';
+ }else status='READY · '+(side==='p'?'Player':'Bot')+' may attack.';
+ return {name:c.n,info:c.t.toUpperCase()+' · RAM '+cp+' · ATTACK '+(c.a??0)+' · DEFENSE '+(u?u.hp:c.d??0)+' · '+target,status};
+}
+function showCardIntel(n,u,side,slot,isHand){
+ const v=intelDetails(n,u,side,slot,isHand),panel=$('cardIntel');
+ $('intelName').textContent=v.name;$('intelFacts').textContent=v.info;$('intelDecision').textContent=v.status;
+ panel.classList.toggle('intelBlocked',v.status.startsWith('BLOCKED'));panel.classList.toggle('intelReady',v.status.startsWith('READY'));
+}
+function clearCardIntel(){
+ $('intelName').textContent='CARD INTELLIGENCE';$('intelFacts').textContent='Hover or focus a card for cost, target, and tactical status.';$('intelDecision').textContent='Tactical readout';$('cardIntel').classList.remove('intelBlocked','intelReady');
+}
+function bindCardIntel(el,n,u,side,slot,isHand){
+ const reveal=()=>showCardIntel(n,u,side,slot,isHand);
+ el.addEventListener('pointerenter',reveal);el.addEventListener('pointerleave',clearCardIntel);
+ el.addEventListener('focus',reveal);el.addEventListener('blur',clearCardIntel);
+}
 function squareCard(n,u,handler,label){let c=card(n),el=document.createElement('button'),identity=cardIdentity(c);el.className='sqcard'+(handler?' '+label:'')+(u?.used?' used':'')+' identity-'+identity.type+(identity.target?' target-'+identity.target.toLowerCase():'')+' power-'+identity.level;el.dataset.cardType=identity.type;el.dataset.target=identity.target||'';el.type='button';el.disabled=!handler;el.setAttribute('aria-label',c.n+'; cost '+cost(c)+'; attack '+(c.a||0)+'; defense '+(u?u.hp:c.d||0)+(handler?'; '+label:''));
 let img=document.createElement('img');img.src=c.img;img.alt='';img.loading='lazy';img.onerror=()=>{img.remove();el.style.background='#50335d'};el.append(img);
 let name=document.createElement('strong');name.textContent=c.n;name.title=c.n;let stats=document.createElement('small');stats.textContent='RAM '+cost(c)+'  ⚔'+(c.a??0)+'  ◈'+(u?u.hp:c.d??0);
 el.append(name,stats);let chip=document.createElement('span');chip.className='cardIdentity';chip.textContent=identity.tag;chip.setAttribute('aria-hidden','true');el.append(chip);if(handler)el.onclick=handler;return el}
-function render(){const s=state,k=s.active,p=s.p,e=s.e;
+function render(){const s=state,k=s.active,p=s.p,e=s.e;clearCardIntel();
 const stage=s.done?'finished':'phase-'+s.phase;
 $('gameBoard').dataset.rhythm=stage;
 $('gameBoard').dataset.activeSide=s.active;
@@ -880,8 +922,8 @@ if(lastImpact&&lastImpact.from===key&&lastImpact.source===i){slot.classList.add(
 if(lastImpact&&lastImpact.to===key&&lastImpact.target===-1){slot.classList.add('energyDirect')}
 let deaths=lastImpact?.destroyed?.filter(d=>d.side===key&&d.slot===i)||[];
 if(deaths.length){slot.classList.add('shattered');let overlay=document.createElement('span');overlay.className='shatterLabel';overlay.textContent='✦ RECYCLED';overlay.setAttribute('aria-hidden','true');slot.append(overlay)}
-let u=x.units[i];if(targetPreview&&targetPreview.to===key&&targetPreview.target===i)slot.classList.add('targetPreview');if(targetPreview&&targetPreview.to===key&&targetPreview.target===-1)slot.classList.add('directPreview');if(u){let available=!s.done&&mode==='human'&&key==='p'&&s.active==='p'&&s.phase===2&&!u.used&&card(u.n).a>0;if(available)slot.classList.add('available');let unitCard=squareCard(u.n,u,available?()=>act('p','attack',i):null,'attack');unitCard.classList.add('deployed','resonance-'+key);if(u.used)unitCard.classList.add('resonance-exhausted');if(available){unitCard.addEventListener('pointerenter',()=>previewTarget(i));unitCard.addEventListener('pointerleave',clearPreview);unitCard.addEventListener('focus',()=>previewTarget(i));unitCard.addEventListener('blur',clearPreview)}slot.append(unitCard)}return slot}))}
-let playable=0;const hand=$('hand');hand.replaceChildren(...(mode==='auto'?s[k].hand:p.hand).map((n,i)=>{let c=card(n);let ok=mode==='human'&&!s.done&&k==='p'&&s.phase===1&&p.units.length<5&&cost(c)<=free(p);if(ok)playable++;let hc=squareCard(n,null,ok?()=>act('p','deploy',i):null,'playable');if(ok)hc.classList.add('resonance-ready');return hc}));
+let u=x.units[i];if(targetPreview&&targetPreview.to===key&&targetPreview.target===i)slot.classList.add('targetPreview');if(targetPreview&&targetPreview.to===key&&targetPreview.target===-1)slot.classList.add('directPreview');if(u){let available=!s.done&&mode==='human'&&key==='p'&&s.active==='p'&&s.phase===2&&!u.used&&card(u.n).a>0;if(available)slot.classList.add('available');let unitCard=squareCard(u.n,u,available?()=>act('p','attack',i):null,'attack');unitCard.classList.add('deployed','resonance-'+key);bindCardIntel(unitCard,u.n,u,key,i,false);if(u.used)unitCard.classList.add('resonance-exhausted');if(available){unitCard.addEventListener('pointerenter',()=>previewTarget(i));unitCard.addEventListener('pointerleave',clearPreview);unitCard.addEventListener('focus',()=>previewTarget(i));unitCard.addEventListener('blur',clearPreview)}slot.append(unitCard)}return slot}))}
+let playable=0;const hand=$('hand');hand.replaceChildren(...(mode==='auto'?s[k].hand:p.hand).map((n,i)=>{let c=card(n);let ok=mode==='human'&&!s.done&&k==='p'&&s.phase===1&&p.units.length<5&&cost(c)<=free(p);if(ok)playable++;let hc=squareCard(n,null,ok?()=>act('p','deploy',i):null,'playable');if(ok)hc.classList.add('resonance-ready');bindCardIntel(hc,n,null,mode==='auto'?k:'p',i,true);return hc}));
 $('handLabel').textContent=mode==='auto'?(k==='p'?'BOT A HAND':'BOT B HAND'):'YOUR HAND';$('handStatus').textContent=mode==='auto'?'BOT SPECTATOR':playable+' PLAYABLE';
 const can=mode==='human'&&!s.done&&s.active==='p',legal=can?legalActions(s,'p'):[];
 $('install').disabled=!legal.some(a=>a.kind==='ram');$('draw').disabled=!legal.some(a=>a.kind==='draw');$('next').disabled=!legal.some(a=>a.kind==='next');
