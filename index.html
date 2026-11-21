@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.6 — Neon Shatter</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.7 — Neon Recycling Circuit</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -463,13 +463,39 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 }
 @keyframes shatterText{0%{opacity:0;transform:translateY(8px)}20%{opacity:1;transform:translateY(0)}75%{opacity:1}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.board .slot.shattered::before,.board .slot .shatterLabel{animation:none;opacity:.85}}
+
+/* v2.8.7 evidence-linked recycling: glow only when a unit actually moves to bin. */
+.meters .recycleCircuit{
+ display:none;white-space:nowrap;
+ font:900 10px monospace;letter-spacing:.025em;
+ color:#7e2abe;border:1px solid #b86ef3;
+ background:linear-gradient(100deg,#fff8ee,#f5e7ff);
+ box-shadow:0 0 12px #af54ee64,inset 0 0 11px #ffae4b28;
+ padding:4px 8px;pointer-events:none;
+}
+.meters .recycleCircuit.circuitLive{display:inline-flex;align-items:center;gap:4px;animation:circuitPulse 1s ease-out both}
+.you .meters .recycleCircuit.circuitLive{
+ color:#b84b00;border-color:#ff7a19;
+ background:linear-gradient(100deg,#fff3dc,#fffaff);
+ box-shadow:0 0 13px #ff8023ac,inset 0 0 10px #ffa94c41;
+}
+.opponent .meters .recycleCircuit.circuitLive{
+ color:#8030b4;border-color:#a33bee;
+ box-shadow:0 0 13px #a340eeac,inset 0 0 10px #b866ff33;
+}
+.meters span.ramReleased{border:2px solid #f97b17;box-shadow:0 0 11px #ff842ea0}
+.opponent .meters span.ramReleased{border-color:#a244e7;box-shadow:0 0 11px #a54ced97}
+.meters span.binReceived{font-weight:900;border:2px solid #f97b17;box-shadow:0 0 11px #ff842e97}
+.opponent .meters span.binReceived{border-color:#a244e7;box-shadow:0 0 11px #a54ced97}
+@keyframes circuitPulse{0%{opacity:.4;filter:brightness(1.5);transform:translateX(-5px)}35%{opacity:1;transform:translateX(2px)}100%{opacity:1;filter:brightness(1);transform:translateX(0)}}
+@media(prefers-reduced-motion:reduce){.meters .recycleCircuit.circuitLive{animation:none}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.6 · BONE WHITE / NEON SHATTER</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.7 · BONE WHITE / NEON RECYCLING CIRCUIT</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" aria-label="Two-player square card battlefield">
-<div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span></div></div><div class="lanes" id="eLanes"></div></div>
+<div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="lanes" id="eLanes"></div></div>
 <div class="divider"><span>⚔ COMBAT</span><span id="combatEnergy" class="combatEnergy" aria-hidden="true"></span><small id="combatFeed" aria-live="polite">Ready defender blocks first · otherwise direct BF / MF damage</small><span id="gameResult"></span></div>
-<div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span></div></div><div class="lanes" id="pLanes"></div></div>
+<div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="lanes" id="pLanes"></div></div>
 </section>
 <div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
 <section class="hand-area"><div class="hand-heading"><strong id="handLabel">YOUR HAND</strong><span id="handStatus"></span></div><div id="hand" class="hand"></div></section>
@@ -507,11 +533,12 @@ else if(kind==='attack'){
 let u=p.units[i],c=card(u.n),block=e.units.find(v=>!v.used);lastImpact={from:k,to:other(k),source:i,attacker:c.n,defender:block?card(block.n).n:null,damage:c.a,retaliation:block?card(block.n).a:0,meter:block?null:(c.hit==='MAINFRAME'?'MF':'BF'),kind:block?'blocked':'direct',target:block?e.units.indexOf(block):-1,seq:++impactSeq};u.used=true;
 if(block){let defender=card(block.n);block.hp-=c.a;u.hp-=defender.a;log(c.n+' attacks '+defender.n+' ('+c.a+' / '+defender.a+').')}
 else{let meter=c.hit==='MAINFRAME'?'mf':'bf';e[meter]-=c.a;log(c.n+' hits '+(meter==='mf'?'mainframe':'bioframe')+' for '+c.a+'.')}
-lastImpact.destroyed=[];
-for(let side of [k,other(k)]){let q=state[side],removed=q.units.map((v,slot)=>({v,slot})).filter(x=>x.v.hp<=0);
-for(let x of removed)lastImpact.destroyed.push({side,slot:x.slot,name:card(x.v.n).n});
-q.bin.push(...removed.map(x=>x.v.n));q.units=q.units.filter(v=>v.hp>0)}
-if(lastImpact.destroyed.length)log('RECYCLED: '+lastImpact.destroyed.map(x=>x.name).join(' + ')+'.');
+lastImpact.destroyed=[];lastImpact.recycle=[];
+for(let side of [k,other(k)]){let q=state[side],beforeFree=free(q),removed=q.units.map((v,slot)=>({v,slot})).filter(x=>x.v.hp<=0);
+for(let x of removed)lastImpact.destroyed.push({side,slot:x.slot,name:card(x.v.n).n,ram:cost(card(x.v.n))});
+q.bin.push(...removed.map(x=>x.v.n));q.units=q.units.filter(v=>v.hp>0);
+if(removed.length)lastImpact.recycle.push({side,count:removed.length,freed:free(q)-beforeFree,freeNow:free(q),binNow:q.bin.length});}
+if(lastImpact.destroyed.length)log('RECYCLED: '+lastImpact.destroyed.map(x=>x.name).join(' + ')+'. RAM returned: '+lastImpact.recycle.map(x=>(x.side==='p'?'PLAYER':'BOT')+' +'+x.freed).join(' / ')+'.');
 if(e.bf<=0||e.mf<=0||p.bf<=0||p.mf<=0){state.done=true;state.winner=e.bf<=0||e.mf<=0?k:other(k);log((state.winner==='p'?'Player':'Bot')+' wins.')}
 }
 else if(kind==='next'){
@@ -548,6 +575,10 @@ $('modeHuman').classList.toggle('active',mode==='human');$('modeAuto').classList
 $('turnText').textContent='TURN '+s.turn+' / '+(s.done?'FINISHED':(k==='p'?'PLAYER':'BOT')+' / '+PHASES[s.phase]);
 $('phaseStrip').replaceChildren(...PHASES.map((name,i)=>{let x=document.createElement('span');x.className=i===s.phase?'current':'';x.textContent=(i+1)+' '+name;return x}));
 for(let [key,x]of [['p',p],['e',e]]){$(key+'Health').textContent='BF '+Math.max(0,x.bf)+' / MF '+Math.max(0,x.mf);$(key+'Ram').textContent='RAM '+free(x)+'/'+x.ram;$(key+'Deck').textContent='DECK '+x.deck.length;$(key+'Bin').textContent='RECYCLE '+x.bin.length;
+let circuit=lastImpact?.recycle?.find(v=>v.side===key);
+let meter=$(key+'Circuit');meter.textContent=circuit?'↻ +'+circuit.freed+' RAM · '+circuit.count+' RECYCLED':'';meter.classList.toggle('circuitLive',!!circuit);
+$(key+'Ram').classList.toggle('ramReleased',!!circuit&&circuit.freed>0);
+$(key+'Bin').classList.toggle('binReceived',!!circuit);
 let lane=$(key+'Lanes');lane.replaceChildren(...Array.from({length:5},(_,i)=>{let slot=document.createElement('div');slot.className='slot';slot.dataset.slot=String(i+1);
 if(lastImpact&&lastImpact.to===key&&lastImpact.target===i){slot.classList.add('impact','energyStrike');slot.dataset.energy=lastImpact.kind==='blocked'?'BLOCK':'HIT'}
 if(lastImpact&&lastImpact.from===key&&lastImpact.source===i){slot.classList.add('energySource')}
