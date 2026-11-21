@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.11 — Neon Energy Continuity</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.12 — Neon Combat Rhythm</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -557,10 +557,47 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .board .combatPathways .combatDirect{stroke:#fb7d1d;color:#ff831c;filter:drop-shadow(0 0 7px #ff851ad9)}
 .board .energyPathways .energyRoute{animation-duration:740ms}
 @media(prefers-reduced-motion:reduce){.board .combatPathways{display:none}.side .energyPathways{display:none}}
+
+/* v2.8.12 phase rhythms. CSS-only lighting; zero timers or input interception. */
+#turnbar,#gameBoard{--phase-color:#a63be4;--phase-glow:#a54bed8c}
+#turnbar[data-rhythm="phase-0"],#gameBoard[data-rhythm="phase-0"]{--phase-color:#a23ce7;--phase-glow:#a23ce78c}
+#turnbar[data-rhythm="phase-1"],#gameBoard[data-rhythm="phase-1"]{--phase-color:#ff790c;--phase-glow:#ff86148c}
+#turnbar[data-rhythm="phase-2"],#gameBoard[data-rhythm="phase-2"]{--phase-color:#f66b1b;--phase-glow:#f7671bc5}
+#turnbar[data-rhythm="phase-3"],#gameBoard[data-rhythm="phase-3"]{--phase-color:#9146d7;--phase-glow:#a364db8c}
+#turnbar[data-rhythm="finished"],#gameBoard[data-rhythm="finished"]{--phase-color:#a780b6;--phase-glow:#b6a5c37a}
+#turnbar{
+ position:relative;overflow:hidden;
+ border-left:4px solid var(--phase-color);
+ box-shadow:0 0 8px var(--phase-glow),inset 0 0 8px #fff;
+}
+#turnbar::after{
+ content:'';position:absolute;left:0;right:0;bottom:0;height:2px;
+ background:linear-gradient(90deg,transparent,var(--phase-color),transparent);
+ pointer-events:none;transform-origin:left;animation:rhythmSweep 2.7s ease-in-out infinite;
+}
+#turnbar .phases .current{
+ background:linear-gradient(105deg,#fffefa,#fff0df);
+ border-color:var(--phase-color);
+ box-shadow:0 0 0 1px #fff,0 0 12px var(--phase-glow);
+ color:#632f75;
+}
+#turnbar[data-rhythm="phase-2"] .phases .current{color:#ae4600}
+#gameBoard{border-color:var(--phase-color);box-shadow:0 0 0 3px #fffefa,0 0 13px var(--phase-glow),0 0 27px #a34cea37}
+#gameBoard .side.you,#gameBoard .side.opponent{transition:box-shadow 140ms ease,border-color 140ms ease}
+#gameBoard[data-active-side="p"] .side.you{box-shadow:0 0 10px #ff7b24b8,0 0 21px #ff903f51}
+#gameBoard[data-active-side="e"] .side.opponent{box-shadow:0 0 10px #a341ebbe,0 0 21px #ac69f65c}
+#gameBoard[data-rhythm="phase-2"] .divider{
+ border-color:#ff7510;box-shadow:0 0 14px #ff842aaa,inset 0 0 15px #b55de347;
+}
+#gameBoard[data-rhythm="phase-1"] .side.you .slot.available{
+ box-shadow:0 0 11px #ff7a1d8a,inset 0 0 8px #ff9d2b45;
+}
+@keyframes rhythmSweep{0%,100%{opacity:.22;transform:scaleX(.3)}50%{opacity:.88;transform:scaleX(1)}}
+@media(prefers-reduced-motion:reduce){#turnbar::after{animation:none;transform:none}#gameBoard .side.you,#gameBoard .side.opponent{transition:none}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.11 · BONE WHITE / NEON ENERGY CONTINUITY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
-<main><div class="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
-<section class="board" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.12 · BONE WHITE / NEON COMBAT RHYTHM</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
+<section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
 <div class="divider"><span>⚔ COMBAT</span><span id="combatEnergy" class="combatEnergy" aria-hidden="true"></span><small id="combatFeed" aria-live="polite">Ready defender blocks first · otherwise direct BF / MF damage</small><span id="gameResult"></span></div>
 <div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Player RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="pInstalled">0</b></span><span>COMMITTED <b id="pCommitted">0</b></span><span>AVAILABLE <b id="pAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="pRamCommitted" class="ramCommitted"></i><i id="pRamAvailable" class="ramAvailable"></i></div><div id="pFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="pLanes"></div><svg id="pPathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -699,9 +736,14 @@ let img=document.createElement('img');img.src=c.img;img.alt='';img.loading='lazy
 let name=document.createElement('strong');name.textContent=c.n;name.title=c.n;let stats=document.createElement('small');stats.textContent='RAM '+cost(c)+'  ⚔'+(c.a??0)+'  ◈'+(u?u.hp:c.d??0);
 el.append(name,stats);if(handler)el.onclick=handler;return el}
 function render(){const s=state,k=s.active,p=s.p,e=s.e;
+const stage=s.done?'finished':'phase-'+s.phase;
+$('gameBoard').dataset.rhythm=stage;
+$('gameBoard').dataset.activeSide=s.active;
+$('turnbar').dataset.rhythm=stage;
+$('turnbar').dataset.activeSide=s.active;
 $('modeHuman').classList.toggle('active',mode==='human');$('modeAuto').classList.toggle('active',mode==='auto');
 $('turnText').textContent='TURN '+s.turn+' / '+(s.done?'FINISHED':(k==='p'?'PLAYER':'BOT')+' / '+PHASES[s.phase]);
-$('phaseStrip').replaceChildren(...PHASES.map((name,i)=>{let x=document.createElement('span');x.className=i===s.phase?'current':'';x.textContent=(i+1)+' '+name;return x}));
+$('phaseStrip').replaceChildren(...PHASES.map((name,i)=>{let x=document.createElement('span');x.className=i===s.phase?'current':'';x.dataset.phase=String(i);x.textContent=(i+1)+' '+name;return x}));
 for(let [key,x]of [['p',p],['e',e]]){$(key+'Health').textContent='BF '+Math.max(0,x.bf)+' / MF '+Math.max(0,x.mf);$(key+'Ram').textContent='RAM '+free(x)+'/'+x.ram;
 $(key+'Installed').textContent=x.ram;$(key+'Committed').textContent=committed(x);$(key+'Available').textContent=free(x);
 $(key+'RamCommitted').style.width=(committed(x)/25*100)+'%';$(key+'RamAvailable').style.width=(free(x)/25*100)+'%';
