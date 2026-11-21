@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.8 — RAM Recovery Verified</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.9 — Neon RAM Flow</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -506,13 +506,31 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .opponent .ramGaugeTrack .ramAvailable{background:linear-gradient(90deg,#ffbf71,#ff8423)}
 @media(max-width:650px){.ramGauge{margin-bottom:4px;padding:3px 4px}.ramGaugeLegend{font-size:8px;gap:2px 9px}.ramGaugeLegend b{font-size:9px}.ramGaugeTrack{height:6px}}
 @media(prefers-reduced-motion:reduce){.ramGaugeTrack i{transition:none}}
+
+/* v2.8.9 — deterministic RAM flow telemetry. Purely visual. */
+.ramGauge{position:relative;overflow:hidden}
+.ramGaugeTrack{position:relative;isolation:isolate;overflow:visible}
+.ramGaugeTrack::after{content:'';position:absolute;inset:-2px;pointer-events:none;opacity:.6;background:linear-gradient(90deg,transparent,#fff 44%,transparent 65%);background-size:200% 100%;animation:ramCharge 3s linear infinite}
+.ramFlow{display:none;align-items:center;gap:5px;margin-top:5px;padding:3px 6px;min-height:18px;font:900 10px/1.3 monospace;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1px solid transparent}
+.ramFlow:not(:empty){display:flex}
+.ramFlow.flow-install{color:#8440ba;background:#f1e4ff;border-color:#a665dd;box-shadow:0 0 9px #b75bf58a;animation:ramFlowIn 620ms ease-out}
+.ramFlow.flow-commit{color:#a84705;background:#fff0db;border-color:#f78a2b;box-shadow:0 0 13px #ff8b2f96;animation:ramFlowOut 660ms ease-out}
+.ramFlow.flow-release{color:#8139ba;background:linear-gradient(90deg,#fff4e1,#f2e4ff);border-color:#a250e5;box-shadow:0 0 12px #a654ee9e;animation:ramFlowIn 740ms ease-out}
+.you .ramFlow.flow-release{border-color:#f58624;color:#bf5b08;box-shadow:0 0 12px #ff8625a5}
+.ramGauge:has(.flow-commit) .ramCommitted{filter:brightness(1.25) drop-shadow(0 0 5px #ff7a17)}
+.ramGauge:has(.flow-release) .ramAvailable{filter:brightness(1.25) drop-shadow(0 0 5px #a845ee)}
+@keyframes ramCharge{from{background-position:200% 0}to{background-position:-200% 0}}
+@keyframes ramFlowIn{0%{opacity:0;transform:translateX(-18px)}45%{opacity:1;transform:translateX(3px)}100%{transform:translateX(0)}}
+@keyframes ramFlowOut{0%{opacity:0;transform:translateX(18px)}45%{opacity:1;transform:translateX(-2px)}100%{transform:translateX(0)}}
+@media(max-width:650px){.ramFlow{font-size:8px;margin-top:3px;padding:2px 4px}}
+@media(prefers-reduced-motion:reduce){.ramGaugeTrack::after,.ramFlow{animation:none}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.8 · BONE WHITE / RAM RECOVERY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.9 · BONE WHITE / NEON RAM FLOW</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" aria-label="Two-player square card battlefield">
-<div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div></div><div class="lanes" id="eLanes"></div></div>
+<div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div></div>
 <div class="divider"><span>⚔ COMBAT</span><span id="combatEnergy" class="combatEnergy" aria-hidden="true"></span><small id="combatFeed" aria-live="polite">Ready defender blocks first · otherwise direct BF / MF damage</small><span id="gameResult"></span></div>
-<div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Player RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="pInstalled">0</b></span><span>COMMITTED <b id="pCommitted">0</b></span><span>AVAILABLE <b id="pAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="pRamCommitted" class="ramCommitted"></i><i id="pRamAvailable" class="ramAvailable"></i></div></div><div class="lanes" id="pLanes"></div></div>
+<div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Player RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="pInstalled">0</b></span><span>COMMITTED <b id="pCommitted">0</b></span><span>AVAILABLE <b id="pAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="pRamCommitted" class="ramCommitted"></i><i id="pRamAvailable" class="ramAvailable"></i></div><div id="pFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="pLanes"></div></div>
 </section>
 <div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
 <section class="hand-area"><div class="hand-heading"><strong id="handLabel">YOUR HAND</strong><span id="handStatus"></span></div><div id="hand" class="hand"></div></section>
@@ -528,13 +546,13 @@ const cost=c=>c.c.reduce((a,b)=>a+(Number(b)||0),0);
 const deckA=[36,65,111,36,217,111,36,65,217,111,65,36];
 const deckB=[111,36,65,111,217,36,111,65,36,217,65,36];
 const PHASES=['RAM / DRAW','DEPLOY','COMBAT','END TURN'];
-let state,botTimer=null,mode='human',seed=0,lastImpact=null,targetPreview=null,impactSeq=0;
+let state,botTimer=null,mode='human',seed=0,lastImpact=null,targetPreview=null,impactSeq=0,lastRamFlow=null,flowSeq=0;
 const makePlayer=(main,deck)=>({main,bf:20,mf:20,ram:0,hand:deck.slice(0,5),deck:deck.slice(5),units:[],bin:[]});
 const committed=p=>p.units.reduce((a,u)=>a+cost(card(u.n)),0);
 const free=p=>p.ram-committed(p);
 const other=k=>k==='p'?'e':'p';
 function log(msg){state.events.unshift(msg);if(state.events.length>30)state.events.length=30}
-function restart(kind=mode){if(botTimer!==null)clearTimeout(botTimer);botTimer=null;lastImpact=null;targetPreview=null;mode=kind;state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
+function restart(kind=mode){if(botTimer!==null)clearTimeout(botTimer);botTimer=null;lastImpact=null;targetPreview=null;lastRamFlow=null;mode=kind;state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
 function legalActions(s,k){if(s.done||s.active!==k)return[];let p=s[k],a=[];
 if(s.phase===0){if(s.actions>0){if(p.ram<25)a.push({kind:'ram'});if(p.deck.length)a.push({kind:'draw'})}a.push({kind:'next'});}
 else if(s.phase===1){if(p.units.length<5)p.hand.forEach((n,i)=>{if(cost(card(n))<=free(p))a.push({kind:'deploy',i})});a.push({kind:'next'});}
@@ -542,10 +560,10 @@ else if(s.phase===2){p.units.forEach((u,i)=>{if(!u.used&&card(u.n).a>0)a.push({k
 else a.push({kind:'next'});return a}
 function act(k,kind,i=null){if(state.done||state.active!==k)return false;if(!legalActions(state,k).some(x=>x.kind===kind&&(x.i??null)===i))return false;
 let p=state[k],e=state[other(k)];
-targetPreview=null;if(kind!=='attack')lastImpact=null;
-if(kind==='ram'){p.ram++;state.actions--;log((k==='p'?'You':'Bot')+' installed RAM ('+p.ram+').')}
+targetPreview=null;lastRamFlow=null;if(kind!=='attack')lastImpact=null;
+if(kind==='ram'){p.ram++;state.actions--;lastRamFlow={seq:++flowSeq,events:[{side:k,type:'install',amount:1,name:'RAM INSTALLED'}]};log((k==='p'?'You':'Bot')+' installed RAM ('+p.ram+').')}
 else if(kind==='draw'){let n=p.deck.shift();p.hand.push(n);state.actions--;log((k==='p'?'You':'Bot')+' drew a card.')}
-else if(kind==='deploy'){let n=p.hand.splice(i,1)[0],c=card(n);p.units.push({n,hp:c.d,used:false});log((k==='p'?'You':'Bot')+' deployed '+c.n+'.')}
+else if(kind==='deploy'){let before=free(p),n=p.hand.splice(i,1)[0],c=card(n);p.units.push({n,hp:c.d,used:false});lastRamFlow={seq:++flowSeq,events:[{side:k,type:'commit',amount:before-free(p),name:c.n}]};log((k==='p'?'You':'Bot')+' deployed '+c.n+'.')}
 else if(kind==='attack'){
 let u=p.units[i],c=card(u.n),block=e.units.find(v=>!v.used);lastImpact={from:k,to:other(k),source:i,attacker:c.n,defender:block?card(block.n).n:null,damage:c.a,retaliation:block?card(block.n).a:0,meter:block?null:(c.hit==='MAINFRAME'?'MF':'BF'),kind:block?'blocked':'direct',target:block?e.units.indexOf(block):-1,seq:++impactSeq};u.used=true;
 if(block){let defender=card(block.n);block.hp-=c.a;u.hp-=defender.a;log(c.n+' attacks '+defender.n+' ('+c.a+' / '+defender.a+').')}
@@ -555,7 +573,9 @@ for(let side of [k,other(k)]){let q=state[side],beforeFree=free(q),removed=q.uni
 for(let x of removed)lastImpact.destroyed.push({side,slot:x.slot,name:card(x.v.n).n,ram:cost(card(x.v.n))});
 q.bin.push(...removed.map(x=>x.v.n));q.units=q.units.filter(v=>v.hp>0);
 if(removed.length)lastImpact.recycle.push({side,count:removed.length,freed:free(q)-beforeFree,freeNow:free(q),binNow:q.bin.length});}
-if(lastImpact.destroyed.length)log('RECYCLED: '+lastImpact.destroyed.map(x=>x.name).join(' + ')+'. RAM returned: '+lastImpact.recycle.map(x=>(x.side==='p'?'PLAYER':'BOT')+' +'+x.freed).join(' / ')+'.');
+if(lastImpact.destroyed.length){
+lastRamFlow={seq:++flowSeq,events:lastImpact.recycle.map(x=>({side:x.side,type:'release',amount:x.freed,name:lastImpact.destroyed.filter(y=>y.side===x.side).map(y=>y.name).join(' + ')}))};
+log('RECYCLED: '+lastImpact.destroyed.map(x=>x.name).join(' + ')+'. RAM returned: '+lastImpact.recycle.map(x=>(x.side==='p'?'PLAYER':'BOT')+' +'+x.freed).join(' / ')+'.');}
 if(e.bf<=0||e.mf<=0||p.bf<=0||p.mf<=0){state.done=true;state.winner=e.bf<=0||e.mf<=0?k:other(k);log((state.winner==='p'?'Player':'Bot')+' wins.')}
 }
 else if(kind==='next'){
@@ -593,7 +613,11 @@ $('turnText').textContent='TURN '+s.turn+' / '+(s.done?'FINISHED':(k==='p'?'PLAY
 $('phaseStrip').replaceChildren(...PHASES.map((name,i)=>{let x=document.createElement('span');x.className=i===s.phase?'current':'';x.textContent=(i+1)+' '+name;return x}));
 for(let [key,x]of [['p',p],['e',e]]){$(key+'Health').textContent='BF '+Math.max(0,x.bf)+' / MF '+Math.max(0,x.mf);$(key+'Ram').textContent='RAM '+free(x)+'/'+x.ram;
 $(key+'Installed').textContent=x.ram;$(key+'Committed').textContent=committed(x);$(key+'Available').textContent=free(x);
-$(key+'RamCommitted').style.width=(committed(x)/25*100)+'%';$(key+'RamAvailable').style.width=(free(x)/25*100)+'%';$(key+'Deck').textContent='DECK '+x.deck.length;$(key+'Bin').textContent='RECYCLE '+x.bin.length;
+$(key+'RamCommitted').style.width=(committed(x)/25*100)+'%';$(key+'RamAvailable').style.width=(free(x)/25*100)+'%';
+let f=lastRamFlow?.events.find(v=>v.side===key);
+let flow=$(key+'Flow');flow.className='ramFlow'+(f?' flow-'+f.type:'');
+flow.textContent=f?(f.type==='commit'?'↘ COMMITTED '+f.amount+' RAM · '+f.name:f.type==='release'?'↗ RETURNED '+f.amount+' RAM · '+f.name:'✦ INSTALLED +'+f.amount+' RAM'):'';
+flow.title=f?flow.textContent:'';$(key+'Deck').textContent='DECK '+x.deck.length;$(key+'Bin').textContent='RECYCLE '+x.bin.length;
 let circuit=lastImpact?.recycle?.find(v=>v.side===key);
 let meter=$(key+'Circuit');meter.textContent=circuit?'↻ +'+circuit.freed+' RAM · '+circuit.count+' RECYCLED':'';meter.classList.toggle('circuitLive',!!circuit);
 $(key+'Ram').classList.toggle('ramReleased',!!circuit&&circuit.freed>0);
