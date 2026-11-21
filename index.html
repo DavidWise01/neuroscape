@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.4 — Neon Voltage</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.5 — Neon Combat Energy</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -362,12 +362,84 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
  50%{box-shadow:0 0 0 2px #fff,0 0 15px #ff6800,0 0 31px #ff7b2ba6}
 }
 @media(prefers-reduced-motion:reduce){.sqcard.playable,.sqcard.attack{animation:none}}
+
+/* v2.8.5: impact energy is CSS-only and never overlays click targets. */
+.board .slot.energySource{
+ position:relative;isolation:isolate;
+ animation:voltageSource 580ms ease-out both;
+}
+.board .slot.energyStrike{
+ position:relative;isolation:isolate;
+ animation:voltageImpact 650ms ease-out both;
+}
+.board .slot.energyStrike:after{
+ content:attr(data-energy);position:absolute;top:2px;left:2px;right:2px;
+ z-index:2;pointer-events:none;text-align:center;
+ font:900 9px/1.4 monospace;color:#fff;
+ background:linear-gradient(90deg,#ff7710,#a335f5);
+ box-shadow:0 0 8px #ff8729a3,0 0 14px #a544f37a;
+ animation:voltageTag 520ms ease-out both;
+}
+.board .slot.energyDirect{animation:voltageDirect 550ms ease-out both}
+.board .slot.energySource .sqcard,.board .slot.energyStrike .sqcard{pointer-events:auto}
+.divider .combatEnergy{
+ position:absolute;inset:0;z-index:0;pointer-events:none;
+ display:flex;align-items:center;justify-content:center;
+ font:900 clamp(11px,1.3vw,16px) monospace;letter-spacing:.12em;
+ white-space:nowrap;color:#7625a9;
+}
+.divider>span:not(.combatEnergy),.divider>small{position:relative;z-index:1}
+.divider .combatEnergy.beamBurst{
+ background:linear-gradient(90deg,transparent,#ffab5470 24%,#fefaffab 48%,#b56ff577 77%,transparent);
+ animation:voltageBeam 580ms ease-out both;
+}
+.divider .combatEnergy.shieldBurst{
+ color:#8223c2;background:radial-gradient(ellipse at center,#ba68ff80,#ffae4f22 55%,transparent 78%);
+ animation:voltageShield 600ms ease-out both;
+}
+@keyframes voltageSource{
+ 0%{filter:brightness(1);transform:scale(1)}
+ 20%{filter:brightness(1.2);transform:scale(.97)}
+ 55%{filter:brightness(1.6);transform:scale(1.035)}
+ 100%{filter:brightness(1);transform:scale(1)}
+}
+@keyframes voltageImpact{
+ 0%{filter:brightness(1.8) saturate(1.6);transform:scale(1.03)}
+ 35%{filter:brightness(1.4);transform:scale(.96)}
+ 100%{filter:brightness(1);transform:scale(1)}
+}
+@keyframes voltageTag{
+ 0%{opacity:0;transform:translateY(8px)}
+ 18%{opacity:1;transform:translateY(0)}
+ 85%{opacity:1}100%{opacity:0}
+}
+@keyframes voltageDirect{
+ 0%{box-shadow:0 0 0 2px #fff,0 0 20px #9b43fbda}
+ 45%{box-shadow:0 0 18px #ff8c2ade,inset 0 0 20px #a952ef6e}
+ 100%{box-shadow:0 0 7px #af61f86f}
+}
+@keyframes voltageBeam{
+ 0%{opacity:0;transform:scaleX(.1)}
+ 27%{opacity:.97;transform:scaleX(1)}
+ 100%{opacity:0;transform:scaleX(1)}
+}
+@keyframes voltageShield{
+ 0%{opacity:0;transform:scale(.65)}
+ 33%{opacity:1;transform:scale(1.02)}
+ 100%{opacity:0;transform:scale(1.08)}
+}
+@media(prefers-reduced-motion:reduce){
+ .board .slot.energySource,.board .slot.energyStrike,.board .slot.energyDirect,
+ .board .slot.energyStrike:after,.divider .combatEnergy.beamBurst,
+ .divider .combatEnergy.shieldBurst{animation:none}
+ .divider .combatEnergy{display:none}
+}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.4 · BONE WHITE / HIGH-VOLTAGE ORANGE + PURPLE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.5 · BONE WHITE / NEON COMBAT ENERGY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" aria-label="Two-player square card battlefield">
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span></div></div><div class="lanes" id="eLanes"></div></div>
-<div class="divider"><span>⚔ COMBAT</span><small id="combatFeed" aria-live="polite">Ready defender blocks first · otherwise direct BF / MF damage</small><span id="gameResult"></span></div>
+<div class="divider"><span>⚔ COMBAT</span><span id="combatEnergy" class="combatEnergy" aria-hidden="true"></span><small id="combatFeed" aria-live="polite">Ready defender blocks first · otherwise direct BF / MF damage</small><span id="gameResult"></span></div>
 <div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span></div></div><div class="lanes" id="pLanes"></div></div>
 </section>
 <div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
@@ -384,7 +456,7 @@ const cost=c=>c.c.reduce((a,b)=>a+(Number(b)||0),0);
 const deckA=[36,65,111,36,217,111,36,65,217,111,65,36];
 const deckB=[111,36,65,111,217,36,111,65,36,217,65,36];
 const PHASES=['RAM / DRAW','DEPLOY','COMBAT','END TURN'];
-let state,botTimer=null,mode='human',seed=0,lastImpact=null,targetPreview=null;
+let state,botTimer=null,mode='human',seed=0,lastImpact=null,targetPreview=null,impactSeq=0;
 const makePlayer=(main,deck)=>({main,bf:20,mf:20,ram:0,hand:deck.slice(0,5),deck:deck.slice(5),units:[],bin:[]});
 const committed=p=>p.units.reduce((a,u)=>a+cost(card(u.n)),0);
 const free=p=>p.ram-committed(p);
@@ -403,7 +475,7 @@ if(kind==='ram'){p.ram++;state.actions--;log((k==='p'?'You':'Bot')+' installed R
 else if(kind==='draw'){let n=p.deck.shift();p.hand.push(n);state.actions--;log((k==='p'?'You':'Bot')+' drew a card.')}
 else if(kind==='deploy'){let n=p.hand.splice(i,1)[0],c=card(n);p.units.push({n,hp:c.d,used:false});log((k==='p'?'You':'Bot')+' deployed '+c.n+'.')}
 else if(kind==='attack'){
-let u=p.units[i],c=card(u.n),block=e.units.find(v=>!v.used);lastImpact={from:k,to:other(k),attacker:c.n,defender:block?card(block.n).n:null,damage:c.a,retaliation:block?card(block.n).a:0,meter:block?null:(c.hit==='MAINFRAME'?'MF':'BF'),kind:block?'blocked':'direct',target:block?e.units.indexOf(block):-1};u.used=true;
+let u=p.units[i],c=card(u.n),block=e.units.find(v=>!v.used);lastImpact={from:k,to:other(k),source:i,attacker:c.n,defender:block?card(block.n).n:null,damage:c.a,retaliation:block?card(block.n).a:0,meter:block?null:(c.hit==='MAINFRAME'?'MF':'BF'),kind:block?'blocked':'direct',target:block?e.units.indexOf(block):-1,seq:++impactSeq};u.used=true;
 if(block){let defender=card(block.n);block.hp-=c.a;u.hp-=defender.a;log(c.n+' attacks '+defender.n+' ('+c.a+' / '+defender.a+').')}
 else{let meter=c.hit==='MAINFRAME'?'mf':'bf';e[meter]-=c.a;log(c.n+' hits '+(meter==='mf'?'mainframe':'bioframe')+' for '+c.a+'.')}
 for(let q of [p,e]){let removed=q.units.filter(v=>v.hp<=0);q.bin.push(...removed.map(v=>v.n));q.units=q.units.filter(v=>v.hp>0)}
@@ -442,12 +514,17 @@ $('modeHuman').classList.toggle('active',mode==='human');$('modeAuto').classList
 $('turnText').textContent='TURN '+s.turn+' / '+(s.done?'FINISHED':(k==='p'?'PLAYER':'BOT')+' / '+PHASES[s.phase]);
 $('phaseStrip').replaceChildren(...PHASES.map((name,i)=>{let x=document.createElement('span');x.className=i===s.phase?'current':'';x.textContent=(i+1)+' '+name;return x}));
 for(let [key,x]of [['p',p],['e',e]]){$(key+'Health').textContent='BF '+Math.max(0,x.bf)+' / MF '+Math.max(0,x.mf);$(key+'Ram').textContent='RAM '+free(x)+'/'+x.ram;$(key+'Deck').textContent='DECK '+x.deck.length;$(key+'Bin').textContent='RECYCLE '+x.bin.length;
-let lane=$(key+'Lanes');lane.replaceChildren(...Array.from({length:5},(_,i)=>{let slot=document.createElement('div');slot.className='slot';slot.dataset.slot=String(i+1);if(lastImpact&&lastImpact.to===key&&lastImpact.target===i)slot.classList.add('impact');let u=x.units[i];if(targetPreview&&targetPreview.to===key&&targetPreview.target===i)slot.classList.add('targetPreview');if(targetPreview&&targetPreview.to===key&&targetPreview.target===-1)slot.classList.add('directPreview');if(u){let available=!s.done&&mode==='human'&&key==='p'&&s.active==='p'&&s.phase===2&&!u.used&&card(u.n).a>0;if(available)slot.classList.add('available');let unitCard=squareCard(u.n,u,available?()=>act('p','attack',i):null,'attack');if(available){unitCard.addEventListener('pointerenter',()=>previewTarget(i));unitCard.addEventListener('pointerleave',clearPreview);unitCard.addEventListener('focus',()=>previewTarget(i));unitCard.addEventListener('blur',clearPreview)}slot.append(unitCard)}return slot}))}
+let lane=$(key+'Lanes');lane.replaceChildren(...Array.from({length:5},(_,i)=>{let slot=document.createElement('div');slot.className='slot';slot.dataset.slot=String(i+1);
+if(lastImpact&&lastImpact.to===key&&lastImpact.target===i){slot.classList.add('impact','energyStrike');slot.dataset.energy=lastImpact.kind==='blocked'?'BLOCK':'HIT'}
+if(lastImpact&&lastImpact.from===key&&lastImpact.source===i){slot.classList.add('energySource')}
+if(lastImpact&&lastImpact.to===key&&lastImpact.target===-1){slot.classList.add('energyDirect')}
+let u=x.units[i];if(targetPreview&&targetPreview.to===key&&targetPreview.target===i)slot.classList.add('targetPreview');if(targetPreview&&targetPreview.to===key&&targetPreview.target===-1)slot.classList.add('directPreview');if(u){let available=!s.done&&mode==='human'&&key==='p'&&s.active==='p'&&s.phase===2&&!u.used&&card(u.n).a>0;if(available)slot.classList.add('available');let unitCard=squareCard(u.n,u,available?()=>act('p','attack',i):null,'attack');if(available){unitCard.addEventListener('pointerenter',()=>previewTarget(i));unitCard.addEventListener('pointerleave',clearPreview);unitCard.addEventListener('focus',()=>previewTarget(i));unitCard.addEventListener('blur',clearPreview)}slot.append(unitCard)}return slot}))}
 let playable=0;const hand=$('hand');hand.replaceChildren(...(mode==='auto'?s[k].hand:p.hand).map((n,i)=>{let c=card(n);let ok=mode==='human'&&!s.done&&k==='p'&&s.phase===1&&p.units.length<5&&cost(c)<=free(p);if(ok)playable++;return squareCard(n,null,ok?()=>act('p','deploy',i):null,'playable')}));
 $('handLabel').textContent=mode==='auto'?(k==='p'?'BOT A HAND':'BOT B HAND'):'YOUR HAND';$('handStatus').textContent=mode==='auto'?'BOT SPECTATOR':playable+' PLAYABLE';
 const can=mode==='human'&&!s.done&&s.active==='p',legal=can?legalActions(s,'p'):[];
 $('install').disabled=!legal.some(a=>a.kind==='ram');$('draw').disabled=!legal.some(a=>a.kind==='draw');$('next').disabled=!legal.some(a=>a.kind==='next');
 renderCombatText();
+const fx=$('combatEnergy');fx.className='combatEnergy'+(lastImpact?(lastImpact.kind==='blocked'?' shieldBurst':' beamBurst'):'');fx.textContent=lastImpact?(lastImpact.kind==='blocked'?'◈ BLOCK / RETURN':'⚡ DIRECT '+lastImpact.meter):'';
 $('gameResult').textContent=s.done?(s.winner==='draw'?'DRAW':s.winner==='p'?'PLAYER WINS':'BOT WINS'):'';
 $('message').textContent=s.done?'Match complete. Restart to play again.':mode==='auto'?'Bots are playing automatically.':k==='e'?'Bot is taking its turn.':s.phase===0?(s.actions?'Install RAM or draw a card.':'Advance to deploy.'):s.phase===1?(playable?'Click a highlighted square card in your hand.':'No affordable cards. Advance to combat.'):s.phase===2?'Click a highlighted square unit to attack, or advance.':'Advance to finish your turn.';
 $('events').replaceChildren(...s.events.slice(0,15).map(t=>{let li=document.createElement('li');li.textContent=t;return li}));
