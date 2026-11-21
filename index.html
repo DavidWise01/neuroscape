@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.5 — Neon Combat Energy</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.6 — Neon Shatter</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -434,8 +434,37 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
  .divider .combatEnergy.shieldBurst{animation:none}
  .divider .combatEnergy{display:none}
 }
+
+/* v2.8.6 — neon destruction footprints, no extra playfield elements */
+.board .slot.shattered{isolation:isolate;outline:2px solid #fff;outline-offset:-2px}
+.board .opponent .slot.shattered{
+ box-shadow:inset 0 0 18px #d88fff8a,0 0 17px #a73fffb3;
+}
+.board .you .slot.shattered{
+ box-shadow:inset 0 0 18px #ffb46094,0 0 17px #ff7514ae;
+}
+.board .slot.shattered::before{
+ content:'';position:absolute;inset:-20%;z-index:3;pointer-events:none;
+ background:repeating-conic-gradient(from 18deg at 50% 50%,#ff7600 0 9deg,transparent 9deg 28deg,#a948f5 28deg 37deg,transparent 37deg 58deg);
+ clip-path:polygon(50% 3%,60% 38%,97% 22%,67% 52%,93% 81%,59% 63%,50% 100%,39% 63%,7% 81%,34% 50%,3% 23%,39% 38%);
+ animation:neonShatter 650ms cubic-bezier(.16,.71,.34,1) both;
+}
+.board .slot .shatterLabel{
+ position:absolute;bottom:6%;left:4%;right:4%;z-index:4;pointer-events:none;
+ text-align:center;font:900 clamp(7px,.75vw,11px) monospace;
+ color:#fff;background:linear-gradient(90deg,#ef6e0a,#9e2bdf);
+ box-shadow:0 0 12px #eb7a2ba3,0 0 19px #ab56f9a9;
+ animation:shatterText 900ms ease-out both;
+}
+@keyframes neonShatter{
+ 0%{opacity:.92;transform:scale(.22) rotate(-18deg);filter:blur(2px)}
+ 36%{opacity:1;transform:scale(1.09) rotate(5deg);filter:blur(0)}
+ 100%{opacity:0;transform:scale(1.42) rotate(22deg);filter:blur(2px)}
+}
+@keyframes shatterText{0%{opacity:0;transform:translateY(8px)}20%{opacity:1;transform:translateY(0)}75%{opacity:1}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){.board .slot.shattered::before,.board .slot .shatterLabel{animation:none;opacity:.85}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.5 · BONE WHITE / NEON COMBAT ENERGY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.6 · BONE WHITE / NEON SHATTER</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" aria-label="Two-player square card battlefield">
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span></div></div><div class="lanes" id="eLanes"></div></div>
@@ -478,7 +507,11 @@ else if(kind==='attack'){
 let u=p.units[i],c=card(u.n),block=e.units.find(v=>!v.used);lastImpact={from:k,to:other(k),source:i,attacker:c.n,defender:block?card(block.n).n:null,damage:c.a,retaliation:block?card(block.n).a:0,meter:block?null:(c.hit==='MAINFRAME'?'MF':'BF'),kind:block?'blocked':'direct',target:block?e.units.indexOf(block):-1,seq:++impactSeq};u.used=true;
 if(block){let defender=card(block.n);block.hp-=c.a;u.hp-=defender.a;log(c.n+' attacks '+defender.n+' ('+c.a+' / '+defender.a+').')}
 else{let meter=c.hit==='MAINFRAME'?'mf':'bf';e[meter]-=c.a;log(c.n+' hits '+(meter==='mf'?'mainframe':'bioframe')+' for '+c.a+'.')}
-for(let q of [p,e]){let removed=q.units.filter(v=>v.hp<=0);q.bin.push(...removed.map(v=>v.n));q.units=q.units.filter(v=>v.hp>0)}
+lastImpact.destroyed=[];
+for(let side of [k,other(k)]){let q=state[side],removed=q.units.map((v,slot)=>({v,slot})).filter(x=>x.v.hp<=0);
+for(let x of removed)lastImpact.destroyed.push({side,slot:x.slot,name:card(x.v.n).n});
+q.bin.push(...removed.map(x=>x.v.n));q.units=q.units.filter(v=>v.hp>0)}
+if(lastImpact.destroyed.length)log('RECYCLED: '+lastImpact.destroyed.map(x=>x.name).join(' + ')+'.');
 if(e.bf<=0||e.mf<=0||p.bf<=0||p.mf<=0){state.done=true;state.winner=e.bf<=0||e.mf<=0?k:other(k);log((state.winner==='p'?'Player':'Bot')+' wins.')}
 }
 else if(kind==='next'){
@@ -502,6 +535,7 @@ function clearPreview(){if(!targetPreview)return;targetPreview=null;updateTarget
 function updateTargetPreview(){for(let key of ['p','e']){let lane=$(key+'Lanes');if(!lane)continue;Array.from(lane.children).forEach((slot,i)=>{slot.classList.toggle('targetPreview',!!targetPreview&&targetPreview.to===key&&targetPreview.target===i);slot.classList.toggle('directPreview',!!targetPreview&&targetPreview.to===key&&targetPreview.target===-1)})}renderCombatText()}
 function renderCombatText(){const t=targetPreview||lastImpact,feed=$('combatFeed');
 feed.textContent=targetPreview?(t.kind==='blocked'?'PREVIEW · '+t.attacker+' → '+t.defender+' · '+t.damage+' dealt / '+t.retaliation+' returned':'PREVIEW · '+t.attacker+' → '+t.meter+' · '+t.damage+' damage'):lastImpact?(t.kind==='blocked'?t.attacker+' hit '+t.defender+' · '+t.damage+' dealt / '+t.retaliation+' returned':t.attacker+' ⚡ '+t.meter+' DIRECT HIT · '+t.damage+' damage'):'Ready defender blocks first · otherwise direct BF / MF damage';
+if(!targetPreview&&lastImpact?.destroyed?.length)feed.textContent+=' · '+lastImpact.destroyed.map(x=>x.name+' RECYCLED').join(' / ');
 feed.classList.toggle('activeStrike',!!lastImpact&&!targetPreview);feed.classList.toggle('activePreview',!!targetPreview)}
 
 /* UI: actual square buttons are bound to legal engine actions. */
@@ -518,6 +552,8 @@ let lane=$(key+'Lanes');lane.replaceChildren(...Array.from({length:5},(_,i)=>{le
 if(lastImpact&&lastImpact.to===key&&lastImpact.target===i){slot.classList.add('impact','energyStrike');slot.dataset.energy=lastImpact.kind==='blocked'?'BLOCK':'HIT'}
 if(lastImpact&&lastImpact.from===key&&lastImpact.source===i){slot.classList.add('energySource')}
 if(lastImpact&&lastImpact.to===key&&lastImpact.target===-1){slot.classList.add('energyDirect')}
+let deaths=lastImpact?.destroyed?.filter(d=>d.side===key&&d.slot===i)||[];
+if(deaths.length){slot.classList.add('shattered');let overlay=document.createElement('span');overlay.className='shatterLabel';overlay.textContent='✦ RECYCLED';overlay.setAttribute('aria-hidden','true');slot.append(overlay)}
 let u=x.units[i];if(targetPreview&&targetPreview.to===key&&targetPreview.target===i)slot.classList.add('targetPreview');if(targetPreview&&targetPreview.to===key&&targetPreview.target===-1)slot.classList.add('directPreview');if(u){let available=!s.done&&mode==='human'&&key==='p'&&s.active==='p'&&s.phase===2&&!u.used&&card(u.n).a>0;if(available)slot.classList.add('available');let unitCard=squareCard(u.n,u,available?()=>act('p','attack',i):null,'attack');if(available){unitCard.addEventListener('pointerenter',()=>previewTarget(i));unitCard.addEventListener('pointerleave',clearPreview);unitCard.addEventListener('focus',()=>previewTarget(i));unitCard.addEventListener('blur',clearPreview)}slot.append(unitCard)}return slot}))}
 let playable=0;const hand=$('hand');hand.replaceChildren(...(mode==='auto'?s[k].hand:p.hand).map((n,i)=>{let c=card(n);let ok=mode==='human'&&!s.done&&k==='p'&&s.phase===1&&p.units.length<5&&cost(c)<=free(p);if(ok)playable++;return squareCard(n,null,ok?()=>act('p','deploy',i):null,'playable')}));
 $('handLabel').textContent=mode==='auto'?(k==='p'?'BOT A HAND':'BOT B HAND'):'YOUR HAND';$('handStatus').textContent=mode==='auto'?'BOT SPECTATOR':playable+' PLAYABLE';
