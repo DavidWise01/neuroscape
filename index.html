@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.16 — Neon Card Intelligence</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.17 — Tactical Combat Preview</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -721,15 +721,21 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .cardIntel.intelReady{border-left-color:#fd7816;box-shadow:0 0 13px #ff871b66}.cardIntel.intelReady #intelDecision{color:#ac4d00}
 .cardIntel.intelBlocked{border-left-color:#8a42c5}.cardIntel.intelBlocked #intelDecision{color:#872eb0}
 @media(max-width:650px){.cardIntel{gap:3px 10px;padding:6px 8px;font-size:10px}.cardIntel #intelFacts,.cardIntel #intelDecision{flex-basis:100%}}
+
+/* v2.8.17: read-only projected health; never covers or delays square attacks. */
+.cardIntel .combatProjection{flex:1 1 100%;box-sizing:border-box;min-height:22px;padding:6px 9px;border:1px solid #b565e4;border-left:3px solid #b14aee;background:#f4e8ff;color:#6b319a;font:900 11px/1.45 monospace;letter-spacing:.01em;box-shadow:inset 0 0 8px #b35be322}
+.cardIntel .combatProjection[hidden]{display:none}
+.cardIntel .combatProjection.projectionFatal{border-color:#fc791a;border-left-color:#f86a11;background:#fff1df;color:#af4e0c;box-shadow:0 0 9px #ff863b5c}
+@media(max-width:650px){.cardIntel .combatProjection{font-size:10px;padding:5px 6px}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.16 · BONE WHITE / NEON CARD INTELLIGENCE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.17 · BONE WHITE / TACTICAL COMBAT PREVIEW</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
 <div class="divider"><span>⚔ COMBAT</span><span id="combatEnergy" class="combatEnergy" aria-hidden="true"></span><small id="combatFeed" aria-live="polite">Ready defender blocks first · otherwise direct BF / MF damage</small><span id="gameResult"></span></div>
 <div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Player RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="pInstalled">0</b></span><span>COMMITTED <b id="pCommitted">0</b></span><span>AVAILABLE <b id="pAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="pRamCommitted" class="ramCommitted"></i><i id="pRamAvailable" class="ramAvailable"></i></div><div id="pFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="pLanes"></div><svg id="pPathways" class="energyPathways" aria-hidden="true"></svg></div>
 </section>
-<aside id="cardIntel" class="cardIntel" aria-label="Card tactical information"><strong id="intelName">CARD INTELLIGENCE</strong><span id="intelFacts">Hover or focus a card for cost, target, and tactical status.</span><span id="intelDecision">Tactical readout</span></aside><div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
+<aside id="cardIntel" class="cardIntel" aria-label="Card tactical information"><strong id="intelName">CARD INTELLIGENCE</strong><span id="intelFacts">Hover or focus a card for cost, target, and tactical status.</span><span id="intelDecision">Tactical readout</span><div id="combatProjection" class="combatProjection" aria-live="off" hidden></div></aside><div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
 <section class="hand-area"><div class="hand-heading"><strong id="handLabel">YOUR HAND</strong><span id="handStatus"></span></div><div id="hand" class="hand"></div></section>
 <div class="foot"><section class="info"><h2>HOW TO PLAY</h2><p id="message"></p></section><section class="info"><h2>EVENT LOG</h2><ol class="log" id="events"></ol></section></div>
 <p class="notice">Square-card practice rules: install RAM or draw, deploy within available RAM (up to five characters), attack once per ready character, then end your turn. This simplified trainer is not the complete official card game. Original catalog artwork is loaded from external source URLs.</p>
@@ -790,10 +796,25 @@ function scheduleBot(){if(botTimer!==null){clearTimeout(botTimer);botTimer=null}
 
 
 /* Read-only preview: follows the same deterministic defender selection as act(). */
-function predictedTarget(s,k,i){if(s.done||s.active!==k||s.phase!==2)return null;const u=s[k].units[i];if(!u||u.used||card(u.n).a<=0)return null;const defender=s[other(k)].units.find(x=>!x.used);const c=card(u.n);return {from:k,to:other(k),attacker:c.n,damage:c.a,defender:defender?card(defender.n).n:null,retaliation:defender?card(defender.n).a:0,kind:defender?'blocked':'direct',target:defender?s[other(k)].units.indexOf(defender):-1,meter:defender?null:(c.hit==='MAINFRAME'?'MF':'BF')}}
+function predictedTarget(s,k,i){if(s.done||s.active!==k||s.phase!==2)return null;const u=s[k].units[i];if(!u||u.used||card(u.n).a<=0)return null;const defender=s[other(k)].units.find(x=>!x.used);const c=card(u.n),dc=defender?card(defender.n):null;
+const meter=dc?null:(c.hit==='MAINFRAME'?'MF':'BF'),before=dc?null:s[other(k)][meter==='MF'?'mf':'bf'];
+return {from:k,to:other(k),attacker:c.n,damage:c.a,defender:dc?dc.n:null,retaliation:dc?dc.a:0,kind:dc?'blocked':'direct',target:dc?s[other(k)].units.indexOf(defender):-1,meter,
+attackerHp:u.hp,attackerAfter:dc?u.hp-dc.a:u.hp,defenderHp:dc?defender.hp:null,defenderAfter:dc?defender.hp-c.a:null,
+meterHp:before,meterAfter:dc?null:before-c.a,attackerDestroyed:!!dc&&u.hp-dc.a<=0,defenderDestroyed:!!dc&&defender.hp-c.a<=0}}
 function previewTarget(i){if(mode!=='human')return;targetPreview=predictedTarget(state,'p',i);updateTargetPreview()}
 function clearPreview(){if(!targetPreview)return;targetPreview=null;updateTargetPreview()}
-function updateTargetPreview(){for(let key of ['p','e']){let lane=$(key+'Lanes');if(!lane)continue;Array.from(lane.children).forEach((slot,i)=>{slot.classList.toggle('targetPreview',!!targetPreview&&targetPreview.to===key&&targetPreview.target===i);slot.classList.toggle('directPreview',!!targetPreview&&targetPreview.to===key&&targetPreview.target===-1)})}renderCombatText()}
+function updateTargetPreview(){renderProjectedHealth();for(let key of ['p','e']){let lane=$(key+'Lanes');if(!lane)continue;Array.from(lane.children).forEach((slot,i)=>{slot.classList.toggle('targetPreview',!!targetPreview&&targetPreview.to===key&&targetPreview.target===i);slot.classList.toggle('directPreview',!!targetPreview&&targetPreview.to===key&&targetPreview.target===-1)})}renderCombatText()}
+function projectedHealthText(t){
+ if(!t)return '';
+ if(t.kind==='blocked')return 'YOUR '+t.attacker+': '+t.attackerHp+' → '+Math.max(0,t.attackerAfter)+' HP'+(t.attackerDestroyed?' · RECYCLED':' · SURVIVES')+'   |   BOT '+t.defender+': '+t.defenderHp+' → '+Math.max(0,t.defenderAfter)+' HP'+(t.defenderDestroyed?' · RECYCLED':' · SURVIVES');
+ return 'BOT '+t.meter+': '+t.meterHp+' → '+Math.max(0,t.meterAfter)+' · '+t.damage+' DAMAGE'+(t.meterAfter<=0?' · MATCH ENDS':'')+'   |   '+t.attacker+' REMAINS AT '+t.attackerHp+' HP';
+}
+function renderProjectedHealth(){
+ const x=$('combatProjection');
+ x.hidden=!targetPreview;
+ x.textContent=targetPreview?'◈ PROJECTED · '+projectedHealthText(targetPreview):'';
+ x.classList.toggle('projectionFatal',!!targetPreview&&(targetPreview.attackerDestroyed||targetPreview.defenderDestroyed||targetPreview.meterAfter!==null&&targetPreview.meterAfter<=0));
+}
 function renderCombatText(){const t=targetPreview||lastImpact,feed=$('combatFeed');
 feed.textContent=targetPreview?(t.kind==='blocked'?'PREVIEW · '+t.attacker+' → '+t.defender+' · '+t.damage+' dealt / '+t.retaliation+' returned':'PREVIEW · '+t.attacker+' → '+t.meter+' · '+t.damage+' damage'):lastImpact?(t.kind==='blocked'?t.attacker+' hit '+t.defender+' · '+t.damage+' dealt / '+t.retaliation+' returned':t.attacker+' ⚡ '+t.meter+' DIRECT HIT · '+t.damage+' damage'):'Ready defender blocks first · otherwise direct BF / MF damage';
 if(!targetPreview&&lastImpact?.destroyed?.length)feed.textContent+=' · '+lastImpact.destroyed.map(x=>x.name+' RECYCLED').join(' / ');
@@ -875,7 +896,7 @@ function intelDetails(n,u,side,slot,isHand){
  else if((c.a||0)<=0)status='NO ATTACK · This card cannot attack.';
  else if(mode==='human'&&side==='p'){
   const prediction=predictedTarget(state,'p',slot);
-  status=prediction?(prediction.kind==='blocked'?'READY · '+prediction.defender+' blocks: '+prediction.damage+' damage / '+prediction.retaliation+' retaliation.':'READY · Direct '+prediction.meter+' hit for '+prediction.damage+'.'):'WAIT';
+  status=prediction?'READY · '+projectedHealthText(prediction):'WAIT';
  }else status='READY · '+(side==='p'?'Player':'Bot')+' may attack.';
  return {name:c.n,info:c.t.toUpperCase()+' · RAM '+cp+' · ATTACK '+(c.a??0)+' · DEFENSE '+(u?u.hp:c.d??0)+' · '+target,status};
 }
@@ -885,7 +906,7 @@ function showCardIntel(n,u,side,slot,isHand){
  panel.classList.toggle('intelBlocked',v.status.startsWith('BLOCKED'));panel.classList.toggle('intelReady',v.status.startsWith('READY'));
 }
 function clearCardIntel(){
- $('intelName').textContent='CARD INTELLIGENCE';$('intelFacts').textContent='Hover or focus a card for cost, target, and tactical status.';$('intelDecision').textContent='Tactical readout';$('cardIntel').classList.remove('intelBlocked','intelReady');
+ $('intelName').textContent='CARD INTELLIGENCE';$('intelFacts').textContent='Hover or focus a card for cost, target, and tactical status.';$('intelDecision').textContent='Tactical readout';$('cardIntel').classList.remove('intelBlocked','intelReady');renderProjectedHealth();
 }
 function bindCardIntel(el,n,u,side,slot,isHand){
  const reveal=()=>showCardIntel(n,u,side,slot,isHand);
