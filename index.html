@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.2 — Neon Combat Feedback</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.3 — Square Combat Targeting</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -239,8 +239,16 @@ nav button:hover,nav a:hover,.actions button:not(:disabled):hover{
 @keyframes strikeNotice{0%{opacity:.3;filter:blur(3px)}70%{opacity:1;filter:blur(0)}100%{opacity:1}}
 @media(max-width:650px){.divider small{max-width:58%;font-size:10px}}
 @media(prefers-reduced-motion:reduce){.divider small.activeStrike{animation:none}.sqcard.playable:not(:disabled),.sqcard.attack:not(:disabled){transition:none}}
+
+/* v2.8.3 precise predicted target, not a new targeting rule */
+.side.opponent .slot.targetPreview{border:3px solid #9d37ec;background:linear-gradient(135deg,#ffffff,#e4caff);box-shadow:0 0 0 2px #fff,0 0 20px #9838f2ad,inset 0 0 16px #a357ed50}
+.side.you .slot.targetPreview{border:3px solid #ff7725;box-shadow:0 0 0 2px #fff,0 0 20px #ff7525ab}
+.side.opponent .slot.directPreview{border-color:#b462eacc;box-shadow:inset 0 0 8px #a15ce659}
+.divider small.activePreview{font-weight:900;color:#8937cb;text-shadow:0 0 7px #c884f680}
+.sqcard.attack:focus-visible{outline:3px solid #ff862d;outline-offset:2px}
+@media(prefers-reduced-motion:reduce){.side.opponent .slot.targetPreview,.side.you .slot.targetPreview{transition:none;animation:none}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.2 · BONE WHITE NEON / LIVE COMBAT FEEDBACK</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.3 · BONE WHITE NEON / TARGET PREVIEW</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" aria-label="Two-player square card battlefield">
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span></div></div><div class="lanes" id="eLanes"></div></div>
@@ -261,13 +269,13 @@ const cost=c=>c.c.reduce((a,b)=>a+(Number(b)||0),0);
 const deckA=[36,65,111,36,217,111,36,65,217,111,65,36];
 const deckB=[111,36,65,111,217,36,111,65,36,217,65,36];
 const PHASES=['RAM / DRAW','DEPLOY','COMBAT','END TURN'];
-let state,botTimer=null,mode='human',seed=0,lastImpact=null;
+let state,botTimer=null,mode='human',seed=0,lastImpact=null,targetPreview=null;
 const makePlayer=(main,deck)=>({main,bf:20,mf:20,ram:0,hand:deck.slice(0,5),deck:deck.slice(5),units:[],bin:[]});
 const committed=p=>p.units.reduce((a,u)=>a+cost(card(u.n)),0);
 const free=p=>p.ram-committed(p);
 const other=k=>k==='p'?'e':'p';
 function log(msg){state.events.unshift(msg);if(state.events.length>30)state.events.length=30}
-function restart(kind=mode){if(botTimer!==null)clearTimeout(botTimer);botTimer=null;lastImpact=null;mode=kind;state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
+function restart(kind=mode){if(botTimer!==null)clearTimeout(botTimer);botTimer=null;lastImpact=null;targetPreview=null;mode=kind;state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
 function legalActions(s,k){if(s.done||s.active!==k)return[];let p=s[k],a=[];
 if(s.phase===0){if(s.actions>0){if(p.ram<25)a.push({kind:'ram'});if(p.deck.length)a.push({kind:'draw'})}a.push({kind:'next'});}
 else if(s.phase===1){if(p.units.length<5)p.hand.forEach((n,i)=>{if(cost(card(n))<=free(p))a.push({kind:'deploy',i})});a.push({kind:'next'});}
@@ -275,12 +283,12 @@ else if(s.phase===2){p.units.forEach((u,i)=>{if(!u.used&&card(u.n).a>0)a.push({k
 else a.push({kind:'next'});return a}
 function act(k,kind,i=null){if(state.done||state.active!==k)return false;if(!legalActions(state,k).some(x=>x.kind===kind&&(x.i??null)===i))return false;
 let p=state[k],e=state[other(k)];
-if(kind!=='attack')lastImpact=null;
+targetPreview=null;if(kind!=='attack')lastImpact=null;
 if(kind==='ram'){p.ram++;state.actions--;log((k==='p'?'You':'Bot')+' installed RAM ('+p.ram+').')}
 else if(kind==='draw'){let n=p.deck.shift();p.hand.push(n);state.actions--;log((k==='p'?'You':'Bot')+' drew a card.')}
 else if(kind==='deploy'){let n=p.hand.splice(i,1)[0],c=card(n);p.units.push({n,hp:c.d,used:false});log((k==='p'?'You':'Bot')+' deployed '+c.n+'.')}
 else if(kind==='attack'){
-let u=p.units[i],c=card(u.n),block=e.units.find(v=>!v.used);lastImpact={from:k,to:other(k),attacker:c.n,defender:block?card(block.n).n:null,damage:c.a,kind:block?'blocked':'direct',target:block?e.units.indexOf(block):-1};u.used=true;
+let u=p.units[i],c=card(u.n),block=e.units.find(v=>!v.used);lastImpact={from:k,to:other(k),attacker:c.n,defender:block?card(block.n).n:null,damage:c.a,retaliation:block?card(block.n).a:0,meter:block?null:(c.hit==='MAINFRAME'?'MF':'BF'),kind:block?'blocked':'direct',target:block?e.units.indexOf(block):-1};u.used=true;
 if(block){let defender=card(block.n);block.hp-=c.a;u.hp-=defender.a;log(c.n+' attacks '+defender.n+' ('+c.a+' / '+defender.a+').')}
 else{let meter=c.hit==='MAINFRAME'?'mf':'bf';e[meter]-=c.a;log(c.n+' hits '+(meter==='mf'?'mainframe':'bioframe')+' for '+c.a+'.')}
 for(let q of [p,e]){let removed=q.units.filter(v=>v.hp<=0);q.bin.push(...removed.map(v=>v.n));q.units=q.units.filter(v=>v.hp>0)}
@@ -299,6 +307,16 @@ return a.at(-1)}
 function scheduleBot(){if(botTimer!==null){clearTimeout(botTimer);botTimer=null}if(state.done)return;if(mode==='auto'||state.active==='e'){botTimer=setTimeout(()=>{botTimer=null;const d=botChoice();if(d)act(state.active,d.kind,d.i??null)},mode==='auto'?360:220)}}
 
 
+
+/* Read-only preview: follows the same deterministic defender selection as act(). */
+function predictedTarget(s,k,i){if(s.done||s.active!==k||s.phase!==2)return null;const u=s[k].units[i];if(!u||u.used||card(u.n).a<=0)return null;const defender=s[other(k)].units.find(x=>!x.used);const c=card(u.n);return {from:k,to:other(k),attacker:c.n,damage:c.a,defender:defender?card(defender.n).n:null,retaliation:defender?card(defender.n).a:0,kind:defender?'blocked':'direct',target:defender?s[other(k)].units.indexOf(defender):-1,meter:defender?null:(c.hit==='MAINFRAME'?'MF':'BF')}}
+function previewTarget(i){if(mode!=='human')return;targetPreview=predictedTarget(state,'p',i);updateTargetPreview()}
+function clearPreview(){if(!targetPreview)return;targetPreview=null;updateTargetPreview()}
+function updateTargetPreview(){for(let key of ['p','e']){let lane=$(key+'Lanes');if(!lane)continue;Array.from(lane.children).forEach((slot,i)=>{slot.classList.toggle('targetPreview',!!targetPreview&&targetPreview.to===key&&targetPreview.target===i);slot.classList.toggle('directPreview',!!targetPreview&&targetPreview.to===key&&targetPreview.target===-1)})}renderCombatText()}
+function renderCombatText(){const t=targetPreview||lastImpact,feed=$('combatFeed');
+feed.textContent=targetPreview?(t.kind==='blocked'?'PREVIEW · '+t.attacker+' → '+t.defender+' · '+t.damage+' dealt / '+t.retaliation+' returned':'PREVIEW · '+t.attacker+' → '+t.meter+' · '+t.damage+' damage'):lastImpact?(t.kind==='blocked'?t.attacker+' hit '+t.defender+' · '+t.damage+' dealt / '+t.retaliation+' returned':t.attacker+' ⚡ '+t.meter+' DIRECT HIT · '+t.damage+' damage'):'Ready defender blocks first · otherwise direct BF / MF damage';
+feed.classList.toggle('activeStrike',!!lastImpact&&!targetPreview);feed.classList.toggle('activePreview',!!targetPreview)}
+
 /* UI: actual square buttons are bound to legal engine actions. */
 function squareCard(n,u,handler,label){let c=card(n),el=document.createElement('button');el.className='sqcard'+(handler?' '+label:'')+(u?.used?' used':'');el.type='button';el.disabled=!handler;el.setAttribute('aria-label',c.n+'; cost '+cost(c)+'; attack '+(c.a||0)+'; defense '+(u?u.hp:c.d||0)+(handler?'; '+label:''));
 let img=document.createElement('img');img.src=c.img;img.alt='';img.loading='lazy';img.onerror=()=>{img.remove();el.style.background='#50335d'};el.append(img);
@@ -309,13 +327,12 @@ $('modeHuman').classList.toggle('active',mode==='human');$('modeAuto').classList
 $('turnText').textContent='TURN '+s.turn+' / '+(s.done?'FINISHED':(k==='p'?'PLAYER':'BOT')+' / '+PHASES[s.phase]);
 $('phaseStrip').replaceChildren(...PHASES.map((name,i)=>{let x=document.createElement('span');x.className=i===s.phase?'current':'';x.textContent=(i+1)+' '+name;return x}));
 for(let [key,x]of [['p',p],['e',e]]){$(key+'Health').textContent='BF '+Math.max(0,x.bf)+' / MF '+Math.max(0,x.mf);$(key+'Ram').textContent='RAM '+free(x)+'/'+x.ram;$(key+'Deck').textContent='DECK '+x.deck.length;$(key+'Bin').textContent='RECYCLE '+x.bin.length;
-let lane=$(key+'Lanes');lane.replaceChildren(...Array.from({length:5},(_,i)=>{let slot=document.createElement('div');slot.className='slot';slot.dataset.slot=String(i+1);if(lastImpact&&lastImpact.to===key&&lastImpact.target===i)slot.classList.add('impact');let u=x.units[i];if(u){let available=!s.done&&mode==='human'&&key==='p'&&s.active==='p'&&s.phase===2&&!u.used&&card(u.n).a>0;if(available)slot.classList.add('available');slot.append(squareCard(u.n,u,available?()=>act('p','attack',i):null,'attack'))}return slot}))}
+let lane=$(key+'Lanes');lane.replaceChildren(...Array.from({length:5},(_,i)=>{let slot=document.createElement('div');slot.className='slot';slot.dataset.slot=String(i+1);if(lastImpact&&lastImpact.to===key&&lastImpact.target===i)slot.classList.add('impact');let u=x.units[i];if(targetPreview&&targetPreview.to===key&&targetPreview.target===i)slot.classList.add('targetPreview');if(targetPreview&&targetPreview.to===key&&targetPreview.target===-1)slot.classList.add('directPreview');if(u){let available=!s.done&&mode==='human'&&key==='p'&&s.active==='p'&&s.phase===2&&!u.used&&card(u.n).a>0;if(available)slot.classList.add('available');let unitCard=squareCard(u.n,u,available?()=>act('p','attack',i):null,'attack');if(available){unitCard.addEventListener('pointerenter',()=>previewTarget(i));unitCard.addEventListener('pointerleave',clearPreview);unitCard.addEventListener('focus',()=>previewTarget(i));unitCard.addEventListener('blur',clearPreview)}slot.append(unitCard)}return slot}))}
 let playable=0;const hand=$('hand');hand.replaceChildren(...(mode==='auto'?s[k].hand:p.hand).map((n,i)=>{let c=card(n);let ok=mode==='human'&&!s.done&&k==='p'&&s.phase===1&&p.units.length<5&&cost(c)<=free(p);if(ok)playable++;return squareCard(n,null,ok?()=>act('p','deploy',i):null,'playable')}));
 $('handLabel').textContent=mode==='auto'?(k==='p'?'BOT A HAND':'BOT B HAND'):'YOUR HAND';$('handStatus').textContent=mode==='auto'?'BOT SPECTATOR':playable+' PLAYABLE';
 const can=mode==='human'&&!s.done&&s.active==='p',legal=can?legalActions(s,'p'):[];
 $('install').disabled=!legal.some(a=>a.kind==='ram');$('draw').disabled=!legal.some(a=>a.kind==='draw');$('next').disabled=!legal.some(a=>a.kind==='next');
-$('combatFeed').textContent=lastImpact?(lastImpact.kind==='blocked'?lastImpact.attacker+' ⚡ '+lastImpact.defender+' · '+lastImpact.damage+' attack':lastImpact.attacker+' ⚡ DIRECT HIT · '+lastImpact.damage+' damage'):'Ready defender blocks first · otherwise direct BF / MF damage';
-$('combatFeed').classList.toggle('activeStrike',!!lastImpact);
+renderCombatText();
 $('gameResult').textContent=s.done?(s.winner==='draw'?'DRAW':s.winner==='p'?'PLAYER WINS':'BOT WINS'):'';
 $('message').textContent=s.done?'Match complete. Restart to play again.':mode==='auto'?'Bots are playing automatically.':k==='e'?'Bot is taking its turn.':s.phase===0?(s.actions?'Install RAM or draw a card.':'Advance to deploy.'):s.phase===1?(playable?'Click a highlighted square card in your hand.':'No affordable cards. Advance to combat.'):s.phase===2?'Click a highlighted square unit to attack, or advance.':'Advance to finish your turn.';
 $('events').replaceChildren(...s.events.slice(0,15).map(t=>{let li=document.createElement('li');li.textContent=t;return li}));
