@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8 — Basic Square Reset</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.1 — Bone White Neon</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -71,8 +71,164 @@ main{width:min(1180px,100%);margin:auto;padding:12px}
  .divider{padding:5px;font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+/* v2.8.1 BONE-WHITE + HIGH-DEFINITION ORANGE/PURPLE NEON
+   Presentation-only update: square board and gameplay logic unchanged. */
+:root{
+ color-scheme:light;--bg:#f9f7f0;--panel:#fffefa;--line:#a075d7;
+ --orange:#ff6e0b;--purple:#9b4bea;--text:#24192d;
+ --bone:#f9f7f0;--glass:#fffdf8;
+}
+body{
+ color:var(--text);
+ background:
+ radial-gradient(ellipse 72% 43% at 4% 11%,#ff91291b,transparent 76%),
+ radial-gradient(ellipse 62% 46% at 94% 6%,#a84fff22,transparent 76%),
+ repeating-linear-gradient(0deg,transparent 0 49px,#b070ed0a 50px 51px),
+ linear-gradient(145deg,#fffdf6,#f8f5ed 45%,#fbf8f2);
+}
+header{
+ background:linear-gradient(115deg,#fffdf7,#fbf8f4 47%,#f5edff);
+ border-bottom:3px solid transparent;
+ border-image:linear-gradient(90deg,#ff771b,#ffb84b 33%,#ba65f6 66%,#7b2fda) 1;
+ box-shadow:0 6px 24px #9d5fbd24,0 0 24px #ff97321d;
+}
+h1{
+ color:#2d1940;
+ text-shadow:0 1px #fff,0 0 15px #ff9c3966,0 0 24px #a952ff51;
+}
+header p{color:#7948a6;font-weight:700}
+nav button,nav a,.actions button{
+ background:linear-gradient(135deg,#fffefa,#f5efff);
+ border:1px solid #ad73dc;
+ color:#48235d;
+ box-shadow:0 2px 0 #e0d0ee,0 0 12px #a864e52a;
+ font-weight:750;
+}
+nav button.active{
+ color:#522605;
+ border:2px solid #ff821c;
+ background:linear-gradient(135deg,#fff6dc,#ffdfc2);
+ box-shadow:0 0 0 2px #fff,0 0 18px #ff7b3266;
+}
+nav button:hover,nav a:hover,.actions button:not(:disabled):hover{
+ color:#421d59;border-color:#ff8623;
+ box-shadow:0 0 0 1px #ff992b,0 0 19px #ff8b3499,0 0 28px #a957ed4a;
+}
+.turnbar{
+ background:linear-gradient(100deg,#fffef9,#f6edff);
+ border:1px solid #b57ee5;
+ box-shadow:0 0 14px #a65de830;
+}
+.turnbar strong{color:#7b36c8;font-weight:900}
+.phases span{background:#fffdf9;border-color:#d7bae6;color:#614873}
+.phases span.current{
+ color:#652b00;
+ border:2px solid #ff861d;
+ background:linear-gradient(100deg,#fff1d8,#ffe2c2);
+ font-weight:900;
+ box-shadow:0 0 13px #ff7a375e;
+}
+.board{
+ background:linear-gradient(130deg,#fffdfa,#f7efff 55%,#fff6e8);
+ border:2px solid #a253df;
+ box-shadow:0 0 0 3px #fffefa,0 0 22px #a04ce253,0 0 35px #ff924329;
+}
+.side{background:#fffefa;box-shadow:inset 0 0 0 2px #fff}
+.side.opponent{
+ border:2px solid #a055e5;
+ background:linear-gradient(135deg,#fffefe,#f8f0ff);
+ box-shadow:0 0 15px #a351ed52,inset 0 0 0 2px #fff;
+}
+.side.you{
+ border:2px solid #ff8424;
+ background:linear-gradient(135deg,#fffefb,#fff5e8);
+ box-shadow:0 0 16px #ff8b3666,inset 0 0 0 2px #fff;
+}
+.side-head strong{color:#7f2dcc;font-size:14px;text-shadow:0 0 11px #b564fa44}
+.you .side-head strong{color:#c65304;text-shadow:0 0 11px #ff922b44}
+.meters span{
+ color:#493654;
+ border:1px solid #c6a3df;
+ background:#fffdfa;
+ box-shadow:inset 0 0 9px #a24fea14;
+}
+.meters b{color:#b94c00}
+.slot{
+ background:linear-gradient(145deg,#fffefd,#eee4f8);
+ border:1px dashed #b58ad6;
+ box-shadow:inset 0 0 15px #a959ef16;
+}
+.opponent .slot{border-color:#9656d9;background:linear-gradient(135deg,#fcf8ff,#eee0ff)}
+.you .slot{border-color:#ff9140;background:linear-gradient(135deg,#fffdf7,#ffe9d4)}
+.slot:empty::after{color:#8c64a3;font-weight:800}
+.slot.available{border:2px solid #fa690a;box-shadow:inset 0 0 15px #ffae5d2e,0 0 16px #ff853c94}
+.divider{
+ background:linear-gradient(90deg,#fff2df,#f6e4ff,#fff1e3);
+ border:1px solid #b56fe5;
+ color:#8f36d2;
+ box-shadow:0 0 13px #b26af044;
+}
+.divider small{color:#684b7a}
+.actions{
+ background:linear-gradient(110deg,#fffef9,#f9f2ff 60%,#fff4e8);
+ border:1px solid #b17ddd;box-shadow:0 0 16px #ba71ec2e;
+}
+.actions strong{color:#763bb5}
+.actions button.primary{
+ border:2px solid #ff781a;
+ color:#fffaf3;
+ background:linear-gradient(135deg,#ff8c28,#e76509);
+ box-shadow:0 0 16px #ff7e27a3,0 0 24px #ff9d413d;
+}
+.actions button.primary:hover:not(:disabled){color:#fff}
+.hand-area{
+ border:2px solid #b15ae7;
+ background:linear-gradient(140deg,#fffefa,#f9f1ff);
+ box-shadow:0 0 20px #a551ed45;
+}
+.hand-heading strong{color:#8f39cd;font-weight:900}
+.hand-heading span{color:#a95a13}
+.sqcard{
+ background:#fffefa;
+ color:#29152f;
+ border:1px solid #a66ed5;
+ box-shadow:0 2px 6px #54336620;
+}
+.sqcard img{background:#f1e8f6}
+.sqcard strong{color:#332039}
+.sqcard small{color:#7637a7;font-weight:750}
+.sqcard.playable,.sqcard.attack{
+ border:2px solid #ff6c0a;
+ color:#351e1e;
+ background:linear-gradient(135deg,#fffef5,#ffebd2);
+ box-shadow:0 0 0 1px #fff,0 0 15px #ff8b32a3;
+}
+.sqcard.playable::after,.sqcard.attack::after{
+ color:#fffaf4;
+ background:#f06b08;
+ box-shadow:0 0 12px #ff842ca6;
+}
+.sqcard:not(:disabled):hover{
+ border-color:#f56d0a;
+ outline:2px solid #ff912e;
+ box-shadow:0 0 17px #ff823c85;
+}
+.sqcard.used{opacity:.58}
+.info{
+ background:linear-gradient(135deg,#fffef9,#f6efff);
+ border:1px solid #b782e4;
+ box-shadow:0 0 12px #a65eed25;
+}
+.info h2{color:#9b45d9}
+.info p,.log{color:#3b2844}
+.notice{color:#66526f}
+#gameResult{color:#bc4907;text-shadow:0 0 10px #ffa14a80}
+@media(prefers-reduced-motion:reduce){
+ .side,.board,.slot,.sqcard,nav button{animation:none!important;transition:none!important}
+}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8 · BASIC SQUARE ARENA · PLAY FIRST</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.1 · BONE WHITE / ORANGE + PURPLE NEON · PLAY FIRST</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" aria-label="Two-player square card battlefield">
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span></div></div><div class="lanes" id="eLanes"></div></div>
