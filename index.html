@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.14 — Neon Card Resonance</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.15 — Neon Card Identity</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -690,8 +690,30 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
  #gameBoard .slot .sqcard.deployed::before,
  #hand .sqcard.resonance-ready::before{animation:none;opacity:.45}
 }
+
+/* v2.8.15 data-driven identities: amber BF, violet MF; catalog type badges. */
+.sqcard{--identity:#a44edc;--identity-soft:#b577e446}
+.sqcard.target-bf{--identity:#f36b12;--identity-soft:#ff8c2749}
+.sqcard.target-mf{--identity:#9235d6;--identity-soft:#a849f449}
+.sqcard.identity-program{--identity:#7b43bd;--identity-soft:#a37bdb44}
+.sqcard.identity-gear{--identity:#d36a16;--identity-soft:#edaa6d3c}
+.sqcard.identity-mainframe{--identity:#8038b5;--identity-soft:#a65cd54f}
+.sqcard.identity-ram{--identity:#aa6b1c;--identity-soft:#ddad594d}
+.sqcard .cardIdentity{
+ position:absolute;left:2px;top:2px;z-index:4;pointer-events:none;
+ background:#fffdf8e8;border:1px solid var(--identity);color:var(--identity);
+ font:900 clamp(7px,.62vw,10px)/1.25 monospace;letter-spacing:.045em;
+ padding:2px 4px;box-shadow:0 0 6px var(--identity-soft);
+}
+.sqcard.identity-character:not(.playable):not(.attack) img{box-shadow:inset 0 0 8px var(--identity-soft)}
+.sqcard.identity-character .stat{color:var(--identity)}
+.sqcard.power-3 .cardIdentity{border-width:2px;box-shadow:0 0 9px var(--identity-soft),0 0 13px var(--identity-soft)}
+.sqcard.playable .cardIdentity,.sqcard.attack .cardIdentity{left:2px;top:2px;right:auto;max-width:45%;text-overflow:ellipsis;overflow:hidden}
+.sqcard .cardIdentity+*{pointer-events:none}
+@media(max-width:650px){.sqcard .cardIdentity{font-size:7px;padding:1px 2px;letter-spacing:0}}
+@media(prefers-reduced-motion:reduce){.sqcard .cardIdentity{animation:none}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.14 · BONE WHITE / NEON CARD RESONANCE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.15 · BONE WHITE / NEON CARD IDENTITY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -827,10 +849,11 @@ function schedulePathways(){
  });
 }
 /* UI: actual square buttons are bound to legal engine actions. */
-function squareCard(n,u,handler,label){let c=card(n),el=document.createElement('button');el.className='sqcard'+(handler?' '+label:'')+(u?.used?' used':'');el.type='button';el.disabled=!handler;el.setAttribute('aria-label',c.n+'; cost '+cost(c)+'; attack '+(c.a||0)+'; defense '+(u?u.hp:c.d||0)+(handler?'; '+label:''));
+function cardIdentity(c){const type=c.t||'unknown',target=c.hit==='MAINFRAME'?'MF':c.hit==='BIOFRAME'?'BF':null;const tag=type==='character'?(target||'UNIT'):type==='program'?'CODE':type==='gear'?'GEAR':type==='mainframe'?'CORE':type==='ram'?'RAM':'CARD';return {type,target,tag,level:Math.max(0,Math.min(3,Math.floor((Number(c.a)||0)/3)))}} 
+function squareCard(n,u,handler,label){let c=card(n),el=document.createElement('button'),identity=cardIdentity(c);el.className='sqcard'+(handler?' '+label:'')+(u?.used?' used':'')+' identity-'+identity.type+(identity.target?' target-'+identity.target.toLowerCase():'')+' power-'+identity.level;el.dataset.cardType=identity.type;el.dataset.target=identity.target||'';el.type='button';el.disabled=!handler;el.setAttribute('aria-label',c.n+'; cost '+cost(c)+'; attack '+(c.a||0)+'; defense '+(u?u.hp:c.d||0)+(handler?'; '+label:''));
 let img=document.createElement('img');img.src=c.img;img.alt='';img.loading='lazy';img.onerror=()=>{img.remove();el.style.background='#50335d'};el.append(img);
 let name=document.createElement('strong');name.textContent=c.n;name.title=c.n;let stats=document.createElement('small');stats.textContent='RAM '+cost(c)+'  ⚔'+(c.a??0)+'  ◈'+(u?u.hp:c.d??0);
-el.append(name,stats);if(handler)el.onclick=handler;return el}
+el.append(name,stats);let chip=document.createElement('span');chip.className='cardIdentity';chip.textContent=identity.tag;chip.setAttribute('aria-hidden','true');el.append(chip);if(handler)el.onclick=handler;return el}
 function render(){const s=state,k=s.active,p=s.p,e=s.e;
 const stage=s.done?'finished':'phase-'+s.phase;
 $('gameBoard').dataset.rhythm=stage;
