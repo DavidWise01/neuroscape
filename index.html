@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.19 — Tactical Decision Clarity</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.20 — Tactical Choice Comparison</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -771,15 +771,31 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 #gameBoard .slot .decisionMarker.decision-risky{background:#fff3e3ed;color:#b45a08;box-shadow:0 0 9px #f89b3ea8}
 #gameBoard .slot .decisionMarker.decision-destructive{background:#ffebd9f2;color:#ab4501;box-shadow:0 0 12px #ff7e19bd}
 @media(max-width:650px){.decisionStatus{font-size:10px;padding:5px 6px}#gameBoard .slot .decisionMarker{font-size:8px;padding:1px 2px}}
+
+/* v2.8.20: tactical comparisons are compact, optional one-click attack surfaces. */
+.choicePanel{margin:8px 0 5px;padding:8px 10px;background:#fffdf8;border:1px solid #bf88e9;border-left:4px solid #a146e5;box-shadow:0 0 12px #a552e33a}
+.choicePanel[hidden]{display:none}
+.choiceHeader{display:flex;justify-content:space-between;flex-wrap:wrap;gap:5px;color:#7c319f;font:900 11px/1.4 monospace;margin-bottom:6px}
+.choiceHeader span{color:#8d698f;font-weight:700}
+.choiceOptions{display:flex;align-items:stretch;flex-wrap:wrap;gap:6px}
+.choiceOption{flex:1 1 165px;max-width:280px;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:5px;text-align:left;background:#f6ebff;color:#6e279e;border:2px solid #a351de;border-radius:0;padding:7px 9px;cursor:pointer;box-shadow:0 0 9px #b866ec52;font-family:inherit;transition:box-shadow 120ms ease,transform 120ms ease}
+.choiceOption strong{font:900 10px/1.35 monospace;overflow-wrap:anywhere}
+.choiceOption small{font:800 10px/1.4 monospace;overflow-wrap:anywhere}
+.choiceOption .choiceVerdict{font:900 12px/1 monospace;border:1px solid currentColor;padding:2px 5px}
+.choiceOption.choice-risky{background:#fff4e6;color:#a34c07;border-color:#ee9a3d}
+.choiceOption.choice-destructive{background:#ffecdc;color:#a83d06;border-color:#ed741a;box-shadow:0 0 11px #fa853e7d}
+.choiceOption:hover,.choiceOption:focus-visible{outline:2px solid #ff851e;outline-offset:1px;box-shadow:0 0 15px #ed7e2a91,0 0 19px #ad52ed64;transform:translateY(-1px)}
+@media(max-width:650px){.choicePanel{padding:6px}.choiceOption{flex:1 1 130px;padding:5px 6px}.choiceOption strong,.choiceOption small{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.choiceOption{transition:none}.choiceOption:hover,.choiceOption:focus-visible{transform:none}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.19 · BONE WHITE / TACTICAL DECISION CLARITY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.20 · BONE WHITE / TACTICAL CHOICE COMPARISON</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
 <div class="divider"><span>⚔ COMBAT</span><span id="combatEnergy" class="combatEnergy" aria-hidden="true"></span><small id="combatFeed" aria-live="polite">Ready defender blocks first · otherwise direct BF / MF damage</small><span id="gameResult"></span></div>
 <div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Player RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="pInstalled">0</b></span><span>COMMITTED <b id="pCommitted">0</b></span><span>AVAILABLE <b id="pAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="pRamCommitted" class="ramCommitted"></i><i id="pRamAvailable" class="ramAvailable"></i></div><div id="pFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="pLanes"></div><svg id="pPathways" class="energyPathways" aria-hidden="true"></svg></div>
 </section>
-<div id="decisionStatus" class="decisionStatus" aria-live="off">Hover an attack-ready card to assess its outcome</div><aside id="cardIntel" class="cardIntel" aria-label="Card tactical information"><strong id="intelName">CARD INTELLIGENCE</strong><span id="intelFacts">Hover or focus a card for cost, target, and tactical status.</span><span id="intelDecision">Tactical readout</span><div id="combatProjection" class="combatProjection" aria-live="off" hidden></div></aside><div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
+<section id="choicePanel" class="choicePanel" aria-label="Available attack comparison"><div class="choiceHeader"><strong>ATTACK COMPARISON</strong><span id="choiceCount">No attacks ready</span></div><div id="choiceOptions" class="choiceOptions"></div></section><div id="decisionStatus" class="decisionStatus" aria-live="off">Hover an attack-ready card to assess its outcome</div><aside id="cardIntel" class="cardIntel" aria-label="Card tactical information"><strong id="intelName">CARD INTELLIGENCE</strong><span id="intelFacts">Hover or focus a card for cost, target, and tactical status.</span><span id="intelDecision">Tactical readout</span><div id="combatProjection" class="combatProjection" aria-live="off" hidden></div></aside><div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
 <section class="hand-area"><div class="hand-heading"><strong id="handLabel">YOUR HAND</strong><span id="handStatus"></span></div><div id="hand" class="hand"></div></section>
 <div class="foot"><section class="info"><h2>HOW TO PLAY</h2><p id="message"></p></section><section class="info"><h2>EVENT LOG</h2><ol class="log" id="events"></ol></section></div>
 <p class="notice">Square-card practice rules: install RAM or draw, deploy within available RAM (up to five characters), attack once per ready character, then end your turn. This simplified trainer is not the complete official card game. Original catalog artwork is loaded from external source URLs.</p>
@@ -855,6 +871,36 @@ function decisionClass(t){
  if(t.attackerDestroyed)return {level:'risky',label:'DANGER',reason:'Attacker recycles; defender survives'};
  if(t.attackerAfter<t.attackerHp)return {level:'risky',label:'RETURN FIRE',reason:'Both cards survive; attacker takes damage'};
  return {level:'favorable',label:'SAFE',reason:'Attacker survives without damage'};
+}
+function compareAttacks(s,k){
+ if(s.done||s.active!==k||s.phase!==2)return[];
+ return legalActions(s,k).filter(a=>a.kind==='attack').map(a=>{
+  const t=predictedTarget(s,k,a.i),d=decisionClass(t);
+  return {slot:a.i,attacker:t.attacker,decision:d.label,level:d.level,damage:t.damage,retaliation:t.retaliation,
+   attackerBefore:t.attackerHp,attackerAfter:Math.max(0,t.attackerAfter),
+   target:t.kind==='direct'?t.meter:t.defender,
+   targetBefore:t.kind==='direct'?t.meterHp:t.defenderHp,
+   targetAfter:Math.max(0,t.kind==='direct'?t.meterAfter:t.defenderAfter),
+   attackerLost:t.attackerDestroyed,targetLost:t.kind==='direct'?t.meterAfter<=0:t.defenderDestroyed};
+ });
+}
+function renderAttackChoices(){
+ const panel=$('choicePanel'),container=$('choiceOptions');
+ const choices=mode==='human'?compareAttacks(state,'p'):[];
+ panel.hidden=!choices.length;
+ $('choiceCount').textContent=choices.length+' attack'+(choices.length===1?'':'s')+' ready · click a card or a comparison';
+ container.replaceChildren(...choices.map(t=>{
+  const btn=document.createElement('button');btn.type='button';btn.className='choiceOption choice-'+t.level;
+  btn.setAttribute('aria-label',t.attacker+' from square '+(t.slot+1)+', '+t.decision+', '+t.damage+' damage, '+t.retaliation+' retaliation; click to attack');
+  const head=document.createElement('strong');head.textContent='SQUARE '+(t.slot+1)+' · '+t.attacker;
+  const verdict=document.createElement('span');verdict.className='choiceVerdict';verdict.textContent=t.decision;
+  const stats=document.createElement('small');stats.textContent=t.target+' '+t.targetBefore+'→'+t.targetAfter+(t.targetLost?' ✕':' ✓')+' · YOU '+t.attackerBefore+'→'+t.attackerAfter+(t.attackerLost?' ✕':' ✓');
+  btn.append(head,verdict,stats);
+  btn.addEventListener('pointerenter',()=>previewTarget(t.slot));btn.addEventListener('pointerleave',clearPreview);
+  btn.addEventListener('focus',()=>previewTarget(t.slot));btn.addEventListener('blur',clearPreview);
+  btn.onclick=()=>act('p','attack',t.slot);
+  return btn;
+ }));
 }
 function renderDecisionMarker(){
  document.querySelectorAll('.decisionMarker').forEach(el=>el.remove());
@@ -1029,7 +1075,7 @@ let playable=0;const hand=$('hand');hand.replaceChildren(...(mode==='auto'?s[k].
 $('handLabel').textContent=mode==='auto'?(k==='p'?'BOT A HAND':'BOT B HAND'):'YOUR HAND';$('handStatus').textContent=mode==='auto'?'BOT SPECTATOR':playable+' PLAYABLE';
 const can=mode==='human'&&!s.done&&s.active==='p',legal=can?legalActions(s,'p'):[];
 $('install').disabled=!legal.some(a=>a.kind==='ram');$('draw').disabled=!legal.some(a=>a.kind==='draw');$('next').disabled=!legal.some(a=>a.kind==='next');
-renderCombatText();
+renderCombatText();renderAttackChoices();
 const fx=$('combatEnergy');fx.className='combatEnergy'+(lastImpact?(lastImpact.kind==='blocked'?' shieldBurst':' beamBurst'):'');fx.textContent=lastImpact?(lastImpact.kind==='blocked'?'◈ BLOCK / RETURN':'⚡ DIRECT '+lastImpact.meter):'';
 $('gameResult').textContent=s.done?(s.winner==='draw'?'DRAW':s.winner==='p'?'PLAYER WINS':'BOT WINS'):'';
 $('message').textContent=s.done?'Match complete. Restart to play again.':mode==='auto'?'Bots are playing automatically.':k==='e'?'Bot is taking its turn.':s.phase===0?(s.actions?'Install RAM or draw a card.':'Advance to deploy.'):s.phase===1?(playable?'Click a highlighted square card in your hand.':'No affordable cards. Advance to combat.'):s.phase===2?'Click a highlighted square unit to attack, or advance.':'Advance to finish your turn.';
