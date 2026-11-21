@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.3 — Square Combat Targeting</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.4 — Neon Voltage</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -247,8 +247,123 @@ nav button:hover,nav a:hover,.actions button:not(:disabled):hover{
 .divider small.activePreview{font-weight:900;color:#8937cb;text-shadow:0 0 7px #c884f680}
 .sqcard.attack:focus-visible{outline:3px solid #ff862d;outline-offset:2px}
 @media(prefers-reduced-motion:reduce){.side.opponent .slot.targetPreview,.side.you .slot.targetPreview{transition:none;animation:none}}
+
+/* v2.8.4 HIGH-VOLTAGE: pure CSS skin; game logic and square geometry unchanged. */
+:root{--neon-orange:#ff6800;--neon-violet:#a129ff}
+body{
+ background:
+ radial-gradient(ellipse 52% 39% at -7% 22%,#ff7d2940,transparent 75%),
+ radial-gradient(ellipse 48% 40% at 106% 18%,#a341f63d,transparent 75%),
+ radial-gradient(ellipse 58% 22% at 52% 83%,#d7a1fa29,transparent 75%),
+ repeating-linear-gradient(90deg,transparent 0 79px,#a957ff09 80px 81px),
+ linear-gradient(135deg,#fffefa,#f9f7f0 58%,#fffdfa);
+}
+header{
+ background:linear-gradient(110deg,#fffefa,#fff9f3 35%,#f7edff 72%,#fffefa);
+ box-shadow:0 4px 18px #b557f34b,0 0 34px #ff892f45,inset 0 -1px #ff9b46a0;
+}
+h1{color:#2b153a;text-shadow:0 0 6px #fff,0 0 12px #ff8b5388,0 0 26px #bb6df377}
+.board{
+ position:relative;isolation:isolate;
+ border:2px solid #ac42f1;
+ box-shadow:0 0 0 3px #fffefa,0 0 9px #a23df4bf,0 0 32px #a23df459,0 0 55px #ff93262e;
+}
+.board:before{
+ content:'';pointer-events:none;position:absolute;inset:1px;
+ border:1px solid #fff7f1;
+ background:linear-gradient(110deg,transparent 30%,#ffa94b1a 49%,transparent 68%);
+ z-index:-1;
+}
+.side.opponent{
+ border-color:#a937eb;
+ box-shadow:inset 0 0 0 2px #fff,0 0 8px #a83effbc,0 0 27px #a83eff60;
+}
+.side.you{
+ border-color:#ff780d;
+ box-shadow:inset 0 0 0 2px #fff,0 0 10px #ff7815c7,0 0 29px #ff7d295c;
+}
+.side-head strong{font-weight:950;letter-spacing:.14em;text-shadow:0 0 11px #b95cff92}
+.you .side-head strong{text-shadow:0 0 13px #ff7c259b}
+.opponent .slot{
+ border:1px solid #9a42ef;
+ background:linear-gradient(145deg,#fffdfd,#f4e6ff);
+ box-shadow:inset 0 0 0 1px #fff,0 0 7px #ae62ed7c,inset 0 0 13px #bb71fb2a;
+}
+.you .slot{
+ border:1px solid #ff8a29;
+ background:linear-gradient(145deg,#fffdf9,#fff0df);
+ box-shadow:inset 0 0 0 1px #fff,0 0 7px #ff94328f,inset 0 0 13px #ffad5b30;
+}
+.slot:empty:after{font-size:13px;letter-spacing:.1em}
+.sqcard{
+ border:2px solid #9947dd;
+ background:linear-gradient(160deg,#fffefa,#f7efff);
+ box-shadow:0 0 8px #a94feb7c,inset 0 0 0 1px #fff;
+}
+.you .sqcard{border-color:#f77b17;box-shadow:0 0 9px #ff832a89,inset 0 0 0 1px #fff}
+.sqcard img{border-bottom:1px solid #be84e4}
+.you .sqcard img{border-bottom-color:#ffa34f}
+.sqcard.playable,.sqcard.attack{
+ border:2px solid #ff7809;
+ background:linear-gradient(135deg,#fffef6,#ffe3c4);
+ box-shadow:0 0 0 2px #fff,0 0 10px #ff6e13dc,0 0 25px #ff772c80;
+ animation:neonActionPulse 2.5s ease-in-out infinite;
+}
+.sqcard.playable::after,.sqcard.attack::after{
+ background:#f76a08;color:#fff;
+ box-shadow:0 0 8px #ff7400,0 0 17px #ff7400b0;
+}
+.slot.available{
+ border:2px solid #ff6700;
+ box-shadow:0 0 0 1px #fff,0 0 14px #ff7f0fd5,0 0 25px #ff932b75;
+}
+.opponent .slot.targetPreview{
+ border:3px solid #a12aff;
+ box-shadow:0 0 0 1px #fff,0 0 15px #ae33ff,0 0 30px #a54aff9e,inset 0 0 16px #bd73ff61;
+}
+.opponent .slot.directPreview{
+ border:2px solid #b852ff;
+ box-shadow:0 0 10px #af42f3a1,inset 0 0 11px #aa53ef60;
+}
+.opponent .slot.impact{
+ border:3px solid #9e24ff;
+ box-shadow:0 0 12px #9e24ff,0 0 29px #ae52f7bd,inset 0 0 17px #bd72ff78;
+}
+.you .slot.impact{
+ border:3px solid #ff7309;
+ box-shadow:0 0 12px #ff7309,0 0 28px #ff912dbd,inset 0 0 17px #ffad5f83;
+}
+.divider{
+ border:2px solid #a54bee;
+ background:linear-gradient(90deg,#ffebcb,#f5e1ff 48%,#ffe9d0);
+ box-shadow:0 0 11px #af5af6b9,inset 0 0 17px #ffac433a;
+}
+.divider small.activePreview,.divider small.activeStrike{
+ color:#7e20c3;text-shadow:0 0 6px #fff,0 0 13px #b74af6a8;
+}
+.phases span.current{
+ border-color:#f97808;
+ box-shadow:0 0 9px #ff7611a8,0 0 20px #ff922c5a;
+}
+.actions,.hand-area,.info{box-shadow:0 0 12px #aa57ec65,0 0 24px #ff8c2e21}
+.actions button.primary{
+ background:linear-gradient(115deg,#ff9d32,#eb6100);
+ border:2px solid #ff6500;color:#fff;
+ box-shadow:0 0 12px #ff7514da,0 0 27px #ff91376e;
+}
+.actions button.primary:not(:disabled):hover{
+ box-shadow:0 0 15px #ff7211,0 0 35px #ff89259f;
+}
+.hand-area{border-color:#a73eea;box-shadow:0 0 12px #a742e9b4,0 0 29px #a75aee65}
+.hand-heading strong{color:#8326ca;text-shadow:0 0 12px #ab5ef58b}
+nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff882775}
+@keyframes neonActionPulse{
+ 0%,100%{box-shadow:0 0 0 2px #fff,0 0 9px #ff700ac9,0 0 20px #ff7b3066}
+ 50%{box-shadow:0 0 0 2px #fff,0 0 15px #ff6800,0 0 31px #ff7b2ba6}
+}
+@media(prefers-reduced-motion:reduce){.sqcard.playable,.sqcard.attack{animation:none}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.3 · BONE WHITE NEON / TARGET PREVIEW</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.4 · BONE WHITE / HIGH-VOLTAGE ORANGE + PURPLE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" aria-label="Two-player square card battlefield">
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span></div></div><div class="lanes" id="eLanes"></div></div>
