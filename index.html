@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.7 — Neon Recycling Circuit</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.8 — RAM Recovery Verified</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -489,13 +489,30 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .opponent .meters span.binReceived{border-color:#a244e7;box-shadow:0 0 11px #a54ced97}
 @keyframes circuitPulse{0%{opacity:.4;filter:brightness(1.5);transform:translateX(-5px)}35%{opacity:1;transform:translateX(2px)}100%{opacity:1;filter:brightness(1);transform:translateX(0)}}
 @media(prefers-reduced-motion:reduce){.meters .recycleCircuit.circuitLive{animation:none}}
+
+/* v2.8.8: 25-unit RAM scale; allocation strictly mirrors engine free(). */
+.ramGauge{margin:0 0 8px;padding:5px 7px 6px;background:#fffdf8;border:1px solid #cfa9e7;box-shadow:inset 0 0 7px #b66ef21b}
+.you .ramGauge{border-color:#ffba78}
+.ramGaugeLegend{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:5px 15px;font:800 10px/1.35 monospace;color:#64477b}
+.ramGaugeLegend span:nth-child(1){color:#7934ac}
+.ramGaugeLegend span:nth-child(2){color:#d05b0f}
+.ramGaugeLegend span:nth-child(3){color:#9b45db}
+.ramGaugeLegend b{font-size:12px;color:inherit}
+.ramGaugeTrack{display:flex;width:100%;height:8px;margin-top:5px;overflow:hidden;border:1px solid #ceb4d5;background:repeating-linear-gradient(90deg,#eee7f1 0,#eee7f1 calc(4% - 1px),#fff 4%)}
+.ramGaugeTrack i{display:block;flex:none;height:100%;transition:width .25s ease}
+.ramGaugeTrack .ramCommitted{background:linear-gradient(90deg,#f7a544,#fa6505);box-shadow:0 0 9px #ff710bd0}
+.ramGaugeTrack .ramAvailable{background:linear-gradient(90deg,#b864f9,#8b24d8);box-shadow:0 0 8px #ae4dffca}
+.opponent .ramGaugeTrack .ramCommitted{background:linear-gradient(90deg,#c189f5,#8d30d8)}
+.opponent .ramGaugeTrack .ramAvailable{background:linear-gradient(90deg,#ffbf71,#ff8423)}
+@media(max-width:650px){.ramGauge{margin-bottom:4px;padding:3px 4px}.ramGaugeLegend{font-size:8px;gap:2px 9px}.ramGaugeLegend b{font-size:9px}.ramGaugeTrack{height:6px}}
+@media(prefers-reduced-motion:reduce){.ramGaugeTrack i{transition:none}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.7 · BONE WHITE / NEON RECYCLING CIRCUIT</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.8 · BONE WHITE / RAM RECOVERY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" aria-label="Two-player square card battlefield">
-<div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="lanes" id="eLanes"></div></div>
+<div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div></div><div class="lanes" id="eLanes"></div></div>
 <div class="divider"><span>⚔ COMBAT</span><span id="combatEnergy" class="combatEnergy" aria-hidden="true"></span><small id="combatFeed" aria-live="polite">Ready defender blocks first · otherwise direct BF / MF damage</small><span id="gameResult"></span></div>
-<div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="lanes" id="pLanes"></div></div>
+<div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Player RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="pInstalled">0</b></span><span>COMMITTED <b id="pCommitted">0</b></span><span>AVAILABLE <b id="pAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="pRamCommitted" class="ramCommitted"></i><i id="pRamAvailable" class="ramAvailable"></i></div></div><div class="lanes" id="pLanes"></div></div>
 </section>
 <div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
 <section class="hand-area"><div class="hand-heading"><strong id="handLabel">YOUR HAND</strong><span id="handStatus"></span></div><div id="hand" class="hand"></div></section>
@@ -574,7 +591,9 @@ function render(){const s=state,k=s.active,p=s.p,e=s.e;
 $('modeHuman').classList.toggle('active',mode==='human');$('modeAuto').classList.toggle('active',mode==='auto');
 $('turnText').textContent='TURN '+s.turn+' / '+(s.done?'FINISHED':(k==='p'?'PLAYER':'BOT')+' / '+PHASES[s.phase]);
 $('phaseStrip').replaceChildren(...PHASES.map((name,i)=>{let x=document.createElement('span');x.className=i===s.phase?'current':'';x.textContent=(i+1)+' '+name;return x}));
-for(let [key,x]of [['p',p],['e',e]]){$(key+'Health').textContent='BF '+Math.max(0,x.bf)+' / MF '+Math.max(0,x.mf);$(key+'Ram').textContent='RAM '+free(x)+'/'+x.ram;$(key+'Deck').textContent='DECK '+x.deck.length;$(key+'Bin').textContent='RECYCLE '+x.bin.length;
+for(let [key,x]of [['p',p],['e',e]]){$(key+'Health').textContent='BF '+Math.max(0,x.bf)+' / MF '+Math.max(0,x.mf);$(key+'Ram').textContent='RAM '+free(x)+'/'+x.ram;
+$(key+'Installed').textContent=x.ram;$(key+'Committed').textContent=committed(x);$(key+'Available').textContent=free(x);
+$(key+'RamCommitted').style.width=(committed(x)/25*100)+'%';$(key+'RamAvailable').style.width=(free(x)/25*100)+'%';$(key+'Deck').textContent='DECK '+x.deck.length;$(key+'Bin').textContent='RECYCLE '+x.bin.length;
 let circuit=lastImpact?.recycle?.find(v=>v.side===key);
 let meter=$(key+'Circuit');meter.textContent=circuit?'↻ +'+circuit.freed+' RAM · '+circuit.count+' RECYCLED':'';meter.classList.toggle('circuitLive',!!circuit);
 $(key+'Ram').classList.toggle('ramReleased',!!circuit&&circuit.freed>0);
