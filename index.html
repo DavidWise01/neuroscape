@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.50 — Matchup-Aware Risk Assessment</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.51 — Multi-Attack Survival Planning</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -889,7 +889,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
 @media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.50 · BONE WHITE / RISK AWARENESS</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.51 · BONE WHITE / COMBO PLANNING</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1248,10 +1248,39 @@ function compareBotAttacks(s,k,a,b,experience=botMemory){
   learnedB-learnedA||
   a.i-b.i;
 }
+/* Two-move deterministic lookahead. Match-local, read-only, no UI change. */
+function botTwoAttackPlan(s,k,actions){
+ const legal=actions.filter(x=>x.kind==='attack');
+ if(legal.length<2)return null;
+ let best=null,examined=0;
+ for(const a of legal)for(const b of legal){
+  if(a.i===b.i)continue;
+  const source={...s,p:{...s.p,bin:s.p.bin||[]},e:{...s.e,bin:s.e.bin||[]}};
+  const simulation=cloneCombat(source),first=simulation[k].units[a.i]?.origin,second=simulation[k].units[b.i]?.origin;
+  if(first==null||second==null)continue;
+  const firstResult=simulateSequenceAttack(simulation,k,first);
+  if(!firstResult||simulation.done)continue;
+  const secondResult=simulateSequenceAttack(simulation,k,second);
+  if(!secondResult)continue;
+  examined++;
+  const win=!!simulation.done&&(simulation[other(k)].bf<=0||simulation[other(k)].mf<=0);
+  const loss=source[k].units.length-simulation[k].units.length;
+  const direct=(firstResult.kind==='direct'?firstResult.damage:0)+(secondResult.kind==='direct'?secondResult.damage:0);
+  const candidate={first:a.i,second:b.i,win,loss,direct,opening:!!firstResult.defenderDestroyed&&secondResult.kind==='direct'};
+  if(!best||Number(candidate.win)>Number(best.win)||
+    (candidate.win===best.win&&(candidate.loss<best.loss||
+    (candidate.loss===best.loss&&(candidate.direct>best.direct||
+    (candidate.direct===best.direct&&candidate.first<best.first))))))best=candidate;
+ }
+ return best?Object.freeze({...best,examined}):null;
+}
 function chooseBotAttack(s,k,actions,experience=botMemory){
  const attacks=actions.filter(x=>x.kind==='attack');
  if(!attacks.length)return actions.find(x=>x.kind==='next')||null;
- return attacks.slice().sort((a,b)=>compareBotAttacks(s,k,a,b,experience))[0];
+ const ranked=attacks.slice().sort((a,b)=>compareBotAttacks(s,k,a,b,experience));
+ if(botAttackRisk(predictedTarget(s,k,ranked[0].i)).immediateWin)return ranked[0];
+ const plan=botTwoAttackPlan(s,k,attacks);
+ return plan?.win?attacks.find(x=>x.i===plan.first)||ranked[0]:ranked[0];
 }
 function botMemoryRegression(){
  const cases=[],check=(name,pass)=>cases.push(Object.freeze({name,pass:!!pass}));
@@ -1434,6 +1463,39 @@ function botRiskRegression(){
  return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
 }
 const botRiskChecks=botRiskRegression();
+function botComboRegression(){
+ const checks=[],check=(name,pass)=>checks.push(Object.freeze({name,pass:!!pass}));
+ const cards=CATALOG.cards.filter(x=>x.a>0&&x.d>0);
+ const weak=cards.find(x=>x.a===1),strong=cards.find(x=>x.a>=3&&x.hit===weak.hit),foe=cards.find(x=>x.a===1);
+ const unit=(c,hp=c.d)=>({n:Number(c.num),hp,used:false});
+ const board=()=>({p:{units:[unit(strong),unit(weak)],bf:20,mf:20,bin:[]},
+  e:{units:[unit(foe,1)],bf:20,mf:20,bin:[]},active:'p',phase:2,done:false});
+ const s=board(),meter=strong.hit==='MAINFRAME'?'mf':'bf';s.e[meter]=strong.a;
+ const frozen=JSON.stringify(s),actions=legalActions(s,'p'),plan=botTwoAttackPlan(s,'p',actions);
+ check('two legal attacks',actions.filter(x=>x.kind==='attack').length===2);
+ check('two-step plan constructed',!!plan);
+ check('blocker-clearing opener creates victory',plan?.win&&plan.first===1&&plan.second===0);
+ check('bot executes winning opener',chooseBotAttack(s,'p',actions,{p:[],e:[]})?.i===1);
+ check('original state untouched',JSON.stringify(s)===frozen);
+ const sim=cloneCombat(s),first=sim.p.units[1].origin,second=sim.p.units[0].origin;
+ const opening=simulateSequenceAttack(sim,'p',first),finish=simulateSequenceAttack(sim,'p',second);
+ check('blocker recycled',opening?.defenderDestroyed===true);
+ check('follow-up direct',finish?.kind==='direct');
+ check('follow-up terminal win',sim.done&&sim.e[meter]<=0);
+ const other=cloneCombat(s);const one=other.p.units[0].origin,two=other.p.units[1].origin;
+ simulateSequenceAttack(other,'p',one);simulateSequenceAttack(other,'p',two);
+ check('reversed order fails to finish',!other.done);
+ const immediate=board();immediate.e.units=[];immediate.e[meter]=1;
+ check('one-move victory precedence',chooseBotAttack(immediate,'p',legalActions(immediate,'p'),{p:[],e:[]})?.i===0);
+ const solo=board();solo.p.units=[unit(strong)];solo.e.units=[];
+ check('one attacker remains executable',chooseBotAttack(solo,'p',legalActions(solo,'p'),{p:[],e:[]})?.i===0);
+ check('one attacker has no combo',botTwoAttackPlan(solo,'p',legalActions(solo,'p'))===null);
+ const done=board();done.done=true;
+ check('terminal attack denied',chooseBotAttack(done,'p',legalActions(done,'p'),{p:[],e:[]})===null);
+ const passed=checks.filter(x=>x.pass).length;return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
+}
+const botComboChecks=botComboRegression();
+
 
 
 
@@ -1916,7 +1978,7 @@ function routeAuthoritativeAction(proposal){
  routeEvidence.rejected++;routeEvidence.last='REJECT · ENGINE DECLINED';return false;
 }
 function renderRouteStatus(){
- $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' · RISK '+botRiskChecks.passed+'/'+botRiskChecks.total+' '+(botRiskChecks.passed===botRiskChecks.total?'PASS':'FAIL');
+ $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' · RISK '+botRiskChecks.passed+'/'+botRiskChecks.total+' · COMBOS '+botComboChecks.passed+'/'+botComboChecks.total+' '+(botComboChecks.passed===botComboChecks.total?'PASS':'FAIL');
 }
 function renderBestAction(all){
  const panel=$('bestActionPanel'),button=$('bestActionButton'),label=$('bestActionText');
