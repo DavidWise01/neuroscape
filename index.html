@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.28 — Learning From Outcomes</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.29 — Learning Across Turns</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -836,8 +836,11 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 
 /* v2.8.28: opportunity gap is observational, not an automatic policy. */
 .learningStatus{border-left:3px solid #ec7d25;box-shadow:inset 0 0 9px #d987392b}
+
+/* v2.8.29 observational time-series status; no modal interrupts */
+.learningStatus{border-bottom:1px solid #d7a5f0;padding-bottom:7px}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.28 · BONE WHITE / LEARNING FROM OUTCOMES</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.29 · BONE WHITE / LEARNING ACROSS TURNS</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -863,6 +866,60 @@ let tacticalPriority='win'; // UI-only preference, never changes combat
 /* Session-only, bounded, observation-led learning. No network or persistence. */
 const tacticalEvidence={choices:{win:0,preserve:0,damage:0},observed:[],max:48};
 let pendingAttackEvidence=null;
+/* Longitudinal evidence is append-only, immutable and session bounded.
+   Delayed board change is descriptive; intervening bot actions confound attribution. */
+const temporalEvidence={match:0,records:[],settlements:[],max:48};
+function freezeEvidence(value){
+ if(value&&typeof value==='object'&&!Object.isFrozen(value)){
+  for(const k of Object.keys(value))freezeEvidence(value[k]);
+  Object.freeze(value);
+ }
+ return value;
+}
+function boardPosition(s=state){
+ const p=s.p,e=s.e;
+ const unitValue=x=>x.units.reduce((sum,u)=>sum+Math.max(0,u.hp),0);
+ return {pBF:p.bf,pMF:p.mf,eBF:e.bf,eMF:e.mf,pUnits:p.units.length,eUnits:e.units.length,
+  pUnitHP:unitValue(p),eUnitHP:unitValue(e)};
+}
+function positionValue(b){
+ return 5*((b.pBF+b.pMF)-(b.eBF+b.eMF))+2*(b.pUnitHP-b.eUnitHP)+3*(b.pUnits-b.eUnits);
+}
+function recordLongitudinalAttack(e){
+ if(!e)return;
+ const id=temporalEvidence.match+':'+(temporalEvidence.records.length?temporalEvidence.records.at(-1).serial+1:1);
+ const now=boardPosition(),snapshot=freezeEvidence({
+  id,serial:temporalEvidence.records.length?temporalEvidence.records.at(-1).serial+1:1,
+  match:temporalEvidence.match,bucket:e.bucket,priority:e.priority,card:e.card,
+  turn:e.turn,predicted:structuredCloneSafe(e.predicted),
+  before:structuredCloneSafe(e.boardBefore),afterAttack:now,
+  immediateChange:positionValue(now)-positionValue(e.boardBefore),
+  horizon:'next player turn or terminal'
+ });
+ temporalEvidence.records.push(snapshot);
+ if(temporalEvidence.records.length>temporalEvidence.max)temporalEvidence.records.shift();
+}
+function structuredCloneSafe(value){return JSON.parse(JSON.stringify(value))}
+function settleLongitudinal(horizon){
+ const settled=new Set(temporalEvidence.settlements.map(x=>x.id));
+ const now=boardPosition(),score=positionValue(now);
+ for(const record of temporalEvidence.records){
+  if(record.match!==temporalEvidence.match||settled.has(record.id))continue;
+  const result=freezeEvidence({id:record.id,match:record.match,bucket:record.bucket,priority:record.priority,card:record.card,
+   startTurn:record.turn,endTurn:state.turn,horizon,positionAfter:now,
+   immediateChange:record.immediateChange,delayedChange:score-positionValue(record.afterAttack),
+   totalChange:score-positionValue(record.before)});
+  temporalEvidence.settlements.push(result);
+ }
+ while(temporalEvidence.settlements.length>temporalEvidence.max)temporalEvidence.settlements.shift();
+}
+function temporalLearningBonus(n,priority){
+ const settled=temporalEvidence.settlements.filter(x=>x.bucket===evidenceBucket(n,priority)&&x.horizon==='next player turn');
+ if(settled.length<3)return 0;
+ const avg=settled.reduce((sum,x)=>sum+x.delayedChange,0)/settled.length;
+ return Math.max(-8,Math.min(8,Math.round(avg/12)));
+}
+
 function evidenceBucket(n,priority){return priority+'|'+n}
 function observedAccuracy(){const x=tacticalEvidence.observed;return {n:x.length,matched:x.filter(v=>v.matched).length}}
 function learnedBonus(n,priority){
@@ -894,12 +951,13 @@ function captureAttackEvidence(k,i){
  if(k!=='p'||mode!=='human'||state.phase!==2)return null;
  const t=predictedTarget(state,k,i);if(!t)return null;
  const defender=state[other(k)].units[t.target];
+ const boardBefore=boardPosition();
  const alternatives=legalActions(state,k).filter(a=>a.kind==='attack').map(a=>({slot:a.i,value:attackOutcomeValue(predictedTarget(state,k,a.i),tacticalPriority)}));
  const chosen=alternatives.find(a=>a.slot===i),best=Math.max(...alternatives.map(a=>a.value));
  return {bucket:evidenceBucket(state[k].units[i].n,tacticalPriority),priority:tacticalPriority,card:state[k].units[i].n,
   predicted:{kind:t.kind,attackerAfter:t.attackerAfter,defenderAfter:t.defenderAfter,meterAfter:t.meterAfter,
    targetCard:defender?defender.n:null},
-  before:{attacker:state[k].units[i],defender,meter:t.meter,enemyMeterBefore:t.meterHp},turn:state.turn,
+  before:{attacker:state[k].units[i],defender,meter:t.meter,enemyMeterBefore:t.meterHp},boardBefore,turn:state.turn,
   opportunity:{chosenValue:chosen.value,bestValue:best,alternatives:alternatives.length}};
 
 }
@@ -925,11 +983,14 @@ function renderLearning(){
  const good=competitive.filter(e=>e.regret===0).length;
  const missed=competitive.length-good;
  const last=tacticalEvidence.observed[tacticalEvidence.observed.length-1];
+ const settled=temporalEvidence.settlements.filter(x=>x.horizon==='next player turn');
+ const pending=temporalEvidence.records.filter(x=>x.match===temporalEvidence.match&&!temporalEvidence.settlements.some(y=>y.id===x.id)).length;
  $('learningStatus').textContent='OUTCOME LEARNING · '+x.n+' attacks · '+x.matched+'/'+x.n+
   ' model checks · '+good+'/'+competitive.length+' best immediate choices · '+missed+' opportunity gaps'+
   (last&&last.competitive?' · LAST GAP '+last.regret:'')+
   ' · PRIORITY PICKS '+['win','preserve','damage'].map(k=>TACTICAL_WEIGHTS[k].label+' '+tacticalEvidence.choices[k]).join(' / ')+
-  ' · counterfactuals modeled, not observed · session only';
+  ' · NEXT TURN '+settled.length+' settled / '+pending+' pending'+
+  ' · delayed changes observational, not causal · session only';
 }
 
 const makePlayer=(main,deck)=>({main,bf:20,mf:20,ram:0,hand:deck.slice(0,5),deck:deck.slice(5),units:[],bin:[]});
@@ -937,7 +998,7 @@ const committed=p=>p.units.reduce((a,u)=>a+cost(card(u.n)),0);
 const free=p=>p.ram-committed(p);
 const other=k=>k==='p'?'e':'p';
 function log(msg){state.events.unshift(msg);if(state.events.length>30)state.events.length=30}
-function restart(kind=mode){if(botTimer!==null)clearTimeout(botTimer);botTimer=null;lastImpact=null;targetPreview=null;lastRamFlow=null;mode=kind;state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
+function restart(kind=mode){if(state&&!state.done)settleLongitudinal('interrupted');temporalEvidence.match++;if(botTimer!==null)clearTimeout(botTimer);botTimer=null;lastImpact=null;targetPreview=null;lastRamFlow=null;mode=kind;state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
 function legalActions(s,k){if(s.done||s.active!==k)return[];let p=s[k],a=[];
 if(s.phase===0){if(s.actions>0){if(p.ram<25)a.push({kind:'ram'});if(p.deck.length)a.push({kind:'draw'})}a.push({kind:'next'});}
 else if(s.phase===1){if(p.units.length<5)p.hand.forEach((n,i)=>{if(cost(card(n))<=free(p))a.push({kind:'deploy',i})});a.push({kind:'next'});}
@@ -963,11 +1024,12 @@ if(lastImpact.destroyed.length){
 lastRamFlow={seq:++flowSeq,events:lastImpact.recycle.map(x=>({side:x.side,type:'release',amount:x.freed,name:lastImpact.destroyed.filter(y=>y.side===x.side).map(y=>y.name).join(' + '),slots:lastImpact.destroyed.filter(y=>y.side===x.side&&y.ram>0).map(y=>({slot:y.slot,amount:y.ram}))}))};
 log('RECYCLED: '+lastImpact.destroyed.map(x=>x.name).join(' + ')+'. RAM returned: '+lastImpact.recycle.map(x=>(x.side==='p'?'PLAYER':'BOT')+' +'+x.freed).join(' / ')+'.');}
 commitAttackEvidence(attackEvidence);
-if(e.bf<=0||e.mf<=0||p.bf<=0||p.mf<=0){state.done=true;state.winner=e.bf<=0||e.mf<=0?k:other(k);log((state.winner==='p'?'Player':'Bot')+' wins.')}
+recordLongitudinalAttack(attackEvidence);
+if(e.bf<=0||e.mf<=0||p.bf<=0||p.mf<=0){state.done=true;state.winner=e.bf<=0||e.mf<=0?k:other(k);settleLongitudinal('terminal');log((state.winner==='p'?'Player':'Bot')+' wins.')}
 }
 else if(kind==='next'){
 if(state.phase<3){state.phase++;log('Phase: '+PHASES[state.phase]+'.')}
-else {for(let q of [p,e])q.units.forEach(u=>{u.hp=card(u.n).d});state.active=other(k);state.phase=0;state.actions=2;state.turn++;state[state.active].units.forEach(u=>{u.used=false});log((state.active==='p'?'Your':'Bot')+' turn '+state.turn+' begins.');if(state.turn>250){state.done=true;state.winner='draw';log('Match drawn: turn limit.')}}
+else {for(let q of [p,e])q.units.forEach(u=>{u.hp=card(u.n).d});state.active=other(k);state.phase=0;state.actions=2;state.turn++;state[state.active].units.forEach(u=>{u.used=false});if(state.active==='p')settleLongitudinal('next player turn');log((state.active==='p'?'Your':'Bot')+' turn '+state.turn+' begins.');if(state.turn>250){state.done=true;state.winner='draw';log('Match drawn: turn limit.')}}
 }
 render();scheduleBot();return true}
 function botChoice(){let k=state.active,p=state[k],a=legalActions(state,k);if(!a.length)return null;
@@ -1072,7 +1134,8 @@ function compareSequences(s,k){
   o.baseScore=sequenceScore(o);
   o.accuracyBonus=learnedBonus(s[k].units[o.first].n,tacticalPriority);
   o.outcomeBonus=outcomeLearningBonus(s[k].units[o.first].n,tacticalPriority);
-  o.learnedAdjustment=o.accuracyBonus+o.outcomeBonus;
+  o.temporalBonus=temporalLearningBonus(s[k].units[o.first].n,tacticalPriority);
+  o.learnedAdjustment=o.accuracyBonus+o.outcomeBonus+o.temporalBonus;
   o.score=o.baseScore+o.learnedAdjustment;
  });
  outcomes.sort((a,b)=>b.score-a.score||a.losses-b.losses||a.order.join(',').localeCompare(b.order.join(',')));
@@ -1110,7 +1173,8 @@ function renderSequences(){
   const explanation=document.createElement('small');explanation.className='sequenceWhy';
   explanation.textContent='WHY #'+(i+1)+' · '+why.reason+' · BASE '+why.score+
    (s.accuracyBonus?' · ACCURACY +'+s.accuracyBonus:'')+
-   (s.outcomeBonus?' · OUTCOME '+(s.outcomeBonus>0?'+':'')+s.outcomeBonus:'')+' · RANK '+s.score;
+   (s.outcomeBonus?' · OUTCOME '+(s.outcomeBonus>0?'+':'')+s.outcomeBonus:'')+
+   (s.temporalBonus?' · NEXT-TURN '+(s.temporalBonus>0?'+':'')+s.temporalBonus:'')+' · RANK '+s.score;
   const math=document.createElement('small');math.className='sequenceScore';
   math.textContent=why.parts.join('  |  ');
   btn.append(head,detail,note,explanation,math);
