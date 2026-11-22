@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.47 — Confidence Decay and Relearning</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.48 — Context-Aware Combat Memory</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -889,7 +889,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
 @media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.47 · BONE WHITE / RELEARNING</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.48 · BONE WHITE / CONTEXT MEMORY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1175,10 +1175,15 @@ const unitIdentity=()=>++nextUnitIdentity;
 /* Phase 34 turn 1: observed, bounded, match-local experience only. */
 const BOT_MEMORY_LIMIT=48;
 const botMemory={p:[],e:[]};
+function combatMemoryContext(kind,meter=null){
+ return kind==='blocked'?'BLOCKER':kind==='direct'&&meter==='MF'?'MAINFRAME':kind==='direct'&&meter==='BF'?'BIOFRAME':null;
+}
+function predictedMemoryContext(t){return t?combatMemoryContext(t.kind,t.meter):null}
+
 function resetBotMemory(){botMemory.p.length=0;botMemory.e.length=0}
 function recordBotExperience(side,event){
  const list=botMemory[side];if(!list)return false;
- list.push(Object.freeze({cardId:String(event.cardId),kind:event.kind,damage:event.damage,
+ list.push(Object.freeze({cardId:String(event.cardId),kind:event.kind,context:event.context||event.kind,damage:event.damage,
   attackerLost:!!event.attackerLost,defenderLost:!!event.defenderLost,turn:event.turn}));
  if(list.length>BOT_MEMORY_LIMIT)list.splice(0,list.length-BOT_MEMORY_LIMIT);
  return true;
@@ -1198,7 +1203,7 @@ function wilsonLowerBound(successes,total){
 /* Heuristic recency-weighted Wilson bound, not a calibrated interval.
    Preserve the original 48 records while reducing old votes' influence. */
 function botExperienceConfidence(side,id,kind,experience=botMemory){
- const history=experience[side]||[],matching=history.filter(x=>x.cardId===String(id)&&x.kind===kind);
+ const history=experience[side]||[],matching=history.filter(x=>x.cardId===String(id)&&(x.context||x.kind)===kind);
  const n=matching.length,current=history.reduce((v,x)=>Math.max(v,Number(x.turn)||0),0);
  const weighted=matching.map(x=>({item:x,weight:Math.pow(0.5,Math.max(0,current-(Number(x.turn)||0))/BOT_MEMORY_HALF_LIFE)}));
  const effective=weighted.reduce((v,x)=>v+x.weight,0);
@@ -1220,7 +1225,7 @@ function chooseBotAttack(s,k,actions,experience=botMemory){
   const ca=card(s[k].units[a.i].n),cb=card(s[k].units[b.i].n);
   const pa=predictedTarget(s,k,a.i),pb=predictedTarget(s,k,b.i);
   return cb.a-ca.a||
-   botExperienceScore(k,cb.num,pb?.kind,experience)-botExperienceScore(k,ca.num,pa?.kind,experience)||
+   botExperienceScore(k,cb.num,predictedMemoryContext(pb),experience)-botExperienceScore(k,ca.num,predictedMemoryContext(pa),experience)||
    a.i-b.i;
  })[0];
 }
@@ -1229,7 +1234,7 @@ function botMemoryRegression(){
  const cards=CATALOG.cards.filter(c=>c.a>0&&c.d>0);
  const pair=cards.flatMap(c=>cards.filter(d=>d.a===c.a&&d.num!==c.num).map(d=>[c,d]))[0];
  if(!pair)return Object.freeze({passed:0,total:1,checks:[{name:'pair of attackers',pass:false}]});
- const [ca,cb]=pair,record={cardId:String(cb.num),kind:'direct',damage:cb.a,attackerLost:false,defenderLost:true,turn:1};
+ const [ca,cb]=pair,record={cardId:String(cb.num),kind:'direct',context:cb.hit==='MAINFRAME'?'MAINFRAME':'BIOFRAME',damage:cb.a,attackerLost:false,defenderLost:true,turn:1};
  const scratch={p:[],e:[]};
  for(let i=0;i<60;i++){scratch.p.push(Object.freeze({...record,turn:i+1}));if(scratch.p.length>BOT_MEMORY_LIMIT)scratch.p.shift()}
  check('bounded FIFO 48',scratch.p.length===48&&scratch.p[0].turn===13);
@@ -1297,6 +1302,30 @@ function botDecayRegression(){
  return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
 }
 const botDecayChecks=botDecayRegression();
+function botContextRegression(){
+ const cases=[],test=(name,pass)=>cases.push(Object.freeze({name,pass:!!pass}));
+ const c=CATALOG.cards.find(v=>v.a>0&&v.d>0),id=String(c.num);
+ const make=(context,t)=>Object.freeze({cardId:id,kind:context==='BLOCKER'?'blocked':'direct',context,damage:c.a,attackerLost:false,defenderLost:context==='BLOCKER',turn:t});
+ const evidence={p:[make('BIOFRAME',1),make('BIOFRAME',2),make('BIOFRAME',3)],e:[]};
+ const snapshot=JSON.stringify(evidence),live=JSON.stringify(botMemory);
+ test('blocker routing',combatMemoryContext('blocked','BF')==='BLOCKER');
+ test('blocker ignores hit type',combatMemoryContext('blocked','MF')==='BLOCKER');
+ test('bioframe routing',combatMemoryContext('direct','BF')==='BIOFRAME');
+ test('mainframe routing',combatMemoryContext('direct','MF')==='MAINFRAME');
+ test('unknown meter abstains',combatMemoryContext('direct')===null);
+ test('BF confident',botExperienceConfidence('p',id,'BIOFRAME',evidence).confident);
+ test('BF not MF',botExperienceScore('p',id,'MAINFRAME',evidence)===0);
+ test('BF not blocker',botExperienceScore('p',id,'BLOCKER',evidence)===0);
+ test('separate side memory',botExperienceScore('e',id,'BIOFRAME',evidence)===0);
+ const blocked={p:[make('BLOCKER',1),make('BLOCKER',2),make('BLOCKER',3)],e:[]};
+ test('blocker confident',botExperienceConfidence('p',id,'BLOCKER',blocked).confident);
+ test('blocker not BF',botExperienceScore('p',id,'BIOFRAME',blocked)===0);
+ test('deterministic scoring',botExperienceScore('p',id,'BIOFRAME',evidence)===botExperienceScore('p',id,'BIOFRAME',evidence));
+ test('pure evidence',JSON.stringify(evidence)===snapshot&&JSON.stringify(botMemory)===live);
+ const passed=cases.filter(x=>x.pass).length;return Object.freeze({passed,total:cases.length,checks:Object.freeze(cases)});
+}
+const botContextChecks=botContextRegression();
+
 
 
 const makePlayer=(main,deck)=>({main,bf:20,mf:20,ram:0,hand:deck.slice(0,5),deck:deck.slice(5),units:[],bin:[]});
@@ -1348,7 +1377,7 @@ if(lastImpact.destroyed.length){
 lastRamFlow={seq:++flowSeq,events:lastImpact.recycle.map(x=>({side:x.side,type:'release',amount:x.freed,name:lastImpact.destroyed.filter(y=>y.side===x.side).map(y=>y.name).join(' + '),slots:lastImpact.destroyed.filter(y=>y.side===x.side&&y.ram>0).map(y=>({slot:y.slot,amount:y.ram}))}))};
 log('RECYCLED: '+lastImpact.destroyed.map(x=>x.name).join(' + ')+'. RAM returned: '+lastImpact.recycle.map(x=>(x.side==='p'?'PLAYER':'BOT')+' +'+x.freed).join(' / ')+'.');}
 if(mode==='auto'||k==='e'){
- recordBotExperience(k,{cardId:u.n,kind:lastImpact.kind,damage:c.a,
+ recordBotExperience(k,{cardId:u.n,kind:lastImpact.kind,context:combatMemoryContext(lastImpact.kind,lastImpact.meter),damage:c.a,
   attackerLost:lastImpact.destroyed.some(x=>x.side===k&&x.slot===i),
   defenderLost:lastImpact.destroyed.some(x=>x.side===other(k)),
   turn:state.turn});
@@ -1776,7 +1805,7 @@ function routeAuthoritativeAction(proposal){
  routeEvidence.rejected++;routeEvidence.last='REJECT · ENGINE DECLINED';return false;
 }
 function renderRouteStatus(){
- $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' '+(botDecayChecks.passed===botDecayChecks.total?'PASS':'FAIL');
+ $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' '+(botContextChecks.passed===botContextChecks.total?'PASS':'FAIL');
 }
 function renderBestAction(all){
  const panel=$('bestActionPanel'),button=$('bestActionButton'),label=$('bestActionText');
