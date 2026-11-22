@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.51 — Multi-Attack Survival Planning</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.52 — Three-Attack Tactical Chains</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -889,7 +889,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
 @media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.51 · BONE WHITE / COMBO PLANNING</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.52 · BONE WHITE / THREE-CHAIN</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1274,13 +1274,46 @@ function botTwoAttackPlan(s,k,actions){
  }
  return best?Object.freeze({...best,examined}):null;
 }
+/* Bounded 3-move lookahead: up to 60 ordered permutations of 5 units. */
+const BOT_THREE_CHAIN_CAP=60;
+function botThreeAttackPlan(s,k,actions){
+ const ready=actions.filter(a=>a.kind==='attack');
+ if(ready.length<3)return null;
+ const source={...s,p:{...s.p,bin:s.p.bin||[]},e:{...s.e,bin:s.e.bin||[]}};
+ let best=null,examined=0;
+ const better=(a,b)=>!b||Number(a.win)>Number(b.win)||
+  a.win===b.win&&(a.loss<b.loss||a.loss===b.loss&&
+   (a.direct>b.direct||a.direct===b.direct&&a.order.join(',')<b.order.join(',')));
+ for(const a of ready)for(const b of ready)for(const c of ready){
+  if(a.i===b.i||a.i===c.i||b.i===c.i)continue;
+  if(examined>=BOT_THREE_CHAIN_CAP)break;
+  examined++;
+  const sim=cloneCombat(source),order=[a.i,b.i,c.i],origins=order.map(i=>sim[k].units[i]?.origin);
+  if(origins.some(i=>i==null))continue;
+  let direct=0,valid=true,cleared=0;
+  for(const origin of origins){
+   if(sim.done){valid=false;break}
+   const t=simulateSequenceAttack(sim,k,origin);
+   if(!t){valid=false;break}
+   if(t.kind==='direct')direct+=t.damage;
+   if(t.defenderDestroyed)cleared++;
+  }
+  if(!valid)continue;
+  const candidate={order,first:order[0],win:sim.done&&(sim[other(k)].bf<=0||sim[other(k)].mf<=0),
+   loss:source[k].units.length-sim[k].units.length,direct,cleared};
+  if(better(candidate,best))best=candidate;
+ }
+ return best?Object.freeze({...best,examined,cap:BOT_THREE_CHAIN_CAP}):null;
+}
 function chooseBotAttack(s,k,actions,experience=botMemory){
  const attacks=actions.filter(x=>x.kind==='attack');
  if(!attacks.length)return actions.find(x=>x.kind==='next')||null;
  const ranked=attacks.slice().sort((a,b)=>compareBotAttacks(s,k,a,b,experience));
  if(botAttackRisk(predictedTarget(s,k,ranked[0].i)).immediateWin)return ranked[0];
  const plan=botTwoAttackPlan(s,k,attacks);
- return plan?.win?attacks.find(x=>x.i===plan.first)||ranked[0]:ranked[0];
+ if(plan?.win)return attacks.find(x=>x.i===plan.first)||ranked[0];
+ const chain=botThreeAttackPlan(s,k,attacks);
+ return chain?.win?attacks.find(x=>x.i===chain.first)||ranked[0]:ranked[0];
 }
 function botMemoryRegression(){
  const cases=[],check=(name,pass)=>cases.push(Object.freeze({name,pass:!!pass}));
@@ -1495,6 +1528,44 @@ function botComboRegression(){
  const passed=checks.filter(x=>x.pass).length;return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
 }
 const botComboChecks=botComboRegression();
+/* Phase 34 turn 8: three attack regression, includes precedence and bound. */
+function botThreeChainRegression(){
+ const checks=[],check=(name,pass)=>checks.push(Object.freeze({name,pass:!!pass}));
+ const cards=CATALOG.cards.filter(x=>x.a>0&&x.d>0),weak=cards.find(x=>x.a===1);
+ const strong=cards.find(x=>x.a>=3&&x.hit===weak.hit),foe=cards.find(x=>x.a===1);
+ const unit=(c,hp=c.d)=>({n:Number(c.num),hp,used:false});
+ const board=()=>({p:{units:[unit(strong),unit(weak),unit(weak)],bf:20,mf:20,bin:[]},
+  e:{units:[unit(foe,1),unit(foe,1)],bf:20,mf:20,bin:[]},active:'p',phase:2,done:false});
+ const s=board(),meter=strong.hit==='MAINFRAME'?'mf':'bf';s.e[meter]=strong.a;
+ const snapshot=JSON.stringify(s),legal=legalActions(s,'p'),plan=botThreeAttackPlan(s,'p',legal);
+ check('3 attack ready',legal.filter(x=>x.kind==='attack').length===3);
+ check('plan found',!!plan);
+ check('3 step win',!!plan?.win);
+ check('weak opener, strong finisher',plan?.first===1&&plan.order[2]===0);
+ check('two steps cannot finish',!botTwoAttackPlan(s,'p',legal)?.win);
+ check('winning opener selected',chooseBotAttack(s,'p',legal,{p:[],e:[]})?.i===1);
+ check('two defenders eliminated',plan?.cleared===2);
+ check('read-only planning',JSON.stringify(s)===snapshot);
+ const sim=cloneCombat(s),origins=plan.order.map(i=>sim.p.units[i].origin),kinds=[];
+ for(const origin of origins)kinds.push(simulateSequenceAttack(sim,'p',origin)?.kind);
+ check('blocked blocked direct',kinds.join(',')==='blocked,blocked,direct');
+ check('terminal after third attack',sim.done&&sim.e[meter]<=0);
+ const immediate=board();immediate.e.units=[];immediate.e[meter]=1;
+ check('instant win precedence',chooseBotAttack(immediate,'p',legalActions(immediate,'p'),{p:[],e:[]})?.i===0);
+ const two=board();two.e.units=[unit(foe,1)];two.e[meter]=strong.a;
+ check('two move win precedence',chooseBotAttack(two,'p',legalActions(two,'p'),{p:[],e:[]})?.i===1);
+ const solo=board();solo.p.units=[unit(strong),unit(weak)];
+ check('two cards cannot form three chain',botThreeAttackPlan(solo,'p',legalActions(solo,'p'))===null);
+ const five=board();five.p.units=[unit(strong),unit(weak),unit(weak),unit(weak),unit(weak)];
+ const bounded=botThreeAttackPlan(five,'p',legalActions(five,'p'));
+ check('5P3 bounded search',bounded?.examined===60&&bounded?.cap===60);
+ const done=board();done.done=true;
+ check('terminal board denied',botThreeAttackPlan(done,'p',legalActions(done,'p'))===null);
+ check('bot memory still unchanged',botMemory.p.length===0&&botMemory.e.length===0);
+ const passed=checks.filter(x=>x.pass).length;return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
+}
+const botThreeChainChecks=botThreeChainRegression();
+
 
 
 
@@ -1978,7 +2049,7 @@ function routeAuthoritativeAction(proposal){
  routeEvidence.rejected++;routeEvidence.last='REJECT · ENGINE DECLINED';return false;
 }
 function renderRouteStatus(){
- $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' · RISK '+botRiskChecks.passed+'/'+botRiskChecks.total+' · COMBOS '+botComboChecks.passed+'/'+botComboChecks.total+' '+(botComboChecks.passed===botComboChecks.total?'PASS':'FAIL');
+ $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' · RISK '+botRiskChecks.passed+'/'+botRiskChecks.total+' · COMBOS '+botComboChecks.passed+'/'+botComboChecks.total+' · THREE CHAIN '+botThreeChainChecks.passed+'/'+botThreeChainChecks.total+' '+(botThreeChainChecks.passed===botThreeChainChecks.total?'PASS':'FAIL');
 }
 function renderBestAction(all){
  const panel=$('bestActionPanel'),button=$('bestActionButton'),label=$('bestActionText');
