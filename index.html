@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.46 — Adaptive Combat Confidence</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.47 — Confidence Decay and Relearning</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -889,7 +889,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
 @media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.46 · BONE WHITE / CONFIDENCE GATE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.47 · BONE WHITE / RELEARNING</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1188,21 +1188,27 @@ function recordBotExperience(side,event){
    Neither a forecast nor a different card/target type counts as evidence. */
 const BOT_CONFIDENCE_MIN=3;
 const BOT_CONFIDENCE_BOUND=0.35;
+const BOT_MEMORY_HALF_LIFE=8;
+const BOT_EFFECTIVE_MIN=2.5;
 function wilsonLowerBound(successes,total){
  if(total<=0)return 0;
  const z=1.96,p=successes/total,den=1+z*z/total;
  return Math.max(0,(p+z*z/(2*total)-z*Math.sqrt((p*(1-p)+z*z/(4*total))/total))/den);
 }
+/* Heuristic recency-weighted Wilson bound, not a calibrated interval.
+   Preserve the original 48 records while reducing old votes' influence. */
 function botExperienceConfidence(side,id,kind,experience=botMemory){
- const matching=(experience[side]||[]).filter(x=>x.cardId===String(id)&&x.kind===kind);
- const n=matching.length;
- const positive=matching.filter(x=>x.defenderLost||x.damage>0&&!x.attackerLost).length;
- const negative=matching.filter(x=>x.attackerLost).length;
- const lowerPositive=wilsonLowerBound(positive,n),lowerNegative=wilsonLowerBound(negative,n);
- const average=n?matching.reduce((v,x)=>v+(x.defenderLost?2:0)+(x.damage>0?1:0)-(x.attackerLost?3:0),0)/n:0;
- const confident=n>=BOT_CONFIDENCE_MIN&&Math.max(lowerPositive,lowerNegative)>=BOT_CONFIDENCE_BOUND;
- return Object.freeze({samples:n,positive,negative,lowerPositive,lowerNegative,
-  confident,score:confident?average*n/(n+4):0});
+ const history=experience[side]||[],matching=history.filter(x=>x.cardId===String(id)&&x.kind===kind);
+ const n=matching.length,current=history.reduce((v,x)=>Math.max(v,Number(x.turn)||0),0);
+ const weighted=matching.map(x=>({item:x,weight:Math.pow(0.5,Math.max(0,current-(Number(x.turn)||0))/BOT_MEMORY_HALF_LIFE)}));
+ const effective=weighted.reduce((v,x)=>v+x.weight,0);
+ const positive=weighted.reduce((v,x)=>v+((x.item.defenderLost||x.item.damage>0&&!x.item.attackerLost)?x.weight:0),0);
+ const negative=weighted.reduce((v,x)=>v+(x.item.attackerLost?x.weight:0),0);
+ const lowerPositive=wilsonLowerBound(positive,effective),lowerNegative=wilsonLowerBound(negative,effective);
+ const average=effective?weighted.reduce((v,x)=>v+x.weight*((x.item.defenderLost?2:0)+(x.item.damage>0?1:0)-(x.item.attackerLost?3:0)),0)/effective:0;
+ const confident=n>=BOT_CONFIDENCE_MIN&&effective>=BOT_EFFECTIVE_MIN&&Math.max(lowerPositive,lowerNegative)>=BOT_CONFIDENCE_BOUND;
+ return Object.freeze({samples:n,effective,positive,negative,lowerPositive,lowerNegative,confident,
+  score:confident?average*effective/(effective+4):0});
 }
 function botExperienceScore(side,id,kind,experience=botMemory){
  return botExperienceConfidence(side,id,kind,experience).score;
@@ -1263,6 +1269,35 @@ function botConfidenceRegression(){
  return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
 }
 const botConfidenceChecks=botConfidenceRegression();
+/* Phase 34 turn 3: old evidence decays, sustained new evidence relearns. */
+function botDecayRegression(){
+ const checks=[],check=(name,pass)=>checks.push(Object.freeze({name,pass:!!pass}));
+ const c=CATALOG.cards.find(x=>x.a>0&&x.d>0);
+ const good=turn=>Object.freeze({cardId:String(c.num),kind:'direct',damage:c.a,defenderLost:true,attackerLost:false,turn});
+ const bad=turn=>Object.freeze({cardId:String(c.num),kind:'direct',damage:0,defenderLost:false,attackerLost:true,turn});
+ const batch=arr=>({p:arr,e:[]}),before=JSON.stringify(botMemory);
+ const early=batch([good(1),good(2),good(3)]),recent=batch([good(29),good(30),good(31)]);
+ const aged=batch([good(1),good(2),good(3),{...good(31),cardId:'different'}]);
+ const single=batch([good(1),good(2),good(3),bad(4)]);
+ const reversed=batch([good(1),good(2),good(3),...Array.from({length:9},(_,i)=>bad(i+4))]);
+ const recovered=batch([bad(1),bad(2),bad(3),...Array.from({length:9},(_,i)=>good(i+4))]);
+ const old=botExperienceConfidence('p',c.num,'direct',early),now=botExperienceConfidence('p',c.num,'direct',recent);
+ const stale=botExperienceConfidence('p',c.num,'direct',aged);
+ check('three recent wins remain confident',old.confident&&now.confident);
+ check('equal age pattern yields equal score',Math.abs(old.score-now.score)<1e-10);
+ check('old samples lose effective weight',stale.effective<old.effective);
+ check('old samples remain in bounded history',stale.samples===3);
+ check('stale confidence abstains',!stale.confident);
+ check('one new loss does not impose negative preference',botExperienceScore('p',c.num,'direct',single)>=0);
+ check('sustained losses reduce preference',botExperienceScore('p',c.num,'direct',reversed)<botExperienceScore('p',c.num,'direct',single));
+ check('sustained newer wins permit relearning',botExperienceScore('p',c.num,'direct',recovered)>0);
+ check('no cross-bot evidence transfer',botExperienceScore('e',c.num,'direct',recovered)===0);
+ check('read-only scoring preserves source',JSON.stringify(botMemory)===before);
+ const passed=checks.filter(x=>x.pass).length;
+ return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
+}
+const botDecayChecks=botDecayRegression();
+
 
 const makePlayer=(main,deck)=>({main,bf:20,mf:20,ram:0,hand:deck.slice(0,5),deck:deck.slice(5),units:[],bin:[]});
 const committed=p=>p.units.reduce((a,u)=>a+cost(card(u.n)),0);
@@ -1741,7 +1776,7 @@ function routeAuthoritativeAction(proposal){
  routeEvidence.rejected++;routeEvidence.last='REJECT · ENGINE DECLINED';return false;
 }
 function renderRouteStatus(){
- $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' '+(botConfidenceChecks.passed===botConfidenceChecks.total?'PASS':'FAIL');
+ $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' '+(botDecayChecks.passed===botDecayChecks.total?'PASS':'FAIL');
 }
 function renderBestAction(all){
  const panel=$('bestActionPanel'),button=$('bestActionButton'),label=$('bestActionText');
