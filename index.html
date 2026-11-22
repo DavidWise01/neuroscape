@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.36 — Hegemonic Decision Authority</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.37 — Survival and Victory Precedence</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -868,8 +868,11 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 /* Phase 33 turn 4: decision and permission share one authoritative kernel. */
 .bestActionPanel{border-color:#a047e9}
 .routeStatus{letter-spacing:.02em}
+
+/* v2.8.37: high-contrast precedence status within established forecast cards. */
+.sequenceOption:first-child .sequenceWhy{color:#7531a4;font-weight:900}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.36 · BONE WHITE / HEGEMONIC DECISION AUTHORITY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.37 · BONE WHITE / SURVIVAL AND VICTORY PRECEDENCE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1257,6 +1260,7 @@ function robustSequenceEvaluation(s,k,order){
   }
   if(!completed)return null;
   const afterPlan=boardPosition(sim);
+  const playerWin=sim.done&&(sim.e.bf<=0||sim.e.mf<=0);
   const attacks=[];
   if(!sim.done){
    for(const q of [sim.p,sim.e])q.units.forEach(u=>{u.hp=card(u.n).d});
@@ -1271,10 +1275,36 @@ function robustSequenceEvaluation(s,k,order){
   }
   const score=positionValue(boardPosition(sim));
   scores.push(score);
-  responses.push({policy,score,opponentAttacks:attacks.length,playerMoves:completed,afterPlan});
+  responses.push({policy,score,opponentAttacks:attacks.length,playerMoves:completed,afterPlan,
+   playerWin,playerLoss:sim.p.bf<=0||sim.p.mf<=0,
+   remainingLife:Math.min(sim.p.bf,sim.p.mf)});
  }
  const worst=Math.min(...scores),best=Math.max(...scores);
- return {worst,best,spread:best-worst,policies:responses,agrees:scores.every(v=>v===scores[0])};
+ return {worst,best,spread:best-worst,policies:responses,agrees:scores.every(v=>v===scores[0]),
+  guaranteedWin:responses.every(r=>r.playerWin),anyLoss:responses.some(r=>r.playerLoss),
+  worstLife:Math.min(...responses.map(r=>r.remainingLife))};
+}
+/* Phase 33 turn 5: lexicographic precedence cannot be overruled by
+   arbitrary score magnitude or learned bonuses. These are modeled outcomes,
+   not guaranteed wins against unknown opponent choices. */
+function precedenceTier(plan){
+ if(plan.steps.length===1&&plan.win)return 4; // legal immediate finishing action
+ if(plan.robust?.guaranteedWin)return 3; // winning by end of full modeled plan
+ if(plan.robust&&!plan.robust.anyLoss)return 2; // survives all modeled policies
+ if(plan.robust)return 1; // exposed to modeled lethal response
+ return 0;
+}
+function comparePrecedence(a,b){
+ return precedenceTier(b)-precedenceTier(a)||
+  (b.robust?.worstLife??-Infinity)-(a.robust?.worstLife??-Infinity)||
+  (b.robust?.worst??-Infinity)-(a.robust?.worst??-Infinity)||
+  b.score-a.score||a.losses-b.losses||
+  a.order[0]-b.order[0]||a.order.join(',').localeCompare(b.order.join(','));
+}
+function precedenceLabel(plan){
+ const tier=precedenceTier(plan);
+ return tier===4?'FINISH NOW':tier===3?'PROJECTED VICTORY':
+  tier===2?'SURVIVES MODELED RESPONSES':tier===1?'MODELED DEFEAT RISK':'UNASSESSED';
 }
 function compareSequences(s,k){
  if(s.done||s.active!==k||s.phase!==2)return[];
@@ -1315,8 +1345,7 @@ function compareSequences(s,k){
   o.score=o.baseScore+o.learnedAdjustment;
   o.robust=robustSequenceEvaluation(s,k,o.order);
  });
- outcomes.sort((a,b)=>(b.robust?.worst??-Infinity)-(a.robust?.worst??-Infinity)||
-  b.score-a.score||a.losses-b.losses||a.order[0]-b.order[0]||a.order.join(',').localeCompare(b.order.join(',')));
+ outcomes.sort(comparePrecedence);
  return outcomes;
 }
 /* Phase 33 turn 2: one legal action per board state.
@@ -1329,7 +1358,7 @@ function bestLegalAction(s,k,forecast=null){
   const plans=forecast||compareSequences(s,k);
   const first=plans[0];
   const proposed=first&&actions.find(a=>a.kind==='attack'&&a.i===first.first);
-  if(proposed)return {kind:'attack',i:proposed.i,reason:'ROBUST WORST '+first.robust.worst+' · PLAN '+first.order.map(i=>i+1).join('→'),
+  if(proposed)return {kind:'attack',i:proposed.i,reason:precedenceLabel(first)+' · WORST '+first.robust.worst+' · PLAN '+first.order.map(i=>i+1).join('→'),
    plan:first.order.slice(),worst:first.robust.worst,score:first.score};
   return {...find('next'),reason:'NO LEGAL ATTACK · ADVANCE'};
  }
@@ -1421,7 +1450,7 @@ function renderSequences(){
  renderLearning();
  const panel=$('sequencePanel'),options=$('sequenceOptions'),all=mode==='human'?compareSequences(state,'p'):[];
  panel.hidden=!all.length;renderBestAction(all);const shown=all.slice(0,6);
- $('sequenceCount').textContent=TACTICAL_WEIGHTS[tacticalPriority].label+' · ONE AUTHORITATIVE ACTION · '+shown.length+' / '+all.length+' analysis paths · '+RESPONSE_POLICIES.length+' policies';
+ $('sequenceCount').textContent=TACTICAL_WEIGHTS[tacticalPriority].label+' · VICTORY > SURVIVAL > SCORE · '+shown.length+' / '+all.length+' analysis paths · '+RESPONSE_POLICIES.length+' policies';
  options.replaceChildren(...shown.map((s,i)=>{
   const btn=document.createElement('button');btn.type='button';btn.className='sequenceOption'+(s.opening?' sequenceOpening':'');
   const head=document.createElement('strong');head.textContent=(i===0?'ONE BEST PLAN · ':'')+s.steps.map((x,j)=>(j+1)+'. '+x.name).join(' → ');
@@ -1429,7 +1458,7 @@ function renderSequences(){
   const note=document.createElement('span');note.className='sequenceNote';note.textContent=s.win?'PROJECTED FINISH · '+s.steps.length+' MOVE'+(s.steps.length===1?'':'S'):s.opening?'BLOCKER → DIRECT '+s.directDamage:s.directDamage?'DIRECT '+s.directDamage+' · LOSSES '+s.losses:'BLOCKED · LOSSES '+s.losses;
   const why=explainSequence(s);
   const explanation=document.createElement('small');explanation.className='sequenceWhy';
-  explanation.textContent='WHY #'+(i+1)+' · '+why.reason+' · WORST '+s.robust.worst+' / BEST '+s.robust.best+' · BASE '+why.score+
+  explanation.textContent='WHY #'+(i+1)+' · '+precedenceLabel(s)+' · '+why.reason+' · WORST '+s.robust.worst+' / BEST '+s.robust.best+' · BASE '+why.score+
    (s.accuracyBonus?' · ACCURACY +'+s.accuracyBonus:'')+
    (s.outcomeBonus?' · OUTCOME '+(s.outcomeBonus>0?'+':'')+s.outcomeBonus:'')+
    (s.temporalBonus?' · NEXT-TURN '+(s.temporalBonus>0?'+':'')+s.temporalBonus:'')+' · RANK '+s.score;
