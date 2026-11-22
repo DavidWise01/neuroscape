@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.39 — Repeated Loss Avoidance</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.40 — Adaptive Search Depth</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -875,8 +875,10 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption .sequenceScore{font-variant-numeric:tabular-nums}
 /* Phase 33 turn 7: learning stays bounded and subordinate to victory and survival. */
 .sequenceOption .sequenceWhy{overflow-wrap:anywhere}
+/* v2.8.40: small adaptive depth readout; the arena retains its space. */
+.sequenceHead #sequenceCount{font-variant-numeric:tabular-nums}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.39 · BONE WHITE / REPEATED LOSS AVOIDANCE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.40 · BONE WHITE / ADAPTIVE SEARCH DEPTH</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1346,11 +1348,26 @@ function precedenceLabel(plan){
  return tier===4?'FINISH NOW':tier===3?'PROJECTED VICTORY':
   tier===2?'SURVIVES MODELED RESPONSES':tier===1?'MODELED DEFEAT RISK':'UNASSESSED';
 }
+/* Phase 33 turn 8: deterministic search budget from observable battlefield
+   complexity. Covers every opening attacker at each depth. Immediate lethal
+   threats force full depth. Never exceed the existing 120 leaf cap. */
+function adaptiveSearchBudget(s,k,ready){
+ const n=ready.length,foe=s[other(k)],self=s[k];
+ const critical=Math.min(self.bf,self.mf,foe.bf,foe.mf)<=5;
+ const contested=foe.units.some(u=>u.hp>0);
+ const danger=foe.units.some(u=>card(u.n).a>=3);
+ const depth=Math.min(n,critical?n:contested&&danger?Math.max(3,n-1):contested?Math.min(n,3):Math.min(n,2));
+ let capacity=1;
+ for(let i=0;i<depth;i++)capacity*=n-i;
+ return Object.freeze({depth,limit:Math.min(MAX_SEQUENCE_ORDERS,capacity),
+  level:critical?'CRITICAL':contested&&danger?'HIGH':contested?'CONTESTED':'OPEN',
+  available:n,reason:critical?'low BF/MF; full search':contested?'opposing cards present':'no opposing blockers'});
+}
 function compareSequences(s,k){
  if(s.done||s.active!==k||s.phase!==2)return[];
  const ready=legalActions(s,k).filter(a=>a.kind==='attack').map(a=>a.i);
  if(ready.length<1)return[];
- const depth=Math.min(5,ready.length),outcomes=[],seen=new Set();
+ const budget=adaptiveSearchBudget(s,k,ready),depth=budget.depth,outcomes=[],seen=new Set();
  let evaluated=0;
  function evaluate(prefix){
   if(evaluated>=MAX_SEQUENCE_ORDERS)return;evaluated++;
@@ -1368,7 +1385,7 @@ function compareSequences(s,k){
   if(seen.has(key))return;seen.add(key);
   const win=!!snapshot.done&&(snapshot[other(k)].bf<=0||snapshot[other(k)].mf<=0);
   outcomes.push({first:order[0],order,steps,directDamage,losses,opening,win,terminal:!!snapshot.done,
-   score:0});
+   search:budget,score:0});
  }
  function enumerate(prefix){
   if(evaluated>=MAX_SEQUENCE_ORDERS)return;
@@ -1494,7 +1511,8 @@ function renderSequences(){
  renderLearning();
  const panel=$('sequencePanel'),options=$('sequenceOptions'),all=mode==='human'?compareSequences(state,'p'):[];
  panel.hidden=!all.length;renderBestAction(all);const shown=all.slice(0,6);
- $('sequenceCount').textContent=TACTICAL_WEIGHTS[tacticalPriority].label+' · VICTORY > SURVIVAL > SCORE · '+shown.length+' / '+all.length+' analysis paths · EXHAUSTIVE RESPONSES';
+ const budget=all[0]?.search;
+ $('sequenceCount').textContent=TACTICAL_WEIGHTS[tacticalPriority].label+' · VICTORY > SURVIVAL > SCORE · '+(budget?budget.level+' DEPTH '+budget.depth+' · ':'')+shown.length+' / '+all.length+' analysis paths · FULL OPPONENT RESPONSES';
  options.replaceChildren(...shown.map((s,i)=>{
   const btn=document.createElement('button');btn.type='button';btn.className='sequenceOption'+(s.opening?' sequenceOpening':'');
   const head=document.createElement('strong');head.textContent=(i===0?'ONE BEST PLAN · ':'')+s.steps.map((x,j)=>(j+1)+'. '+x.name).join(' → ');
@@ -1508,7 +1526,7 @@ function renderSequences(){
    (s.temporalBonus?' · NEXT-TURN '+(s.temporalBonus>0?'+':'')+s.temporalBonus:'')+
    (s.failurePenalty?' · REPEATED LOSS −'+s.failurePenalty+' ('+s.failureRisk.failures+' observed)':'')+' · RANK '+s.score;
   const math=document.createElement('small');math.className='sequenceScore';
-  math.textContent='ADVERSARY '+s.robust.adversary.nodes+'/'+MAX_RESPONSE_NODES+' NODES · WORST '+(s.robust.adversary.worstOrder.map(x=>x+1).join('→')||'PASS')+' · POLICIES '+s.robust.policies.map(x=>x.policy.toUpperCase()+' '+x.score).join(' / ')+' · '+why.parts.join('  |  ');
+  math.textContent='SEARCH '+s.search.level+' '+s.search.depth+'/'+s.search.available+' · ADVERSARY '+s.robust.adversary.nodes+'/'+MAX_RESPONSE_NODES+' NODES · WORST '+(s.robust.adversary.worstOrder.map(x=>x+1).join('→')||'PASS')+' · POLICIES '+s.robust.policies.map(x=>x.policy.toUpperCase()+' '+x.score).join(' / ')+' · '+why.parts.join('  |  ');
   btn.append(head,detail,note,explanation,math);
   btn.setAttribute('aria-label','Forecast '+head.textContent+'. '+detail.textContent+'. '+note.textContent+'. '+explanation.textContent+'. '+math.textContent+'. Execute only the first attack.');
   btn.addEventListener('pointerenter',()=>previewTarget(s.first));btn.addEventListener('pointerleave',clearPreview);
