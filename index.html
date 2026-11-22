@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.40 — Adaptive Search Depth</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.41 — Stable Card Identity</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -877,8 +877,19 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption .sequenceWhy{overflow-wrap:anywhere}
 /* v2.8.40: small adaptive depth readout; the arena retains its space. */
 .sequenceHead #sequenceCount{font-variant-numeric:tabular-nums}
+/* v2.8.41 Neon Overdrive: lighting outside hit targets, bone-white arena retained. */
+#gameBoard{box-shadow:0 0 0 3px #fffefa,0 0 19px #f77d24d9,0 0 40px #a649f19c,0 0 74px #9d36ea54!important}
+#gameBoard .side.you{box-shadow:inset 0 0 24px #ff812222,0 0 18px #ff791aa1!important}
+#gameBoard .side.opponent{box-shadow:inset 0 0 24px #ae46ef22,0 0 18px #9e37e6a1!important}
+#gameBoard .side.you .sqcard.deployed{box-shadow:0 0 0 1px #fff,0 0 13px #ff7316d9,0 0 23px #ff7d186b,inset 0 0 8px #ff8d2742!important}
+#gameBoard .side.opponent .sqcard.deployed{box-shadow:0 0 0 1px #fff,0 0 13px #ac44f4d9,0 0 23px #a247f86b,inset 0 0 8px #ae49fa42!important}
+#gameBoard .divider{box-shadow:0 0 15px #fd7c2a8f,0 0 25px #a73eff77,inset 0 0 13px #b552ec32}
+#gameBoard .slot.available{outline:2px solid #ff8d20;outline-offset:1px}
+#gameBoard .side.opponent .slot.available{outline-color:#bb54fa}
+.sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
+@media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.40 · BONE WHITE / ADAPTIVE SEARCH DEPTH</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.41 · BONE WHITE / NEON IDENTITY LOCK</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1159,23 +1170,36 @@ function renderLearning(){
   ' · response policies simulated, not observed · session only';
 }
 
+let nextUnitIdentity=0;
+const unitIdentity=()=>++nextUnitIdentity;
 const makePlayer=(main,deck)=>({main,bf:20,mf:20,ram:0,hand:deck.slice(0,5),deck:deck.slice(5),units:[],bin:[]});
 const committed=p=>p.units.reduce((a,u)=>a+cost(card(u.n)),0);
 const free=p=>p.ram-committed(p);
 const other=k=>k==='p'?'e':'p';
 function log(msg){state.events.unshift(msg);if(state.events.length>30)state.events.length=30}
-function restart(kind=mode){if(state&&!state.done)settleLongitudinal('interrupted');temporalEvidence.match++;if(botTimer!==null)clearTimeout(botTimer);botTimer=null;lastImpact=null;targetPreview=null;lastRamFlow=null;mode=kind;state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
+function restart(kind=mode){if(state&&!state.done)settleLongitudinal('interrupted');temporalEvidence.match++;if(botTimer!==null)clearTimeout(botTimer);botTimer=null;lastImpact=null;targetPreview=null;lastRamFlow=null;mode=kind;nextUnitIdentity=0;state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
 function legalActions(s,k){if(s.done||s.active!==k)return[];let p=s[k],a=[];
 if(s.phase===0){if(s.actions>0){if(p.ram<25)a.push({kind:'ram'});if(p.deck.length)a.push({kind:'draw'})}a.push({kind:'next'});}
 else if(s.phase===1){if(p.units.length<5)p.hand.forEach((n,i)=>{if(cost(card(n))<=free(p))a.push({kind:'deploy',i})});a.push({kind:'next'});}
 else if(s.phase===2){p.units.forEach((u,i)=>{if(!u.used&&card(u.n).a>0)a.push({kind:'attack',i})});a.push({kind:'next'});}
 else a.push({kind:'next'});return a}
-function act(k,kind,i=null){if(state.done||state.active!==k)return false;if(!legalActions(state,k).some(x=>x.kind===kind&&(x.i??null)===i))return false;
+/* Resolve a captured action by immutable deployment ID; never reuse a shifted square. */
+function resolveCardAction(s,k,kind,i,uid=null){
+ if(kind!=='attack'||uid===null)return i;
+ const current=s[k].units.findIndex(u=>u.uid===uid);
+ return current<0?null:current;
+}
+function act(k,kind,i=null,uid=null){
+ if(state.done||state.active!==k)return false;
+ const resolved=resolveCardAction(state,k,kind,i,uid);
+ if(kind==='attack'&&uid!==null&&resolved===null)return false;
+ i=resolved;
+ if(!legalActions(state,k).some(x=>x.kind===kind&&(x.i??null)===i))return false;
 let p=state[k],e=state[other(k)];
 targetPreview=null;lastRamFlow=null;if(kind!=='attack')lastImpact=null;
 if(kind==='ram'){p.ram++;state.actions--;lastRamFlow={seq:++flowSeq,events:[{side:k,type:'install',amount:1,name:'RAM INSTALLED'}]};log((k==='p'?'You':'Bot')+' installed RAM ('+p.ram+').')}
 else if(kind==='draw'){let n=p.deck.shift();p.hand.push(n);state.actions--;log((k==='p'?'You':'Bot')+' drew a card.')}
-else if(kind==='deploy'){let before=free(p),n=p.hand.splice(i,1)[0],c=card(n);p.units.push({n,hp:c.d,used:false});lastRamFlow={seq:++flowSeq,events:[{side:k,type:'commit',amount:before-free(p),name:c.n,slot:p.units.length-1}]};log((k==='p'?'You':'Bot')+' deployed '+c.n+'.')}
+else if(kind==='deploy'){let before=free(p),n=p.hand.splice(i,1)[0],c=card(n);p.units.push({n,hp:c.d,used:false,uid:unitIdentity()});lastRamFlow={seq:++flowSeq,events:[{side:k,type:'commit',amount:before-free(p),name:c.n,slot:p.units.length-1}]};log((k==='p'?'You':'Bot')+' deployed '+c.n+'.')}
 else if(kind==='attack'){
 const attackEvidence=captureAttackEvidence(k,i);
 let u=p.units[i],c=card(u.n),block=e.units.find(v=>!v.used);lastImpact={from:k,to:other(k),source:i,attacker:c.n,defender:block?card(block.n).n:null,damage:c.a,retaliation:block?card(block.n).a:0,meter:block?null:(c.hit==='MAINFRAME'?'MF':'BF'),kind:block?'blocked':'direct',target:block?e.units.indexOf(block):-1,seq:++impactSeq};u.used=true;
@@ -1450,15 +1474,15 @@ function decisionAuthority(s,k,proposal=null,forecast=null){
  if(!permitted)return {allowed:false,reason:'NOT ACTIVE HUMAN PLAYER',choice:null,proposal:null};
  const choice=bestLegalAction(s,k,forecast);
  if(!choice)return {allowed:false,reason:'NO LEGAL ACTION',choice:null,proposal:null};
- const selected={kind:choice.kind,i:choice.i??null};
+ const selected={kind:choice.kind,i:choice.i??null,uid:choice.kind==='attack'?s[k].units[choice.i]?.uid??null:null};
  const token=actionFingerprint(s,k);
  if(proposal===null)return {allowed:true,reason:'AUTHORITATIVE SELECTION',choice,
-  proposal:Object.freeze({kind:selected.kind,i:selected.i,side:k,fingerprint:token})};
+  proposal:Object.freeze({kind:selected.kind,i:selected.i,uid:selected.uid,side:k,fingerprint:token})};
  if(!proposal||typeof proposal!=='object'||proposal.side!==k)
   return {allowed:false,reason:'UNAUTHORIZED PROPOSAL',choice,proposal:null};
  if(proposal.fingerprint!==token)
   return {allowed:false,reason:'STALE BOARD OR PRIORITY',choice,proposal:null};
- if(proposal.kind!==selected.kind||proposal.i!==selected.i)
+ if(proposal.kind!==selected.kind||proposal.i!==selected.i||proposal.uid!==selected.uid)
   return {allowed:false,reason:'NOT THE BEST ACTION',choice,proposal:null};
  if(!legalActions(s,k).some(a=>a.kind===proposal.kind&&(a.i??null)===proposal.i))
   return {allowed:false,reason:'ILLEGAL ACTION',choice,proposal:null};
@@ -1470,7 +1494,7 @@ function issueActionProposal(s,k,forecast=null){
 function routeAuthoritativeAction(proposal){
  const verdict=decisionAuthority(state,'p',proposal);
  if(!verdict.allowed){routeEvidence.rejected++;routeEvidence.last='REJECT · '+verdict.reason;return false;}
- const executed=act('p',verdict.choice.kind,verdict.choice.i??null);
+ const executed=act('p',verdict.choice.kind,verdict.choice.i??null,verdict.proposal.uid);
  if(executed){routeEvidence.accepted++;routeEvidence.last='ACCEPT · '+verdict.choice.kind.toUpperCase();return true;}
  routeEvidence.rejected++;routeEvidence.last='REJECT · ENGINE DECLINED';return false;
 }
@@ -1531,7 +1555,8 @@ function renderSequences(){
   btn.setAttribute('aria-label','Forecast '+head.textContent+'. '+detail.textContent+'. '+note.textContent+'. '+explanation.textContent+'. '+math.textContent+'. Execute only the first attack.');
   btn.addEventListener('pointerenter',()=>previewTarget(s.first));btn.addEventListener('pointerleave',clearPreview);
   btn.addEventListener('focus',()=>previewTarget(s.first));btn.addEventListener('blur',clearPreview);
-  btn.onclick=()=>act('p','attack',s.first);return btn;
+  const attackerUid=state.p.units[s.first]?.uid??null;
+  btn.onclick=()=>act('p','attack',s.first,attackerUid);return btn;
  }));
 }
 function renderAttackChoices(){
@@ -1548,7 +1573,8 @@ function renderAttackChoices(){
   btn.append(head,verdict,stats);
   btn.addEventListener('pointerenter',()=>previewTarget(t.slot));btn.addEventListener('pointerleave',clearPreview);
   btn.addEventListener('focus',()=>previewTarget(t.slot));btn.addEventListener('blur',clearPreview);
-  btn.onclick=()=>act('p','attack',t.slot);
+  const attackerUid=state.p.units[t.slot]?.uid??null;
+  btn.onclick=()=>act('p','attack',t.slot,attackerUid);
   return btn;
  }));
 }
@@ -1720,7 +1746,7 @@ if(lastImpact&&lastImpact.from===key&&lastImpact.source===i){slot.classList.add(
 if(lastImpact&&lastImpact.to===key&&lastImpact.target===-1){slot.classList.add('energyDirect')}
 let deaths=lastImpact?.destroyed?.filter(d=>d.side===key&&d.slot===i)||[];
 if(deaths.length){slot.classList.add('shattered');let overlay=document.createElement('span');overlay.className='shatterLabel';overlay.textContent='✦ RECYCLED';overlay.setAttribute('aria-hidden','true');slot.append(overlay)}
-let u=x.units[i];if(targetPreview&&targetPreview.to===key&&targetPreview.target===i)slot.classList.add('targetPreview');if(targetPreview&&targetPreview.to===key&&targetPreview.target===-1)slot.classList.add('directPreview');if(u){let available=!s.done&&mode==='human'&&key==='p'&&s.active==='p'&&s.phase===2&&!u.used&&card(u.n).a>0;if(available)slot.classList.add('available');let unitCard=squareCard(u.n,u,available?()=>act('p','attack',i):null,'attack');unitCard.classList.add('deployed','resonance-'+key);bindCardIntel(unitCard,u.n,u,key,i,false);if(u.used)unitCard.classList.add('resonance-exhausted');if(available){unitCard.addEventListener('pointerenter',()=>previewTarget(i));unitCard.addEventListener('pointerleave',clearPreview);unitCard.addEventListener('focus',()=>previewTarget(i));unitCard.addEventListener('blur',clearPreview)}slot.append(unitCard)}return slot}))}
+let u=x.units[i];if(targetPreview&&targetPreview.to===key&&targetPreview.target===i)slot.classList.add('targetPreview');if(targetPreview&&targetPreview.to===key&&targetPreview.target===-1)slot.classList.add('directPreview');if(u){let available=!s.done&&mode==='human'&&key==='p'&&s.active==='p'&&s.phase===2&&!u.used&&card(u.n).a>0;if(available)slot.classList.add('available');let unitCard=squareCard(u.n,u,available?()=>act('p','attack',i,u.uid):null,'attack');unitCard.classList.add('deployed','resonance-'+key);bindCardIntel(unitCard,u.n,u,key,i,false);if(u.used)unitCard.classList.add('resonance-exhausted');if(available){unitCard.addEventListener('pointerenter',()=>previewTarget(i));unitCard.addEventListener('pointerleave',clearPreview);unitCard.addEventListener('focus',()=>previewTarget(i));unitCard.addEventListener('blur',clearPreview)}slot.append(unitCard)}return slot}))}
 let playable=0;const hand=$('hand');hand.replaceChildren(...(mode==='auto'?s[k].hand:p.hand).map((n,i)=>{let c=card(n);let ok=mode==='human'&&!s.done&&k==='p'&&s.phase===1&&p.units.length<5&&cost(c)<=free(p);if(ok)playable++;let hc=squareCard(n,null,ok?()=>act('p','deploy',i):null,'playable');if(ok)hc.classList.add('resonance-ready');bindCardIntel(hc,n,null,mode==='auto'?k:'p',i,true);return hc}));
 $('handLabel').textContent=mode==='auto'?(k==='p'?'BOT A HAND':'BOT B HAND'):'YOUR HAND';$('handStatus').textContent=mode==='auto'?'BOT SPECTATOR':playable+' PLAYABLE';
 const can=mode==='human'&&!s.done&&s.active==='p',legal=can?legalActions(s,'p'):[];
