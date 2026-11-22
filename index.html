@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.23 — Adaptive Tactical Search</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.24 — Tactical Search Stability</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -811,8 +811,12 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption strong,.sequenceOption small{white-space:normal;overflow-wrap:anywhere}
 .sequenceOption .sequenceNote{max-width:100%;white-space:normal}
 .sequencePanel .sequenceHead span{font-variant-numeric:tabular-nums}
+
+/* v2.8.24: make early-terminal, unique-prefix forecasts explicit. */
+.sequenceOption .sequenceNote{overflow-wrap:anywhere}
+.sequenceOption:first-child{border-width:2px}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.23 · BONE WHITE / ADAPTIVE TACTICAL SEARCH</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.24 · BONE WHITE / TACTICAL SEARCH STABILITY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -921,13 +925,15 @@ function simulateSequenceAttack(s,k,origin){
  if(e.bf<=0||e.mf<=0||p.bf<=0||p.mf<=0)s.done=true;
  return t;
 }
-/* Bounded exhaustive search for up to five attack-ready cards (5! = 120). */
+/* Exact-source identity and prefix deduplication keep forecasts stable after
+   recycled units shift square indices. At most 120 leaf permutations. */
 const MAX_SEQUENCE_ORDERS=120;
 function compareSequences(s,k){
  if(s.done||s.active!==k||s.phase!==2)return[];
  const ready=legalActions(s,k).filter(a=>a.kind==='attack').map(a=>a.i);
- if(ready.length<2)return[];
- const depth=Math.min(5,ready.length),outcomes=[];let evaluated=0;
+ if(ready.length<1)return[];
+ const depth=Math.min(5,ready.length),outcomes=[],seen=new Set();
+ let evaluated=0;
  function evaluate(prefix){
   if(evaluated>=MAX_SEQUENCE_ORDERS)return;evaluated++;
   const snapshot={...s,p:{...s.p,units:s.p.units.map((u,i)=>({...u,origin:i})),bin:s.p.bin.slice()},e:{...s.e,units:s.e.units.map((u,i)=>({...u,origin:i})),bin:s.e.bin.slice()}};
@@ -939,9 +945,11 @@ function compareSequences(s,k){
    steps.push(step);if(t.kind==='direct')directDamage+=t.damage;if(t.attackerDestroyed)losses++;
    if(snapshot.done)break;
   }
-  if(steps.length<2)return;
+  if(!steps.length)return;
+  const order=steps.map(v=>v.slot),key=order.join(',');
+  if(seen.has(key))return;seen.add(key);
   const win=!!snapshot.done&&(snapshot[other(k)].bf<=0||snapshot[other(k)].mf<=0);
-  outcomes.push({first:prefix[0],order:steps.map(v=>v.slot),steps,directDamage,losses,opening,win,
+  outcomes.push({first:order[0],order,steps,directDamage,losses,opening,win,terminal:!!snapshot.done,
    score:(win?100000:0)+directDamage*100+steps.filter(v=>v.defenderDestroyed).length*20-losses*15});
  }
  function enumerate(prefix){
@@ -956,12 +964,12 @@ function compareSequences(s,k){
 function renderSequences(){
  const panel=$('sequencePanel'),options=$('sequenceOptions'),all=mode==='human'?compareSequences(state,'p'):[];
  panel.hidden=!all.length;const shown=all.slice(0,6);
- $('sequenceCount').textContent=shown.length+' shown / '+all.length+' forecasts · max '+MAX_SEQUENCE_ORDERS+' orders · only move 1 executes';
+ $('sequenceCount').textContent=shown.length+' shown / '+all.length+' unique forecasts · ≤'+MAX_SEQUENCE_ORDERS+' examined · only move 1 executes';
  options.replaceChildren(...shown.map((s,i)=>{
   const btn=document.createElement('button');btn.type='button';btn.className='sequenceOption'+(s.opening?' sequenceOpening':'');
   const head=document.createElement('strong');head.textContent=(i===0?'TOP FORECAST · ':'')+s.steps.map((x,j)=>(j+1)+'. '+x.name).join(' → ');
   const detail=document.createElement('small');detail.textContent=s.steps.map(x=>x.target+' ('+x.damage+')').join(' → ');
-  const note=document.createElement('span');note.className='sequenceNote';note.textContent=s.win?'PROJECTED FINISH':s.opening?'BLOCKER → DIRECT '+s.directDamage:s.directDamage?'DIRECT '+s.directDamage+' · LOSSES '+s.losses:'BLOCKED · LOSSES '+s.losses;
+  const note=document.createElement('span');note.className='sequenceNote';note.textContent=s.win?'PROJECTED FINISH · '+s.steps.length+' MOVE'+(s.steps.length===1?'':'S'):s.opening?'BLOCKER → DIRECT '+s.directDamage:s.directDamage?'DIRECT '+s.directDamage+' · LOSSES '+s.losses:'BLOCKED · LOSSES '+s.losses;
   btn.append(head,detail,note);
   btn.setAttribute('aria-label','Forecast '+head.textContent+'. '+detail.textContent+'. '+note.textContent+'. Execute only the first attack.');
   btn.addEventListener('pointerenter',()=>previewTarget(s.first));btn.addEventListener('pointerleave',clearPreview);
