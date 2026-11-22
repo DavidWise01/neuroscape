@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.22 — Tactical Sequence Depth</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.23 — Adaptive Tactical Search</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -806,15 +806,20 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption{max-width:none;min-width:0;min-height:76px}
 .sequenceOption:first-child{box-shadow:0 0 0 1px #fff9ed,0 0 14px #f98f2775}
 @media(max-width:650px){.sequenceOptions{grid-template-columns:repeat(2,minmax(0,1fr))}.sequenceOption{min-height:70px}}
+
+/* v2.8.23 bounded five-attack search retains compact cards. */
+.sequenceOption strong,.sequenceOption small{white-space:normal;overflow-wrap:anywhere}
+.sequenceOption .sequenceNote{max-width:100%;white-space:normal}
+.sequencePanel .sequenceHead span{font-variant-numeric:tabular-nums}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.22 · BONE WHITE / TACTICAL SEQUENCE DEPTH</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.23 · BONE WHITE / ADAPTIVE TACTICAL SEARCH</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
 <div class="divider"><span>⚔ COMBAT</span><span id="combatEnergy" class="combatEnergy" aria-hidden="true"></span><small id="combatFeed" aria-live="polite">Ready defender blocks first · otherwise direct BF / MF damage</small><span id="gameResult"></span></div>
 <div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Player RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="pInstalled">0</b></span><span>COMMITTED <b id="pCommitted">0</b></span><span>AVAILABLE <b id="pAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="pRamCommitted" class="ramCommitted"></i><i id="pRamAvailable" class="ramAvailable"></i></div><div id="pFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="pLanes"></div><svg id="pPathways" class="energyPathways" aria-hidden="true"></svg></div>
 </section>
-<section id="choicePanel" class="choicePanel" aria-label="Available attack comparison"><div class="choiceHeader"><strong>ATTACK COMPARISON</strong><span id="choiceCount">No attacks ready</span></div><div id="choiceOptions" class="choiceOptions"></div></section><section id="sequencePanel" class="sequencePanel" aria-label="Up to three attack sequence forecast"><div class="sequenceHead"><strong>SEQUENCE FORECAST · UP TO THREE ATTACKS</strong><span id="sequenceCount">Choose an opening</span></div><div id="sequenceOptions" class="sequenceOptions"></div></section><div id="decisionStatus" class="decisionStatus" aria-live="off">Hover an attack-ready card to assess its outcome</div><aside id="cardIntel" class="cardIntel" aria-label="Card tactical information"><strong id="intelName">CARD INTELLIGENCE</strong><span id="intelFacts">Hover or focus a card for cost, target, and tactical status.</span><span id="intelDecision">Tactical readout</span><div id="combatProjection" class="combatProjection" aria-live="off" hidden></div></aside><div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
+<section id="choicePanel" class="choicePanel" aria-label="Available attack comparison"><div class="choiceHeader"><strong>ATTACK COMPARISON</strong><span id="choiceCount">No attacks ready</span></div><div id="choiceOptions" class="choiceOptions"></div></section><section id="sequencePanel" class="sequencePanel" aria-label="Adaptive attack sequence forecast"><div class="sequenceHead"><strong>ADAPTIVE FORECAST · UP TO FIVE ATTACKS</strong><span id="sequenceCount">Choose an opening</span></div><div id="sequenceOptions" class="sequenceOptions"></div></section><div id="decisionStatus" class="decisionStatus" aria-live="off">Hover an attack-ready card to assess its outcome</div><aside id="cardIntel" class="cardIntel" aria-label="Card tactical information"><strong id="intelName">CARD INTELLIGENCE</strong><span id="intelFacts">Hover or focus a card for cost, target, and tactical status.</span><span id="intelDecision">Tactical readout</span><div id="combatProjection" class="combatProjection" aria-live="off" hidden></div></aside><div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
 <section class="hand-area"><div class="hand-heading"><strong id="handLabel">YOUR HAND</strong><span id="handStatus"></span></div><div id="hand" class="hand"></div></section>
 <div class="foot"><section class="info"><h2>HOW TO PLAY</h2><p id="message"></p></section><section class="info"><h2>EVENT LOG</h2><ol class="log" id="events"></ol></section></div>
 <p class="notice">Square-card practice rules: install RAM or draw, deploy within available RAM (up to five characters), attack once per ready character, then end your turn. This simplified trainer is not the complete official card game. Original catalog artwork is loaded from external source URLs.</p>
@@ -916,27 +921,33 @@ function simulateSequenceAttack(s,k,origin){
  if(e.bf<=0||e.mf<=0||p.bf<=0||p.mf<=0)s.done=true;
  return t;
 }
+/* Bounded exhaustive search for up to five attack-ready cards (5! = 120). */
+const MAX_SEQUENCE_ORDERS=120;
 function compareSequences(s,k){
  if(s.done||s.active!==k||s.phase!==2)return[];
  const ready=legalActions(s,k).filter(a=>a.kind==='attack').map(a=>a.i);
  if(ready.length<2)return[];
- const depth=Math.min(3,ready.length),outcomes=[];
- function enumerate(prefix){
-  if(prefix.length<depth){for(const slot of ready)if(!prefix.includes(slot))enumerate([...prefix,slot]);return;}
+ const depth=Math.min(5,ready.length),outcomes=[];let evaluated=0;
+ function evaluate(prefix){
+  if(evaluated>=MAX_SEQUENCE_ORDERS)return;evaluated++;
   const snapshot={...s,p:{...s.p,units:s.p.units.map((u,i)=>({...u,origin:i})),bin:s.p.bin.slice()},e:{...s.e,units:s.e.units.map((u,i)=>({...u,origin:i})),bin:s.e.bin.slice()}};
   const steps=[];let directDamage=0,losses=0,opening=false;
   for(const slot of prefix){
-   const t=simulateSequenceAttack(snapshot,k,slot);
-   if(!t)break;
-   steps.push({slot,name:t.attacker,kind:t.kind,target:t.defender||t.meter,damage:t.damage,defenderDestroyed:t.defenderDestroyed,attackerDestroyed:t.attackerDestroyed});
-   if(t.kind==='direct')directDamage+=t.damage;
-   if(t.attackerDestroyed)losses++;
-   if(t.kind==='direct'&&steps.slice(0,-1).some(v=>v.defenderDestroyed))opening=true;
+   const t=simulateSequenceAttack(snapshot,k,slot);if(!t)break;
+   const step={slot,name:t.attacker,kind:t.kind,target:t.defender||t.meter,damage:t.damage,defenderDestroyed:t.defenderDestroyed,attackerDestroyed:t.attackerDestroyed};
+   if(t.kind==='direct'&&steps.some(v=>v.defenderDestroyed))opening=true;
+   steps.push(step);if(t.kind==='direct')directDamage+=t.damage;if(t.attackerDestroyed)losses++;
    if(snapshot.done)break;
   }
   if(steps.length<2)return;
   const win=!!snapshot.done&&(snapshot[other(k)].bf<=0||snapshot[other(k)].mf<=0);
-  outcomes.push({first:prefix[0],order:prefix,steps,directDamage,losses,opening,win,score:(win?100000:0)+directDamage*100+steps.filter(v=>v.defenderDestroyed).length*20-losses*15});
+  outcomes.push({first:prefix[0],order:steps.map(v=>v.slot),steps,directDamage,losses,opening,win,
+   score:(win?100000:0)+directDamage*100+steps.filter(v=>v.defenderDestroyed).length*20-losses*15});
+ }
+ function enumerate(prefix){
+  if(evaluated>=MAX_SEQUENCE_ORDERS)return;
+  if(prefix.length===depth){evaluate(prefix);return;}
+  for(const slot of ready)if(!prefix.includes(slot)){enumerate([...prefix,slot]);if(evaluated>=MAX_SEQUENCE_ORDERS)break;}
  }
  enumerate([]);
  outcomes.sort((a,b)=>b.score-a.score||a.losses-b.losses||a.order.join(',').localeCompare(b.order.join(',')));
@@ -945,7 +956,7 @@ function compareSequences(s,k){
 function renderSequences(){
  const panel=$('sequencePanel'),options=$('sequenceOptions'),all=mode==='human'?compareSequences(state,'p'):[];
  panel.hidden=!all.length;const shown=all.slice(0,6);
- $('sequenceCount').textContent=shown.length+' shown / '+all.length+' orders · click executes only move 1';
+ $('sequenceCount').textContent=shown.length+' shown / '+all.length+' forecasts · max '+MAX_SEQUENCE_ORDERS+' orders · only move 1 executes';
  options.replaceChildren(...shown.map((s,i)=>{
   const btn=document.createElement('button');btn.type='button';btn.className='sequenceOption'+(s.opening?' sequenceOpening':'');
   const head=document.createElement('strong');head.textContent=(i===0?'TOP FORECAST · ':'')+s.steps.map((x,j)=>(j+1)+'. '+x.name).join(' → ');
