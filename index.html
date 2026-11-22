@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.29 — Learning Across Turns</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.30 — Counterfactual Turn Learning</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -839,8 +839,11 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 
 /* v2.8.29 observational time-series status; no modal interrupts */
 .learningStatus{border-bottom:1px solid #d7a5f0;padding-bottom:7px}
+
+/* v2.8.30: explicit hypothetical outcome provenance in the existing learning strip. */
+.learningStatus{border-left-color:#a34ee8}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.29 · BONE WHITE / LEARNING ACROSS TURNS</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.30 · BONE WHITE / COUNTERFACTUAL TURN LEARNING</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -885,6 +888,31 @@ function boardPosition(s=state){
 function positionValue(b){
  return 5*((b.pBF+b.pMF)-(b.eBF+b.eMF))+2*(b.pUnitHP-b.eUnitHP)+3*(b.pUnits-b.eUnits);
 }
+/* Model a *different first attack* from the same frozen pre-attack board.
+   This is a one-attack counterfactual: NOT a simulated opponent response. */
+function hypotheticalAttackBoard(before,t){
+ const out={...before};
+ if(t.kind==='blocked'){
+  out.pUnitHP-=Math.min(t.attackerHp,t.retaliation);
+  out.eUnitHP-=Math.min(t.defenderHp,t.damage);
+  if(t.attackerDestroyed)out.pUnits--;
+  if(t.defenderDestroyed)out.eUnits--;
+ }else if(t.meter==='MF')out.eMF-=t.damage;
+ else out.eBF-=t.damage;
+ return out;
+}
+function alternativeFirstAttack(k,chosen){
+ const options=legalActions(state,k).filter(a=>a.kind==='attack'&&a.i!==chosen);
+ if(!options.length)return null;
+ const choices=options.map(a=>{
+  const t=predictedTarget(state,k,a.i);
+  return {slot:a.i,card:state[k].units[a.i].n,target:t.defender||t.meter,
+   tacticalValue:attackOutcomeValue(t,tacticalPriority),
+   projected:freezeEvidence(hypotheticalAttackBoard(boardPosition(),t))};
+ });
+ choices.sort((a,b)=>b.tacticalValue-a.tacticalValue||a.slot-b.slot);
+ return choices[0];
+}
 function recordLongitudinalAttack(e){
  if(!e)return;
  const id=temporalEvidence.match+':'+(temporalEvidence.records.length?temporalEvidence.records.at(-1).serial+1:1);
@@ -892,6 +920,7 @@ function recordLongitudinalAttack(e){
   id,serial:temporalEvidence.records.length?temporalEvidence.records.at(-1).serial+1:1,
   match:temporalEvidence.match,bucket:e.bucket,priority:e.priority,card:e.card,
   turn:e.turn,predicted:structuredCloneSafe(e.predicted),
+  alternative:e.alternative?{slot:e.alternative.slot,card:e.alternative.card,target:e.alternative.target,tacticalValue:e.alternative.tacticalValue,projected:structuredCloneSafe(e.alternative.projected)}:null,
   before:structuredCloneSafe(e.boardBefore),afterAttack:now,
   immediateChange:positionValue(now)-positionValue(e.boardBefore),
   horizon:'next player turn or terminal'
@@ -905,10 +934,22 @@ function settleLongitudinal(horizon){
  const now=boardPosition(),score=positionValue(now);
  for(const record of temporalEvidence.records){
   if(record.match!==temporalEvidence.match||settled.has(record.id))continue;
+  const delayedChange=score-positionValue(record.afterAttack);
+  const alternative=record.alternative;
+  // Fixed-continuation baseline only: add exactly the SAME observed intervening
+  // board-value delta to the alternative. No opponent actions are simulated.
+  const comparison=alternative&&horizon==='next player turn'?{
+   alternativeCard:alternative.card,alternativeSlot:alternative.slot,alternativeTarget:alternative.target,
+   alternativeImmediate:positionValue(alternative.projected)-positionValue(record.before),
+   conditionalNextTurn:positionValue(alternative.projected)+delayedChange,
+   observedNextTurn:score,
+   conditionalGap:(positionValue(alternative.projected)+delayedChange)-score,
+   assumption:'same observed delayed board-value change; no alternate opponent response',
+   status:'modeled, not observed'
+  }:null;
   const result=freezeEvidence({id:record.id,match:record.match,bucket:record.bucket,priority:record.priority,card:record.card,
-   startTurn:record.turn,endTurn:state.turn,horizon,positionAfter:now,
-   immediateChange:record.immediateChange,delayedChange:score-positionValue(record.afterAttack),
-   totalChange:score-positionValue(record.before)});
+   startTurn:record.turn,endTurn:state.turn,horizon,positionAfter:now,comparison,
+   immediateChange:record.immediateChange,delayedChange,totalChange:score-positionValue(record.before)});
   temporalEvidence.settlements.push(result);
  }
  while(temporalEvidence.settlements.length>temporalEvidence.max)temporalEvidence.settlements.shift();
@@ -951,13 +992,13 @@ function captureAttackEvidence(k,i){
  if(k!=='p'||mode!=='human'||state.phase!==2)return null;
  const t=predictedTarget(state,k,i);if(!t)return null;
  const defender=state[other(k)].units[t.target];
- const boardBefore=boardPosition();
+ const boardBefore=boardPosition(),alternative=alternativeFirstAttack(k,i);
  const alternatives=legalActions(state,k).filter(a=>a.kind==='attack').map(a=>({slot:a.i,value:attackOutcomeValue(predictedTarget(state,k,a.i),tacticalPriority)}));
  const chosen=alternatives.find(a=>a.slot===i),best=Math.max(...alternatives.map(a=>a.value));
  return {bucket:evidenceBucket(state[k].units[i].n,tacticalPriority),priority:tacticalPriority,card:state[k].units[i].n,
   predicted:{kind:t.kind,attackerAfter:t.attackerAfter,defenderAfter:t.defenderAfter,meterAfter:t.meterAfter,
    targetCard:defender?defender.n:null},
-  before:{attacker:state[k].units[i],defender,meter:t.meter,enemyMeterBefore:t.meterHp},boardBefore,turn:state.turn,
+  before:{attacker:state[k].units[i],defender,meter:t.meter,enemyMeterBefore:t.meterHp},boardBefore,alternative,turn:state.turn,
   opportunity:{chosenValue:chosen.value,bestValue:best,alternatives:alternatives.length}};
 
 }
@@ -985,12 +1026,16 @@ function renderLearning(){
  const last=tacticalEvidence.observed[tacticalEvidence.observed.length-1];
  const settled=temporalEvidence.settlements.filter(x=>x.horizon==='next player turn');
  const pending=temporalEvidence.records.filter(x=>x.match===temporalEvidence.match&&!temporalEvidence.settlements.some(y=>y.id===x.id)).length;
+ const paired=temporalEvidence.settlements.filter(x=>x.comparison);
+ const lastPair=paired[paired.length-1];
  $('learningStatus').textContent='OUTCOME LEARNING · '+x.n+' attacks · '+x.matched+'/'+x.n+
   ' model checks · '+good+'/'+competitive.length+' best immediate choices · '+missed+' opportunity gaps'+
   (last&&last.competitive?' · LAST GAP '+last.regret:'')+
   ' · PRIORITY PICKS '+['win','preserve','damage'].map(k=>TACTICAL_WEIGHTS[k].label+' '+tacticalEvidence.choices[k]).join(' / ')+
   ' · NEXT TURN '+settled.length+' settled / '+pending+' pending'+
-  ' · delayed changes observational, not causal · session only';
+  ' · COUNTERFACTUAL '+paired.length+' fixed-continuation comparisons'+
+  (lastPair?' · LAST HYPOTHETICAL GAP '+(lastPair.comparison.conditionalGap>0?'+':'')+lastPair.comparison.conditionalGap:'')+
+  ' · alternative not observed; no opponent response modeled · session only';
 }
 
 const makePlayer=(main,deck)=>({main,bf:20,mf:20,ram:0,hand:deck.slice(0,5),deck:deck.slice(5),units:[],bin:[]});
