@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.26 — Adaptive Tactical Priorities</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.27 — Adaptive Tactical Learning</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -829,15 +829,19 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .priorityButton.selected,.priorityButton[aria-pressed="true"]{background:#f2dcff;border-color:#a43edf;color:#6a209c;box-shadow:0 0 11px #ab4de6a0}
 .priorityButton:hover,.priorityButton:focus-visible{outline:2px solid #fb841c;outline-offset:1px}
 @media(max-width:650px){.priorityButton{font-size:9px;padding:3px 5px}}
+
+/* v2.8.27: transparent, session-only observation counter; no gameplay automation. */
+.learningStatus{margin-top:7px;padding:5px 8px;border-top:1px solid #c592e7;color:#7946a3;font:800 10px/1.45 monospace;overflow-wrap:anywhere;background:#faf4ff}
+@media(max-width:650px){.learningStatus{font-size:9px;padding:4px}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.26 · BONE WHITE / ADAPTIVE TACTICAL PRIORITIES</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.27 · BONE WHITE / ADAPTIVE TACTICAL LEARNING</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
 <div class="divider"><span>⚔ COMBAT</span><span id="combatEnergy" class="combatEnergy" aria-hidden="true"></span><small id="combatFeed" aria-live="polite">Ready defender blocks first · otherwise direct BF / MF damage</small><span id="gameResult"></span></div>
 <div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Player RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="pInstalled">0</b></span><span>COMMITTED <b id="pCommitted">0</b></span><span>AVAILABLE <b id="pAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="pRamCommitted" class="ramCommitted"></i><i id="pRamAvailable" class="ramAvailable"></i></div><div id="pFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="pLanes"></div><svg id="pPathways" class="energyPathways" aria-hidden="true"></svg></div>
 </section>
-<section id="choicePanel" class="choicePanel" aria-label="Available attack comparison"><div class="choiceHeader"><strong>ATTACK COMPARISON</strong><span id="choiceCount">No attacks ready</span></div><div id="choiceOptions" class="choiceOptions"></div></section><section id="sequencePanel" class="sequencePanel" aria-label="Adaptive attack sequence forecast"><div class="sequenceHead"><strong>ADAPTIVE FORECAST · UP TO FIVE ATTACKS</strong><div class="priorityGroup" role="group" aria-label="Forecast ranking preference"><button type="button" id="priorityWin" class="priorityButton" aria-pressed="true">QUICK WIN</button><button type="button" id="priorityPreserve" class="priorityButton" aria-pressed="false">PRESERVE</button><button type="button" id="priorityDamage" class="priorityButton" aria-pressed="false">DIRECT DAMAGE</button></div><span id="sequenceCount">Choose an opening</span></div><div id="sequenceOptions" class="sequenceOptions"></div></section><div id="decisionStatus" class="decisionStatus" aria-live="off">Hover an attack-ready card to assess its outcome</div><aside id="cardIntel" class="cardIntel" aria-label="Card tactical information"><strong id="intelName">CARD INTELLIGENCE</strong><span id="intelFacts">Hover or focus a card for cost, target, and tactical status.</span><span id="intelDecision">Tactical readout</span><div id="combatProjection" class="combatProjection" aria-live="off" hidden></div></aside><div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
+<section id="choicePanel" class="choicePanel" aria-label="Available attack comparison"><div class="choiceHeader"><strong>ATTACK COMPARISON</strong><span id="choiceCount">No attacks ready</span></div><div id="choiceOptions" class="choiceOptions"></div></section><section id="sequencePanel" class="sequencePanel" aria-label="Adaptive attack sequence forecast"><div class="sequenceHead"><strong>ADAPTIVE FORECAST · UP TO FIVE ATTACKS</strong><div class="priorityGroup" role="group" aria-label="Forecast ranking preference"><button type="button" id="priorityWin" class="priorityButton" aria-pressed="true">QUICK WIN</button><button type="button" id="priorityPreserve" class="priorityButton" aria-pressed="false">PRESERVE</button><button type="button" id="priorityDamage" class="priorityButton" aria-pressed="false">DIRECT DAMAGE</button></div><span id="sequenceCount">Choose an opening</span></div><div id="sequenceOptions" class="sequenceOptions"></div><div id="learningStatus" class="learningStatus" aria-live="polite">LEARNING · No observed attacks yet · forecasts remain deterministic</div></section><div id="decisionStatus" class="decisionStatus" aria-live="off">Hover an attack-ready card to assess its outcome</div><aside id="cardIntel" class="cardIntel" aria-label="Card tactical information"><strong id="intelName">CARD INTELLIGENCE</strong><span id="intelFacts">Hover or focus a card for cost, target, and tactical status.</span><span id="intelDecision">Tactical readout</span><div id="combatProjection" class="combatProjection" aria-live="off" hidden></div></aside><div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
 <section class="hand-area"><div class="hand-heading"><strong id="handLabel">YOUR HAND</strong><span id="handStatus"></span></div><div id="hand" class="hand"></div></section>
 <div class="foot"><section class="info"><h2>HOW TO PLAY</h2><p id="message"></p></section><section class="info"><h2>EVENT LOG</h2><ol class="log" id="events"></ol></section></div>
 <p class="notice">Square-card practice rules: install RAM or draw, deploy within available RAM (up to five characters), attack once per ready character, then end your turn. This simplified trainer is not the complete official card game. Original catalog artwork is loaded from external source URLs.</p>
@@ -853,6 +857,43 @@ const deckB=[111,36,65,111,217,36,111,65,36,217,65,36];
 const PHASES=['RAM / DRAW','DEPLOY','COMBAT','END TURN'];
 let state,botTimer=null,mode='human',seed=0,lastImpact=null,targetPreview=null,impactSeq=0,lastRamFlow=null,flowSeq=0;
 let tacticalPriority='win'; // UI-only preference, never changes combat
+/* Session-only, bounded, observation-led learning. No network or persistence. */
+const tacticalEvidence={choices:{win:0,preserve:0,damage:0},observed:[],max:48};
+let pendingAttackEvidence=null;
+function evidenceBucket(n,priority){return priority+'|'+n}
+function observedAccuracy(){const x=tacticalEvidence.observed;return {n:x.length,matched:x.filter(v=>v.matched).length}}
+function learnedBonus(n,priority){
+ const x=tacticalEvidence.observed.filter(v=>v.bucket===evidenceBucket(n,priority));
+ if(x.length<3)return 0;
+ // Small confidence tie-break from directly observed prediction accuracy (0..12).
+ return Math.round(12*x.filter(v=>v.matched).length/x.length);
+}
+function captureAttackEvidence(k,i){
+ if(k!=='p'||mode!=='human'||state.phase!==2)return null;
+ const t=predictedTarget(state,k,i);if(!t)return null;
+ const defender=state[other(k)].units[t.target];
+ return {bucket:evidenceBucket(state[k].units[i].n,tacticalPriority),priority:tacticalPriority,card:state[k].units[i].n,
+  predicted:{kind:t.kind,attackerAfter:t.attackerAfter,defenderAfter:t.defenderAfter,meterAfter:t.meterAfter,
+   targetCard:defender?defender.n:null},
+  before:{attacker:state[k].units[i],defender,meter:t.meter},turn:state.turn};
+}
+function commitAttackEvidence(e){
+ if(!e)return;
+ const p=e.before.attacker,d=e.before.defender;
+ const actual={kind:lastImpact.kind,attackerAfter:p.hp,defenderAfter:d?d.hp:null,
+  meterAfter:e.before.meter?state.e[e.before.meter==='MF'?'mf':'bf']:null,targetCard:d?d.n:null};
+ const matched=Object.keys(e.predicted).every(key=>e.predicted[key]===actual[key]);
+ tacticalEvidence.observed.push({bucket:e.bucket,priority:e.priority,card:e.card,turn:e.turn,matched,
+  predicted:{...e.predicted},actual});
+ if(tacticalEvidence.observed.length>tacticalEvidence.max)tacticalEvidence.observed.shift();
+}
+function renderLearning(){
+ const x=observedAccuracy();
+ $('learningStatus').textContent='LEARNING · '+x.n+' observed attack'+(x.n===1?'':'s')+' · '+x.matched+'/'+x.n+
+  ' forecasts matched · PRIORITY PICKS '+['win','preserve','damage'].map(k=>TACTICAL_WEIGHTS[k].label+' '+tacticalEvidence.choices[k]).join(' / ')+
+  ' · session only';
+}
+
 const makePlayer=(main,deck)=>({main,bf:20,mf:20,ram:0,hand:deck.slice(0,5),deck:deck.slice(5),units:[],bin:[]});
 const committed=p=>p.units.reduce((a,u)=>a+cost(card(u.n)),0);
 const free=p=>p.ram-committed(p);
@@ -871,6 +912,7 @@ if(kind==='ram'){p.ram++;state.actions--;lastRamFlow={seq:++flowSeq,events:[{sid
 else if(kind==='draw'){let n=p.deck.shift();p.hand.push(n);state.actions--;log((k==='p'?'You':'Bot')+' drew a card.')}
 else if(kind==='deploy'){let before=free(p),n=p.hand.splice(i,1)[0],c=card(n);p.units.push({n,hp:c.d,used:false});lastRamFlow={seq:++flowSeq,events:[{side:k,type:'commit',amount:before-free(p),name:c.n,slot:p.units.length-1}]};log((k==='p'?'You':'Bot')+' deployed '+c.n+'.')}
 else if(kind==='attack'){
+const attackEvidence=captureAttackEvidence(k,i);
 let u=p.units[i],c=card(u.n),block=e.units.find(v=>!v.used);lastImpact={from:k,to:other(k),source:i,attacker:c.n,defender:block?card(block.n).n:null,damage:c.a,retaliation:block?card(block.n).a:0,meter:block?null:(c.hit==='MAINFRAME'?'MF':'BF'),kind:block?'blocked':'direct',target:block?e.units.indexOf(block):-1,seq:++impactSeq};u.used=true;
 if(block){let defender=card(block.n);block.hp-=c.a;u.hp-=defender.a;log(c.n+' attacks '+defender.n+' ('+c.a+' / '+defender.a+').')}
 else{let meter=c.hit==='MAINFRAME'?'mf':'bf';e[meter]-=c.a;log(c.n+' hits '+(meter==='mf'?'mainframe':'bioframe')+' for '+c.a+'.')}
@@ -882,6 +924,7 @@ if(removed.length)lastImpact.recycle.push({side,count:removed.length,freed:free(
 if(lastImpact.destroyed.length){
 lastRamFlow={seq:++flowSeq,events:lastImpact.recycle.map(x=>({side:x.side,type:'release',amount:x.freed,name:lastImpact.destroyed.filter(y=>y.side===x.side).map(y=>y.name).join(' + '),slots:lastImpact.destroyed.filter(y=>y.side===x.side&&y.ram>0).map(y=>({slot:y.slot,amount:y.ram}))}))};
 log('RECYCLED: '+lastImpact.destroyed.map(x=>x.name).join(' + ')+'. RAM returned: '+lastImpact.recycle.map(x=>(x.side==='p'?'PLAYER':'BOT')+' +'+x.freed).join(' / ')+'.');}
+commitAttackEvidence(attackEvidence);
 if(e.bf<=0||e.mf<=0||p.bf<=0||p.mf<=0){state.done=true;state.winner=e.bf<=0||e.mf<=0?k:other(k);log((state.winner==='p'?'Player':'Bot')+' wins.')}
 }
 else if(kind==='next'){
@@ -955,7 +998,7 @@ function sequenceScore(s,priority=tacticalPriority){
 }
 function setTacticalPriority(next){
  if(!TACTICAL_WEIGHTS[next]||next===tacticalPriority)return;
- tacticalPriority=next;renderSequences();
+ tacticalPriority=next;tacticalEvidence.choices[next]++;renderSequences();
 }
 function compareSequences(s,k){
  if(s.done||s.active!==k||s.phase!==2)return[];
@@ -987,7 +1030,7 @@ function compareSequences(s,k){
   for(const slot of ready)if(!prefix.includes(slot)){enumerate([...prefix,slot]);if(evaluated>=MAX_SEQUENCE_ORDERS)break;}
  }
  enumerate([]);
- outcomes.forEach(o=>{o.score=sequenceScore(o)});
+ outcomes.forEach(o=>{o.baseScore=sequenceScore(o);o.learnedAdjustment=learnedBonus(s[k].units[o.first].n,tacticalPriority);o.score=o.baseScore+o.learnedAdjustment});
  outcomes.sort((a,b)=>b.score-a.score||a.losses-b.losses||a.order.join(',').localeCompare(b.order.join(',')));
  return outcomes;
 }
@@ -1010,6 +1053,7 @@ function renderSequences(){
   const el=$(id);el.setAttribute('aria-pressed',String(key===tacticalPriority));
   el.classList.toggle('selected',key===tacticalPriority);
  }
+ renderLearning();
  const panel=$('sequencePanel'),options=$('sequenceOptions'),all=mode==='human'?compareSequences(state,'p'):[];
  panel.hidden=!all.length;const shown=all.slice(0,6);
  $('sequenceCount').textContent=TACTICAL_WEIGHTS[tacticalPriority].label+' · '+shown.length+' shown / '+all.length+' unique forecasts · only move 1 executes';
@@ -1020,7 +1064,7 @@ function renderSequences(){
   const note=document.createElement('span');note.className='sequenceNote';note.textContent=s.win?'PROJECTED FINISH · '+s.steps.length+' MOVE'+(s.steps.length===1?'':'S'):s.opening?'BLOCKER → DIRECT '+s.directDamage:s.directDamage?'DIRECT '+s.directDamage+' · LOSSES '+s.losses:'BLOCKED · LOSSES '+s.losses;
   const why=explainSequence(s);
   const explanation=document.createElement('small');explanation.className='sequenceWhy';
-  explanation.textContent='WHY #'+(i+1)+' · '+why.reason+' · SCORE '+why.score;
+  explanation.textContent='WHY #'+(i+1)+' · '+why.reason+' · BASE '+why.score+(s.learnedAdjustment?' · OBSERVED +'+s.learnedAdjustment:'')+' · RANK '+s.score;
   const math=document.createElement('small');math.className='sequenceScore';
   math.textContent=why.parts.join('  |  ');
   btn.append(head,detail,note,explanation,math);
