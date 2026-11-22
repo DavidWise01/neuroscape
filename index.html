@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.32 — Opponent Strategy Diversity</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.33 — Robust Tactical Scoring</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -848,8 +848,12 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 
 /* v2.8.32: concise multiple-policy response uncertainty indicators */
 .learningStatus{border-left:3px solid #ad46ef;box-shadow:inset 0 0 8px #ac55ed2b}
+
+/* v2.8.33 phase 33/12: robust score remains within existing forecast panel. */
+.sequenceOption:first-child{box-shadow:0 0 13px #ed8b3b55,0 0 15px #9d54ef50}
+.sequenceOption .sequenceScore{overflow-wrap:anywhere}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.32 · BONE WHITE / OPPONENT STRATEGY DIVERSITY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.33 · BONE WHITE / ROBUST TACTICAL SCORING</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1220,6 +1224,42 @@ function setTacticalPriority(next){
  if(!TACTICAL_WEIGHTS[next]||next===tacticalPriority)return;
  tacticalPriority=next;tacticalEvidence.choices[next]++;renderSequences();
 }
+/* Phase 33/12: exact ordered-plan simulation under each of three modeled bot
+   combat policies. Primary ranking is worst-case board score, then heuristic,
+   then deterministic slot order. Models never change the real match. */
+function robustSequenceEvaluation(s,k,order){
+ if(k!=='p'||!order.length)return null;
+ const scores=[],responses=[];
+ for(const policy of RESPONSE_POLICIES){
+  const sim={...s,p:{...s.p,units:s.p.units.map((u,i)=>({...u,origin:i})),bin:s.p.bin.slice()},
+   e:{...s.e,units:s.e.units.map((u,i)=>({...u,origin:i})),bin:s.e.bin.slice()}};
+  let completed=0;
+  for(const source of order){
+   if(sim.done)break;
+   const t=simulateSequenceAttack(sim,'p',source);if(!t)break;
+   completed++;
+  }
+  if(!completed)return null;
+  const afterPlan=boardPosition(sim);
+  const attacks=[];
+  if(!sim.done){
+   for(const q of [sim.p,sim.e])q.units.forEach(u=>{u.hp=card(u.n).d});
+   sim.active='e';sim.phase=2;sim.e.units.forEach(u=>{u.used=false});
+   while(!sim.done&&attacks.length<5){
+    const candidates=sim.e.units.map((u,i)=>({u,i})).filter(x=>!x.u.used&&card(x.u.n).a>0);
+    if(!candidates.length)break;
+    const attacker=selectResponseAttacker(candidates,policy),t=simulateSequenceAttack(sim,'e',attacker.u.origin);
+    if(!t)break;
+    attacks.push({source:attacker.u.origin,card:t.attacker,kind:t.kind,damage:t.damage});
+   }
+  }
+  const score=positionValue(boardPosition(sim));
+  scores.push(score);
+  responses.push({policy,score,opponentAttacks:attacks.length,playerMoves:completed,afterPlan});
+ }
+ const worst=Math.min(...scores),best=Math.max(...scores);
+ return {worst,best,spread:best-worst,policies:responses,agrees:scores.every(v=>v===scores[0])};
+}
 function compareSequences(s,k){
  if(s.done||s.active!==k||s.phase!==2)return[];
  const ready=legalActions(s,k).filter(a=>a.kind==='attack').map(a=>a.i);
@@ -1257,8 +1297,10 @@ function compareSequences(s,k){
   o.temporalBonus=temporalLearningBonus(s[k].units[o.first].n,tacticalPriority);
   o.learnedAdjustment=o.accuracyBonus+o.outcomeBonus+o.temporalBonus;
   o.score=o.baseScore+o.learnedAdjustment;
+  o.robust=robustSequenceEvaluation(s,k,o.order);
  });
- outcomes.sort((a,b)=>b.score-a.score||a.losses-b.losses||a.order.join(',').localeCompare(b.order.join(',')));
+ outcomes.sort((a,b)=>(b.robust?.worst??-Infinity)-(a.robust?.worst??-Infinity)||
+  b.score-a.score||a.losses-b.losses||a.order.join(',').localeCompare(b.order.join(',')));
  return outcomes;
 }
 /* Exact breakdown of the planner's fixed ranking heuristic, not an AI verdict. */
@@ -1283,20 +1325,20 @@ function renderSequences(){
  renderLearning();
  const panel=$('sequencePanel'),options=$('sequenceOptions'),all=mode==='human'?compareSequences(state,'p'):[];
  panel.hidden=!all.length;const shown=all.slice(0,6);
- $('sequenceCount').textContent=TACTICAL_WEIGHTS[tacticalPriority].label+' · '+shown.length+' shown / '+all.length+' unique forecasts · only move 1 executes';
+ $('sequenceCount').textContent=TACTICAL_WEIGHTS[tacticalPriority].label+' · WORST-CASE FIRST · '+shown.length+' / '+all.length+' forecasts · '+RESPONSE_POLICIES.length+' policies · only move 1 executes';
  options.replaceChildren(...shown.map((s,i)=>{
   const btn=document.createElement('button');btn.type='button';btn.className='sequenceOption'+(s.opening?' sequenceOpening':'');
-  const head=document.createElement('strong');head.textContent=(i===0?'TOP FORECAST · ':'')+s.steps.map((x,j)=>(j+1)+'. '+x.name).join(' → ');
+  const head=document.createElement('strong');head.textContent=(i===0?'ROBUST BEST · ':'')+s.steps.map((x,j)=>(j+1)+'. '+x.name).join(' → ');
   const detail=document.createElement('small');detail.textContent=s.steps.map(x=>x.target+' ('+x.damage+')').join(' → ');
   const note=document.createElement('span');note.className='sequenceNote';note.textContent=s.win?'PROJECTED FINISH · '+s.steps.length+' MOVE'+(s.steps.length===1?'':'S'):s.opening?'BLOCKER → DIRECT '+s.directDamage:s.directDamage?'DIRECT '+s.directDamage+' · LOSSES '+s.losses:'BLOCKED · LOSSES '+s.losses;
   const why=explainSequence(s);
   const explanation=document.createElement('small');explanation.className='sequenceWhy';
-  explanation.textContent='WHY #'+(i+1)+' · '+why.reason+' · BASE '+why.score+
+  explanation.textContent='WHY #'+(i+1)+' · '+why.reason+' · WORST '+s.robust.worst+' / BEST '+s.robust.best+' · BASE '+why.score+
    (s.accuracyBonus?' · ACCURACY +'+s.accuracyBonus:'')+
    (s.outcomeBonus?' · OUTCOME '+(s.outcomeBonus>0?'+':'')+s.outcomeBonus:'')+
    (s.temporalBonus?' · NEXT-TURN '+(s.temporalBonus>0?'+':'')+s.temporalBonus:'')+' · RANK '+s.score;
   const math=document.createElement('small');math.className='sequenceScore';
-  math.textContent=why.parts.join('  |  ');
+  math.textContent='RESPONSE '+s.robust.policies.map(x=>x.policy.toUpperCase()+' '+x.score).join(' / ')+' · '+why.parts.join('  |  ');
   btn.append(head,detail,note,explanation,math);
   btn.setAttribute('aria-label','Forecast '+head.textContent+'. '+detail.textContent+'. '+note.textContent+'. '+explanation.textContent+'. '+math.textContent+'. Execute only the first attack.');
   btn.addEventListener('pointerenter',()=>previewTarget(s.first));btn.addEventListener('pointerleave',clearPreview);
