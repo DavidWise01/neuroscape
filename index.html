@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.33 — Robust Tactical Scoring</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.34 — Deterministic Best Legal Action</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -852,15 +852,23 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 /* v2.8.33 phase 33/12: robust score remains within existing forecast panel. */
 .sequenceOption:first-child{box-shadow:0 0 13px #ed8b3b55,0 0 15px #9d54ef50}
 .sequenceOption .sequenceScore{overflow-wrap:anywhere}
+
+/* Phase 33, turn 2: single authoritative proposal; existing manual controls stay usable. */
+.bestActionPanel{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:7px 0;padding:9px 11px;border:2px solid #9d47ef;background:#fffaf3;color:#7229a2;box-shadow:0 0 15px #a34fe957,0 0 8px #ff8f3160;border-radius:8px}
+.bestActionPanel[hidden]{display:none}
+.bestActionPanel strong{font:900 11px/1.45 monospace;flex:1;min-width:150px}
+.bestActionButton{cursor:pointer;padding:7px 10px;border:1px solid #dc741d;border-radius:5px;background:#f28023;color:#fff;font:900 11px/1.2 monospace;box-shadow:0 0 10px #f68c39a9}
+.bestActionButton:focus-visible{outline:2px solid #8c3bd5;outline-offset:2px}
+.bestActionButton:disabled{opacity:.5;cursor:default}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.33 · BONE WHITE / ROBUST TACTICAL SCORING</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.34 · BONE WHITE / BEST LEGAL ACTION</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
 <div class="divider"><span>⚔ COMBAT</span><span id="combatEnergy" class="combatEnergy" aria-hidden="true"></span><small id="combatFeed" aria-live="polite">Ready defender blocks first · otherwise direct BF / MF damage</small><span id="gameResult"></span></div>
 <div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Player RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="pInstalled">0</b></span><span>COMMITTED <b id="pCommitted">0</b></span><span>AVAILABLE <b id="pAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="pRamCommitted" class="ramCommitted"></i><i id="pRamAvailable" class="ramAvailable"></i></div><div id="pFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="pLanes"></div><svg id="pPathways" class="energyPathways" aria-hidden="true"></svg></div>
 </section>
-<section id="choicePanel" class="choicePanel" aria-label="Available attack comparison"><div class="choiceHeader"><strong>ATTACK COMPARISON</strong><span id="choiceCount">No attacks ready</span></div><div id="choiceOptions" class="choiceOptions"></div></section><section id="sequencePanel" class="sequencePanel" aria-label="Adaptive attack sequence forecast"><div class="sequenceHead"><strong>ADAPTIVE FORECAST · UP TO FIVE ATTACKS</strong><div class="priorityGroup" role="group" aria-label="Forecast ranking preference"><button type="button" id="priorityWin" class="priorityButton" aria-pressed="true">QUICK WIN</button><button type="button" id="priorityPreserve" class="priorityButton" aria-pressed="false">PRESERVE</button><button type="button" id="priorityDamage" class="priorityButton" aria-pressed="false">DIRECT DAMAGE</button></div><span id="sequenceCount">Choose an opening</span></div><div id="sequenceOptions" class="sequenceOptions"></div><div id="learningStatus" class="learningStatus" aria-live="polite">LEARNING · No observed attacks yet · forecasts remain deterministic</div></section><div id="decisionStatus" class="decisionStatus" aria-live="off">Hover an attack-ready card to assess its outcome</div><aside id="cardIntel" class="cardIntel" aria-label="Card tactical information"><strong id="intelName">CARD INTELLIGENCE</strong><span id="intelFacts">Hover or focus a card for cost, target, and tactical status.</span><span id="intelDecision">Tactical readout</span><div id="combatProjection" class="combatProjection" aria-live="off" hidden></div></aside><div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
+<section id="choicePanel" class="choicePanel" aria-label="Available attack comparison"><div class="choiceHeader"><strong>ATTACK COMPARISON</strong><span id="choiceCount">No attacks ready</span></div><div id="choiceOptions" class="choiceOptions"></div></section><section id="sequencePanel" class="sequencePanel" aria-label="Adaptive attack sequence forecast"><div class="sequenceHead"><strong>ADAPTIVE FORECAST · UP TO FIVE ATTACKS</strong><div class="priorityGroup" role="group" aria-label="Forecast ranking preference"><button type="button" id="priorityWin" class="priorityButton" aria-pressed="true">QUICK WIN</button><button type="button" id="priorityPreserve" class="priorityButton" aria-pressed="false">PRESERVE</button><button type="button" id="priorityDamage" class="priorityButton" aria-pressed="false">DIRECT DAMAGE</button></div><span id="sequenceCount">Choose an opening</span></div><div id="bestActionPanel" class="bestActionPanel" aria-live="polite"><strong id="bestActionText">AUTHORITATIVE ACTION · evaluating</strong><button type="button" id="bestActionButton" class="bestActionButton" disabled>EXECUTE FIRST MOVE</button></div><div id="sequenceOptions" class="sequenceOptions"></div><div id="learningStatus" class="learningStatus" aria-live="polite">LEARNING · No observed attacks yet · forecasts remain deterministic</div></section><div id="decisionStatus" class="decisionStatus" aria-live="off">Hover an attack-ready card to assess its outcome</div><aside id="cardIntel" class="cardIntel" aria-label="Card tactical information"><strong id="intelName">CARD INTELLIGENCE</strong><span id="intelFacts">Hover or focus a card for cost, target, and tactical status.</span><span id="intelDecision">Tactical readout</span><div id="combatProjection" class="combatProjection" aria-live="off" hidden></div></aside><div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
 <section class="hand-area"><div class="hand-heading"><strong id="handLabel">YOUR HAND</strong><span id="handStatus"></span></div><div id="hand" class="hand"></div></section>
 <div class="foot"><section class="info"><h2>HOW TO PLAY</h2><p id="message"></p></section><section class="info"><h2>EVENT LOG</h2><ol class="log" id="events"></ol></section></div>
 <p class="notice">Square-card practice rules: install RAM or draw, deploy within available RAM (up to five characters), attack once per ready character, then end your turn. This simplified trainer is not the complete official card game. Original catalog artwork is loaded from external source URLs.</p>
@@ -1300,8 +1308,49 @@ function compareSequences(s,k){
   o.robust=robustSequenceEvaluation(s,k,o.order);
  });
  outcomes.sort((a,b)=>(b.robust?.worst??-Infinity)-(a.robust?.worst??-Infinity)||
-  b.score-a.score||a.losses-b.losses||a.order.join(',').localeCompare(b.order.join(',')));
+  b.score-a.score||a.losses-b.losses||a.order[0]-b.order[0]||a.order.join(',').localeCompare(b.order.join(',')));
  return outcomes;
+}
+/* Phase 33 turn 2: one legal action per board state.
+   Ranking is explicit and stable; only the player activates the proposal. */
+function bestLegalAction(s,k,forecast=null){
+ const actions=legalActions(s,k);
+ if(!actions.length)return null;
+ const find=(kind)=>actions.find(a=>a.kind===kind);
+ if(s.phase===2){
+  const plans=forecast||compareSequences(s,k);
+  const first=plans[0];
+  const proposed=first&&actions.find(a=>a.kind==='attack'&&a.i===first.first);
+  if(proposed)return {kind:'attack',i:proposed.i,reason:'ROBUST WORST '+first.robust.worst+' · PLAN '+first.order.map(i=>i+1).join('→'),
+   plan:first.order.slice(),worst:first.robust.worst,score:first.score};
+  return {...find('next'),reason:'NO LEGAL ATTACK · ADVANCE'};
+ }
+ if(s.phase===0){
+  const action=(s[k].ram<5&&find('ram'))||find('draw')||find('ram')||find('next');
+  return action?{...action,reason:'RESOURCE PHASE · '+action.kind.toUpperCase()}:null;
+ }
+ if(s.phase===1){
+  const deployments=actions.filter(a=>a.kind==='deploy').sort((a,b)=>{
+   const x=card(s[k].hand[a.i]),y=card(s[k].hand[b.i]);
+   return (y.a*2+y.d)-(x.a*2+x.d)||cost(x)-cost(y)||a.i-b.i;
+  });
+  const action=deployments[0]||find('next');
+  return action?{...action,reason:action.kind==='deploy'?'BEST AVAILABLE DEPLOYMENT · HAND '+(action.i+1):'NO LEGAL DEPLOYMENT · ADVANCE'}:null;
+ }
+ const action=find('next');return action?{...action,reason:'COMPLETE TURN · ADVANCE'}:null;
+}
+function renderBestAction(all){
+ const panel=$('bestActionPanel'),button=$('bestActionButton'),label=$('bestActionText');
+ const active=mode==='human'&&!state.done&&state.active==='p';
+ const choice=active?bestLegalAction(state,'p',all):null;
+ panel.hidden=!active||!choice;
+ if(!choice){button.disabled=true;button.onclick=null;return;}
+ const desc=choice.kind==='attack'?'ATTACK SQUARE '+(choice.i+1):
+  choice.kind==='deploy'?'DEPLOY HAND '+(choice.i+1):choice.kind.toUpperCase();
+ label.textContent='ONE BEST ACTION · '+desc+' · '+choice.reason;
+ button.textContent='EXECUTE '+desc;
+ button.disabled=false;
+ button.onclick=()=>{if(legalActions(state,'p').some(a=>a.kind===choice.kind&&(a.i??null)===(choice.i??null)))act('p',choice.kind,choice.i??null)};
 }
 /* Exact breakdown of the planner's fixed ranking heuristic, not an AI verdict. */
 function explainSequence(s,priority=tacticalPriority){
@@ -1324,11 +1373,11 @@ function renderSequences(){
  }
  renderLearning();
  const panel=$('sequencePanel'),options=$('sequenceOptions'),all=mode==='human'?compareSequences(state,'p'):[];
- panel.hidden=!all.length;const shown=all.slice(0,6);
- $('sequenceCount').textContent=TACTICAL_WEIGHTS[tacticalPriority].label+' · WORST-CASE FIRST · '+shown.length+' / '+all.length+' forecasts · '+RESPONSE_POLICIES.length+' policies · only move 1 executes';
+ panel.hidden=!all.length;renderBestAction(all);const shown=all.slice(0,6);
+ $('sequenceCount').textContent=TACTICAL_WEIGHTS[tacticalPriority].label+' · ONE AUTHORITATIVE ACTION · '+shown.length+' / '+all.length+' analysis paths · '+RESPONSE_POLICIES.length+' policies';
  options.replaceChildren(...shown.map((s,i)=>{
   const btn=document.createElement('button');btn.type='button';btn.className='sequenceOption'+(s.opening?' sequenceOpening':'');
-  const head=document.createElement('strong');head.textContent=(i===0?'ROBUST BEST · ':'')+s.steps.map((x,j)=>(j+1)+'. '+x.name).join(' → ');
+  const head=document.createElement('strong');head.textContent=(i===0?'ONE BEST PLAN · ':'')+s.steps.map((x,j)=>(j+1)+'. '+x.name).join(' → ');
   const detail=document.createElement('small');detail.textContent=s.steps.map(x=>x.target+' ('+x.damage+')').join(' → ');
   const note=document.createElement('span');note.className='sequenceNote';note.textContent=s.win?'PROJECTED FINISH · '+s.steps.length+' MOVE'+(s.steps.length===1?'':'S'):s.opening?'BLOCKER → DIRECT '+s.directDamage:s.directDamage?'DIRECT '+s.directDamage+' · LOSSES '+s.losses:'BLOCKED · LOSSES '+s.losses;
   const why=explainSequence(s);
