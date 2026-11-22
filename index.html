@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.41 — Stable Card Identity</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.42 — Deterministic Action Replay</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -889,7 +889,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
 @media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.41 · BONE WHITE / NEON IDENTITY LOCK</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.42 · BONE WHITE / NEON REPLAY LOCK</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1433,6 +1433,55 @@ function compareSequences(s,k){
  outcomes.sort(comparePrecedence);
  return outcomes;
 }
+/* Phase 33 turn 10: deterministic, read-only replay regression.
+   Uses synthetic cards selected from the existing catalog, not match state.
+   It verifies replay identity, compaction and rejection after destruction. */
+function deterministicReplaySuite(){
+ const cases=[],check=(name,pass)=>cases.push({name,pass:!!pass});
+ const candidates=CATALOG.cards.filter(c=>Number(c.a)>0&&Number(c.d)>0);
+ if(!candidates.length)return Object.freeze({passed:0,total:1,checks:[{name:'cards available',pass:false}]});
+ const n=Number(candidates[0].num),attack=card(n).a;
+ const unit=(uid,hp,origin)=>({uid,n,hp,origin,used:false});
+ const seed={
+  p:{bf:20,mf:20,units:[unit(101,100,0),unit(102,100,1),unit(103,100,2)],bin:[]},
+  e:{bf:20,mf:20,units:[unit(201,Math.max(1,attack),0)],bin:[]},
+  active:'p',phase:2,turn:1,actions:0,done:false
+ };
+ const frozen=JSON.stringify(seed);
+ const replay=()=>{
+  const s=cloneCombat(seed),events=[];
+  for(const uid of [101,102,103]){
+   const idx=resolveCardAction(s,'p','attack',0,uid);
+   if(idx===null)throw Error('missing attacker '+uid);
+   const origin=s.p.units[idx].origin;
+   const t=simulateSequenceAttack(s,'p',origin);
+   if(!t)throw Error('illegal replay attack '+uid);
+   events.push({uid,origin,target:t.kind,attacker:t.attacker,damage:t.damage});
+  }
+  return {events,board:boardPosition(s),uids:s.p.units.map(u=>u.uid),enemy:s.e.units.map(u=>u.uid)};
+ };
+ const first=replay(),second=replay();
+ check('identical replay trace',JSON.stringify(first.events)===JSON.stringify(second.events));
+ check('identical replay board',JSON.stringify(first.board)===JSON.stringify(second.board));
+ check('source state unchanged',JSON.stringify(seed)===frozen);
+ check('compacted slot keeps identity',(()=>{
+  const s=cloneCombat(seed);s.p.units.shift();
+  return resolveCardAction(s,'p','attack',2,103)===1;
+ })());
+ check('destroyed card cannot alias next slot',(()=>{
+  const s=cloneCombat(seed);s.p.units.shift();
+  return resolveCardAction(s,'p','attack',0,101)===null;
+ })());
+ check('duplicate attack is rejected',(()=>{
+  const s=cloneCombat(seed);simulateSequenceAttack(s,'p',0);
+  return simulateSequenceAttack(s,'p',0)===null;
+ })());
+ check('removed opponent opens direct lane',first.events[0].target==='blocked'&&first.events[1].target==='direct');
+ check('all distinct attackers preserved',first.events.map(x=>x.uid).join(',')==='101,102,103');
+ const passed=cases.filter(x=>x.pass).length;
+ return Object.freeze({passed,total:cases.length,checks:Object.freeze(cases)});
+}
+const replayVerification=deterministicReplaySuite();
 /* Phase 33 turn 2: one legal action per board state.
    Ranking is explicit and stable; only the player activates the proposal. */
 function bestLegalAction(s,k,forecast=null){
@@ -1499,7 +1548,7 @@ function routeAuthoritativeAction(proposal){
  routeEvidence.rejected++;routeEvidence.last='REJECT · ENGINE DECLINED';return false;
 }
 function renderRouteStatus(){
- $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected';
+ $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' '+(replayVerification.passed===replayVerification.total?'PASS':'FAIL');
 }
 function renderBestAction(all){
  const panel=$('bestActionPanel'),button=$('bestActionButton'),label=$('bestActionText');
