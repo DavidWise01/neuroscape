@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.38 — Minimax Response Resistance</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.39 — Repeated Loss Avoidance</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -873,8 +873,10 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption:first-child .sequenceWhy{color:#7531a4;font-weight:900}
 /* v2.8.38: worst-case response trace in existing planner cards. */
 .sequenceOption .sequenceScore{font-variant-numeric:tabular-nums}
+/* Phase 33 turn 7: learning stays bounded and subordinate to victory and survival. */
+.sequenceOption .sequenceWhy{overflow-wrap:anywhere}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.38 · BONE WHITE / MINIMAX RESPONSE RESISTANCE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.39 · BONE WHITE / REPEATED LOSS AVOIDANCE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1083,6 +1085,18 @@ function outcomeLearningBonus(n,priority){
  // Max +6 for repeatedly matching best immediate option; -12 for missed opportunities.
  return Math.max(-12,Math.min(6,Math.round(6-avg/10)));
 }
+/* Phase 33 turn 7: learned penalties require repeated matched, competitive,
+   observed card losses within the SAME priority, card, attack-kind and target.
+   This does not elevate a counterfactual to an observed fact. */
+const FAILURE_MIN_SAMPLES=3,FAILURE_MAX_PENALTY=30;
+function failureContext(priority,n,kind,target){return priority+'|'+n+'|'+kind+'|'+String(target??'none');}
+function repeatedFailurePenalty(n,priority,kind,target){
+ const key=failureContext(priority,n,kind,target);
+ const matches=tacticalEvidence.observed.filter(x=>x.matched&&x.competitive&&x.failureContext===key);
+ const failures=matches.filter(x=>x.lossFailure).length;
+ return {penalty:matches.length>=FAILURE_MIN_SAMPLES&&failures>=FAILURE_MIN_SAMPLES?
+  Math.min(FAILURE_MAX_PENALTY,6*failures):0,samples:matches.length,failures};
+}
 function captureAttackEvidence(k,i){
  if(k!=='p'||mode!=='human'||state.phase!==2)return null;
  const t=predictedTarget(state,k,i);if(!t)return null;
@@ -1108,11 +1122,15 @@ function commitAttackEvidence(e){
   meterAfter:actual.meterAfter,defenderDestroyed:!!d&&d.hp<=0,attackerDestroyed:p.hp<=0};
  const actualValue=attackOutcomeValue(actualForecast,e.priority);
  const regret=Math.max(0,e.opportunity.bestValue-actualValue);
- tacticalEvidence.observed.push({bucket:e.bucket,priority:e.priority,card:e.card,turn:e.turn,matched,
+ const competitive=e.opportunity.alternatives>=2;
+ const context=failureContext(e.priority,e.card,actual.kind,actual.targetCard??e.before.meter);
+ const lossFailure=matched&&competitive&&actualForecast.attackerDestroyed&&regret>0;
+ tacticalEvidence.observed.push(freezeEvidence({bucket:e.bucket,priority:e.priority,card:e.card,turn:e.turn,matched,
   predicted:{...e.predicted},actual,actualValue,
-  competitive:e.opportunity.alternatives>=2,regret,
+  failureContext:context,lossFailure,attackerDestroyed:actualForecast.attackerDestroyed,
+  competitive,regret,
   bestAlternativeValue:e.opportunity.bestValue,chosenForecastValue:e.opportunity.chosenValue,
-  alternatives:e.opportunity.alternatives});
+  alternatives:e.opportunity.alternatives}));
  if(tacticalEvidence.observed.length>tacticalEvidence.max)tacticalEvidence.observed.shift();
 }
 function renderLearning(){
@@ -1120,6 +1138,7 @@ function renderLearning(){
  const good=competitive.filter(e=>e.regret===0).length;
  const missed=competitive.length-good;
  const last=tacticalEvidence.observed[tacticalEvidence.observed.length-1];
+ const recordedFailures=tacticalEvidence.observed.filter(x=>x.lossFailure).length;
  const settled=temporalEvidence.settlements.filter(x=>x.horizon==='next player turn');
  const pending=temporalEvidence.records.filter(x=>x.match===temporalEvidence.match&&!temporalEvidence.settlements.some(y=>y.id===x.id)).length;
  const paired=temporalEvidence.settlements.filter(x=>x.comparison);
@@ -1128,7 +1147,7 @@ function renderLearning(){
   ' model checks · '+good+'/'+competitive.length+' best immediate choices · '+missed+' opportunity gaps'+
   (last&&last.competitive?' · LAST GAP '+last.regret:'')+
   ' · PRIORITY PICKS '+['win','preserve','damage'].map(k=>TACTICAL_WEIGHTS[k].label+' '+tacticalEvidence.choices[k]).join(' / ')+
-  ' · NEXT TURN '+settled.length+' settled / '+pending+' pending'+
+  ' · OBSERVED LOSS PATTERNS '+recordedFailures+' · NEXT TURN '+settled.length+' settled / '+pending+' pending'+
   ' · COUNTERFACTUAL '+paired.length+' fixed-continuation comparisons'+
   (lastPair&&lastPair.comparison.responseRange?' · RESPONSE RANGE '+lastPair.comparison.responseRange.minimum+
    '…'+lastPair.comparison.responseRange.maximum+
@@ -1362,7 +1381,11 @@ function compareSequences(s,k){
   o.accuracyBonus=learnedBonus(s[k].units[o.first].n,tacticalPriority);
   o.outcomeBonus=outcomeLearningBonus(s[k].units[o.first].n,tacticalPriority);
   o.temporalBonus=temporalLearningBonus(s[k].units[o.first].n,tacticalPriority);
-  o.learnedAdjustment=o.accuracyBonus+o.outcomeBonus+o.temporalBonus;
+  const opening=predictedTarget(s,k,o.first);
+  const targetId=opening.kind==='blocked'?s[other(k)].units[opening.target]?.n:opening.meter;
+  o.failureRisk=repeatedFailurePenalty(s[k].units[o.first].n,tacticalPriority,opening.kind,targetId);
+  o.failurePenalty=o.failureRisk.penalty;
+  o.learnedAdjustment=o.accuracyBonus+o.outcomeBonus+o.temporalBonus-o.failurePenalty;
   o.score=o.baseScore+o.learnedAdjustment;
   o.robust=robustSequenceEvaluation(s,k,o.order);
  });
@@ -1482,7 +1505,8 @@ function renderSequences(){
   explanation.textContent='WHY #'+(i+1)+' · '+precedenceLabel(s)+' · '+why.reason+' · MINIMAX '+s.robust.worst+' / MAX '+s.robust.best+' · BASE '+why.score+
    (s.accuracyBonus?' · ACCURACY +'+s.accuracyBonus:'')+
    (s.outcomeBonus?' · OUTCOME '+(s.outcomeBonus>0?'+':'')+s.outcomeBonus:'')+
-   (s.temporalBonus?' · NEXT-TURN '+(s.temporalBonus>0?'+':'')+s.temporalBonus:'')+' · RANK '+s.score;
+   (s.temporalBonus?' · NEXT-TURN '+(s.temporalBonus>0?'+':'')+s.temporalBonus:'')+
+   (s.failurePenalty?' · REPEATED LOSS −'+s.failurePenalty+' ('+s.failureRisk.failures+' observed)':'')+' · RANK '+s.score;
   const math=document.createElement('small');math.className='sequenceScore';
   math.textContent='ADVERSARY '+s.robust.adversary.nodes+'/'+MAX_RESPONSE_NODES+' NODES · WORST '+(s.robust.adversary.worstOrder.map(x=>x+1).join('→')||'PASS')+' · POLICIES '+s.robust.policies.map(x=>x.policy.toUpperCase()+' '+x.score).join(' / ')+' · '+why.parts.join('  |  ');
   btn.append(head,detail,note,explanation,math);
