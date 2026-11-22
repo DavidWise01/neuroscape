@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.49 — Opponent-Specific Tactical Memory</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.50 — Matchup-Aware Risk Assessment</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -889,7 +889,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
 @media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.49 · BONE WHITE / MATCHUP MEMORY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.50 · BONE WHITE / RISK AWARENESS</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1224,16 +1224,34 @@ function botExperienceScore(side,id,kind,experience=botMemory,defenderCardId=nul
 function predictedDefenderCardId(s,k,preview){
  return preview?.kind==='blocked'?s[other(k)].units[preview.target]?.n??null:null;
 }
+/* Phase 34 turn 6: one-step, observable risk ordering.
+   Direct lethal attacks have absolute precedence. Otherwise respect existing
+   attack-power priority, protect attackers, then use matchup history as tie break.
+   Preview is deterministic and read-only; no imagined match results are logged. */
+function botAttackRisk(preview){
+ if(!preview)return Object.freeze({immediateWin:false,ownLoss:true,retaliation:Infinity,defenderLost:false});
+ return Object.freeze({immediateWin:preview.kind==='direct'&&preview.meterAfter<=0,
+  ownLoss:!!preview.attackerDestroyed,retaliation:preview.kind==='blocked'?preview.retaliation:0,
+  defenderLost:!!preview.defenderDestroyed});
+}
+function compareBotAttacks(s,k,a,b,experience=botMemory){
+ const ca=card(s[k].units[a.i].n),cb=card(s[k].units[b.i].n);
+ const pa=predictedTarget(s,k,a.i),pb=predictedTarget(s,k,b.i);
+ const ra=botAttackRisk(pa),rb=botAttackRisk(pb);
+ const learnedA=botExperienceScore(k,ca.num,predictedMemoryContext(pa),experience,predictedDefenderCardId(s,k,pa));
+ const learnedB=botExperienceScore(k,cb.num,predictedMemoryContext(pb),experience,predictedDefenderCardId(s,k,pb));
+ return Number(rb.immediateWin)-Number(ra.immediateWin)||
+  cb.a-ca.a||
+  Number(ra.ownLoss)-Number(rb.ownLoss)||
+  Number(rb.defenderLost)-Number(ra.defenderLost)||
+  ra.retaliation-rb.retaliation||
+  learnedB-learnedA||
+  a.i-b.i;
+}
 function chooseBotAttack(s,k,actions,experience=botMemory){
  const attacks=actions.filter(x=>x.kind==='attack');
  if(!attacks.length)return actions.find(x=>x.kind==='next')||null;
- return attacks.slice().sort((a,b)=>{
-  const ca=card(s[k].units[a.i].n),cb=card(s[k].units[b.i].n);
-  const pa=predictedTarget(s,k,a.i),pb=predictedTarget(s,k,b.i);
-  return cb.a-ca.a||
-   botExperienceScore(k,cb.num,predictedMemoryContext(pb),experience,predictedDefenderCardId(s,k,pb))-botExperienceScore(k,ca.num,predictedMemoryContext(pa),experience,predictedDefenderCardId(s,k,pa))||
-   a.i-b.i;
- })[0];
+ return attacks.slice().sort((a,b)=>compareBotAttacks(s,k,a,b,experience))[0];
 }
 function botMemoryRegression(){
  const cases=[],check=(name,pass)=>cases.push(Object.freeze({name,pass:!!pass}));
@@ -1369,6 +1387,54 @@ function botMatchupRegression(){
  return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
 }
 const botMatchupChecks=botMatchupRegression();
+/* v2.8.50: synthetic combat states exercise same legalActions/preview paths
+   as live bots, including terminal wins and reciprocal card destruction. */
+function botRiskRegression(){
+ const checks=[],check=(name,pass)=>checks.push(Object.freeze({name,pass:!!pass}));
+ const cards=CATALOG.cards.filter(c=>c.a>0&&c.d>0);
+ const same=cards.find(c=>cards.some(d=>d.num!==c.num&&d.a===c.a));
+ const powerful=cards.find(c=>c.a>same.a);
+ const weak=cards.find(c=>c.a===same.a&&c.num!==same.num);
+ const blocker=cards.find(c=>c.a>=same.d);
+ if(!same||!weak||!powerful||!blocker)return Object.freeze({passed:0,total:1,checks:[{name:'combat fixtures exist',pass:false}]});
+ const unit=(c,hp=card(c.num).d,used=false)=>({n:Number(c.num),hp,used});
+ const base=(a,b,enemy=[])=>({p:{units:[unit(a),unit(b)],bf:20,mf:20},
+  e:{units:enemy,bf:20,mf:20},phase:2,active:'p',done:false});
+ const actions=s=>legalActions(s,'p');
+ const empty={p:[],e:[]};
+ const direct=base(same,weak),before=JSON.stringify(direct);
+ check('no blocker: attacks legal',actions(direct).filter(x=>x.kind==='attack').length===2);
+ check('same power retains deterministic index',chooseBotAttack(direct,'p',actions(direct),empty).i===0);
+ check('no-blocker retaliation zero',botAttackRisk(predictedTarget(direct,'p',0)).retaliation===0);
+ check('no-blocker risk never destroys attacker',!botAttackRisk(predictedTarget(direct,'p',0)).ownLoss);
+ check('read-only ranking preserves state',JSON.stringify(direct)===before);
+ const win=base(same,powerful);
+ win.e.bf=20;win.e.mf=20;
+ // Both attacks target the same meter unless the cards differ in hit type.
+ const strongest=cards.slice().sort((x,y)=>y.a-x.a)[0];
+ const weaker=cards.find(c=>c.a<strongest.a&&c.hit===strongest.hit);
+ if(weaker){
+  win.p.units=[unit(strongest),unit(weaker)];
+  if(strongest.hit==='MAINFRAME')win.e.mf=weaker.a+1;else win.e.bf=weaker.a+1;
+  check('lethal hit selected when available',chooseBotAttack(win,'p',actions(win),empty).i===0);
+ }else check('lethal test fixture available',false);
+ const lethal=base(same,weak);
+ lethal.e.bf=1;lethal.e.mf=1;
+ check('immediate lethal recognized',botAttackRisk(predictedTarget(lethal,'p',0)).immediateWin);
+ const foe=cards.find(c=>c.a>0),loss=base(same,weak,[unit(foe,100)]);
+ loss.p.units[0].hp=1;loss.p.units[1].hp=100;
+ const lp=predictedTarget(loss,'p',0),sp=predictedTarget(loss,'p',1);
+ check('risk predicts attacker destruction',lp.attackerDestroyed&&!sp.attackerDestroyed);
+ check('safe equal-power attacker preferred',chooseBotAttack(loss,'p',actions(loss),empty).i===1);
+ const memory={p:[{cardId:String(same.num),context:'BLOCKER',kind:'blocked',defenderCardId:String(foe.num),damage:100,attackerLost:false,defenderLost:true,turn:1},{cardId:String(same.num),context:'BLOCKER',kind:'blocked',defenderCardId:String(foe.num),damage:100,attackerLost:false,defenderLost:true,turn:2},{cardId:String(same.num),context:'BLOCKER',kind:'blocked',defenderCardId:String(foe.num),damage:100,attackerLost:false,defenderLost:true,turn:3}],e:[]};
+ check('learned success cannot override immediate own loss',chooseBotAttack(loss,'p',actions(loss),memory).i===1);
+ check('blocker predicted from actual ready defender',lp.kind==='blocked'&&sp.kind==='blocked');
+ check('no live experience consumed',JSON.stringify(botMemory)===JSON.stringify(botMemory));
+ const passed=checks.filter(x=>x.pass).length;
+ return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
+}
+const botRiskChecks=botRiskRegression();
+
 
 
 
@@ -1850,7 +1916,7 @@ function routeAuthoritativeAction(proposal){
  routeEvidence.rejected++;routeEvidence.last='REJECT · ENGINE DECLINED';return false;
 }
 function renderRouteStatus(){
- $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' '+(botMatchupChecks.passed===botMatchupChecks.total?'PASS':'FAIL');
+ $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' · RISK '+botRiskChecks.passed+'/'+botRiskChecks.total+' '+(botRiskChecks.passed===botRiskChecks.total?'PASS':'FAIL');
 }
 function renderBestAction(all){
  const panel=$('bestActionPanel'),button=$('bestActionButton'),label=$('bestActionText');
