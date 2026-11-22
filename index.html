@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.42 — Deterministic Action Replay</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.43 — Interrupted Action Replay</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -889,7 +889,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
 @media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.42 · BONE WHITE / NEON REPLAY LOCK</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.43 · BONE WHITE / INTERRUPT LOCK</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1177,7 +1177,7 @@ const committed=p=>p.units.reduce((a,u)=>a+cost(card(u.n)),0);
 const free=p=>p.ram-committed(p);
 const other=k=>k==='p'?'e':'p';
 function log(msg){state.events.unshift(msg);if(state.events.length>30)state.events.length=30}
-function restart(kind=mode){if(state&&!state.done)settleLongitudinal('interrupted');temporalEvidence.match++;if(botTimer!==null)clearTimeout(botTimer);botTimer=null;lastImpact=null;targetPreview=null;lastRamFlow=null;mode=kind;nextUnitIdentity=0;state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
+function restart(kind=mode){if(state&&!state.done)settleLongitudinal('interrupted');temporalEvidence.match++;if(botTimer!==null)clearTimeout(botTimer);botTimer=null;lastImpact=null;targetPreview=null;lastRamFlow=null;mode=kind;state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
 function legalActions(s,k){if(s.done||s.active!==k)return[];let p=s[k],a=[];
 if(s.phase===0){if(s.actions>0){if(p.ram<25)a.push({kind:'ram'});if(p.deck.length)a.push({kind:'draw'})}a.push({kind:'next'});}
 else if(s.phase===1){if(p.units.length<5)p.hand.forEach((n,i)=>{if(cost(card(n))<=free(p))a.push({kind:'deploy',i})});a.push({kind:'next'});}
@@ -1189,8 +1189,15 @@ function resolveCardAction(s,k,kind,i,uid=null){
  const current=s[k].units.findIndex(u=>u.uid===uid);
  return current<0?null:current;
 }
-function act(k,kind,i=null,uid=null){
+/* Captured controls carry the exact board snapshot; interruptions cancel them. */
+function capturedActionStillCurrent(s,k,kind,i,uid,fingerprint){
+ if(fingerprint!==null&&fingerprint!==actionFingerprint(s,k))return false;
+ if(kind==='attack'&&uid!==null&&!s[k].units.some(u=>u.uid===uid))return false;
+ return true;
+}
+function act(k,kind,i=null,uid=null,fingerprint=null){
  if(state.done||state.active!==k)return false;
+ if(!capturedActionStillCurrent(state,k,kind,i,uid,fingerprint))return false;
  const resolved=resolveCardAction(state,k,kind,i,uid);
  if(kind==='attack'&&uid!==null&&resolved===null)return false;
  i=resolved;
@@ -1482,6 +1489,40 @@ function deterministicReplaySuite(){
  return Object.freeze({passed,total:cases.length,checks:Object.freeze(cases)});
 }
 const replayVerification=deterministicReplaySuite();
+/* Phase 33 turn 11: interruption matrix. Rejections are read-only. */
+function interruptedReplaySuite(){
+ const checks=[],record=(name,pass)=>checks.push(Object.freeze({name,pass:!!pass}));
+ const candidate=CATALOG.cards.find(c=>Number(c.a)>0&&Number(c.d)>0);
+ if(!candidate)return Object.freeze({passed:0,total:1,checks:[{name:'catalog attacker',pass:false}]});
+ const n=Number(candidate.num);
+ const unit=uid=>({uid,n,hp:Math.max(1,card(n).d),used:false,origin:0});
+ const base={p:{bf:20,mf:20,ram:5,hand:[],deck:[],units:[unit(901)],bin:[]},
+ e:{bf:20,mf:20,ram:5,hand:[],deck:[],units:[],bin:[]},
+ active:'p',phase:2,turn:4,actions:0,done:false};
+ const stable=JSON.stringify(base),token=actionFingerprint(base,'p');
+ const accepts=(b,uid=901,t=token)=>capturedActionStillCurrent(b,'p','attack',0,uid,t)&&
+  resolveCardAction(b,'p','attack',0,uid)!==null&&
+  legalActions(b,'p').some(a=>a.kind==='attack'&&a.i===resolveCardAction(b,'p','attack',0,uid));
+ const changed=mutate=>{const b=cloneCombat(base);mutate(b);return !accepts(b)&&JSON.stringify(base)===stable;};
+ record('current valid attack executable',accepts(base));
+ record('phase transition rejects pending click',changed(b=>{b.phase=3}));
+ record('turn transition rejects pending click',changed(b=>{b.turn++}));
+ record('active-side switch rejects pending click',changed(b=>{b.active='e'}));
+ record('finished match rejects pending click',changed(b=>{b.done=true}));
+ record('destroyed attacker rejects pending click',changed(b=>{b.p.units=[]}));
+ record('recycled slot cannot alias another attacker',changed(b=>{b.p.units=[unit(902)]}));
+ record('already-used attacker rejected',changed(b=>{b.p.units[0].used=true}));
+ record('board damage cancels captured snapshot',changed(b=>{b.e.bf--}));
+ record('restart with matching square shape rejected',changed(b=>{b.turn=1;b.p.units[0].uid=903}));
+ record('priority change cancels pending click',(()=>{
+  const prior=tacticalPriority;tacticalPriority=prior==='win'?'preserve':'win';
+  try{return !accepts(base)}finally{tacticalPriority=prior}
+ })());
+ record('all rejections leave source unchanged',JSON.stringify(base)===stable);
+ const passed=checks.filter(x=>x.pass).length;
+ return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
+}
+const interruptedVerification=interruptedReplaySuite();
 /* Phase 33 turn 2: one legal action per board state.
    Ranking is explicit and stable; only the player activates the proposal. */
 function bestLegalAction(s,k,forecast=null){
@@ -1548,7 +1589,7 @@ function routeAuthoritativeAction(proposal){
  routeEvidence.rejected++;routeEvidence.last='REJECT · ENGINE DECLINED';return false;
 }
 function renderRouteStatus(){
- $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' '+(replayVerification.passed===replayVerification.total?'PASS':'FAIL');
+ $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' '+(interruptedVerification.passed===interruptedVerification.total?'PASS':'FAIL');
 }
 function renderBestAction(all){
  const panel=$('bestActionPanel'),button=$('bestActionButton'),label=$('bestActionText');
@@ -1605,7 +1646,8 @@ function renderSequences(){
   btn.addEventListener('pointerenter',()=>previewTarget(s.first));btn.addEventListener('pointerleave',clearPreview);
   btn.addEventListener('focus',()=>previewTarget(s.first));btn.addEventListener('blur',clearPreview);
   const attackerUid=state.p.units[s.first]?.uid??null;
-  btn.onclick=()=>act('p','attack',s.first,attackerUid);return btn;
+  const actionToken=actionFingerprint(state,'p');
+  btn.onclick=()=>act('p','attack',s.first,attackerUid,actionToken);return btn;
  }));
 }
 function renderAttackChoices(){
@@ -1623,7 +1665,8 @@ function renderAttackChoices(){
   btn.addEventListener('pointerenter',()=>previewTarget(t.slot));btn.addEventListener('pointerleave',clearPreview);
   btn.addEventListener('focus',()=>previewTarget(t.slot));btn.addEventListener('blur',clearPreview);
   const attackerUid=state.p.units[t.slot]?.uid??null;
-  btn.onclick=()=>act('p','attack',t.slot,attackerUid);
+  const actionToken=actionFingerprint(state,'p');
+  btn.onclick=()=>act('p','attack',t.slot,attackerUid,actionToken);
   return btn;
  }));
 }
@@ -1795,8 +1838,8 @@ if(lastImpact&&lastImpact.from===key&&lastImpact.source===i){slot.classList.add(
 if(lastImpact&&lastImpact.to===key&&lastImpact.target===-1){slot.classList.add('energyDirect')}
 let deaths=lastImpact?.destroyed?.filter(d=>d.side===key&&d.slot===i)||[];
 if(deaths.length){slot.classList.add('shattered');let overlay=document.createElement('span');overlay.className='shatterLabel';overlay.textContent='✦ RECYCLED';overlay.setAttribute('aria-hidden','true');slot.append(overlay)}
-let u=x.units[i];if(targetPreview&&targetPreview.to===key&&targetPreview.target===i)slot.classList.add('targetPreview');if(targetPreview&&targetPreview.to===key&&targetPreview.target===-1)slot.classList.add('directPreview');if(u){let available=!s.done&&mode==='human'&&key==='p'&&s.active==='p'&&s.phase===2&&!u.used&&card(u.n).a>0;if(available)slot.classList.add('available');let unitCard=squareCard(u.n,u,available?()=>act('p','attack',i,u.uid):null,'attack');unitCard.classList.add('deployed','resonance-'+key);bindCardIntel(unitCard,u.n,u,key,i,false);if(u.used)unitCard.classList.add('resonance-exhausted');if(available){unitCard.addEventListener('pointerenter',()=>previewTarget(i));unitCard.addEventListener('pointerleave',clearPreview);unitCard.addEventListener('focus',()=>previewTarget(i));unitCard.addEventListener('blur',clearPreview)}slot.append(unitCard)}return slot}))}
-let playable=0;const hand=$('hand');hand.replaceChildren(...(mode==='auto'?s[k].hand:p.hand).map((n,i)=>{let c=card(n);let ok=mode==='human'&&!s.done&&k==='p'&&s.phase===1&&p.units.length<5&&cost(c)<=free(p);if(ok)playable++;let hc=squareCard(n,null,ok?()=>act('p','deploy',i):null,'playable');if(ok)hc.classList.add('resonance-ready');bindCardIntel(hc,n,null,mode==='auto'?k:'p',i,true);return hc}));
+let u=x.units[i];if(targetPreview&&targetPreview.to===key&&targetPreview.target===i)slot.classList.add('targetPreview');if(targetPreview&&targetPreview.to===key&&targetPreview.target===-1)slot.classList.add('directPreview');if(u){let available=!s.done&&mode==='human'&&key==='p'&&s.active==='p'&&s.phase===2&&!u.used&&card(u.n).a>0;if(available)slot.classList.add('available');let unitCard=squareCard(u.n,u,available?(()=>{const token=actionFingerprint(s,'p');return ()=>act('p','attack',i,u.uid,token)})():null,'attack');unitCard.classList.add('deployed','resonance-'+key);bindCardIntel(unitCard,u.n,u,key,i,false);if(u.used)unitCard.classList.add('resonance-exhausted');if(available){unitCard.addEventListener('pointerenter',()=>previewTarget(i));unitCard.addEventListener('pointerleave',clearPreview);unitCard.addEventListener('focus',()=>previewTarget(i));unitCard.addEventListener('blur',clearPreview)}slot.append(unitCard)}return slot}))}
+let playable=0;const hand=$('hand');hand.replaceChildren(...(mode==='auto'?s[k].hand:p.hand).map((n,i)=>{let c=card(n);let ok=mode==='human'&&!s.done&&k==='p'&&s.phase===1&&p.units.length<5&&cost(c)<=free(p);if(ok)playable++;let hc=squareCard(n,null,ok?(()=>{const token=actionFingerprint(s,'p');return ()=>act('p','deploy',i,null,token)})():null,'playable');if(ok)hc.classList.add('resonance-ready');bindCardIntel(hc,n,null,mode==='auto'?k:'p',i,true);return hc}));
 $('handLabel').textContent=mode==='auto'?(k==='p'?'BOT A HAND':'BOT B HAND'):'YOUR HAND';$('handStatus').textContent=mode==='auto'?'BOT SPECTATOR':playable+' PLAYABLE';
 const can=mode==='human'&&!s.done&&s.active==='p',legal=can?legalActions(s,'p'):[];
 $('install').disabled=!legal.some(a=>a.kind==='ram');$('draw').disabled=!legal.some(a=>a.kind==='draw');$('next').disabled=!legal.some(a=>a.kind==='next');
