@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.37 — Survival and Victory Precedence</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.38 — Minimax Response Resistance</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -871,8 +871,10 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 
 /* v2.8.37: high-contrast precedence status within established forecast cards. */
 .sequenceOption:first-child .sequenceWhy{color:#7531a4;font-weight:900}
+/* v2.8.38: worst-case response trace in existing planner cards. */
+.sequenceOption .sequenceScore{font-variant-numeric:tabular-nums}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.37 · BONE WHITE / SURVIVAL AND VICTORY PRECEDENCE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.38 · BONE WHITE / MINIMAX RESPONSE RESISTANCE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1246,43 +1248,62 @@ function setTacticalPriority(next){
 /* Phase 33/12: exact ordered-plan simulation under each of three modeled bot
    combat policies. Primary ranking is worst-case board score, then heuristic,
    then deterministic slot order. Models never change the real match. */
+/* Phase 33 turn 6: bounded exhaustive minimax over opponent combat orders,
+   including the option to pass at every prefix. Five units <=326 nodes. */
+const MAX_RESPONSE_NODES=326;
+function cloneCombat(s){
+ return {...s,p:{...s.p,units:s.p.units.map((u,i)=>({...u,origin:u.origin??i})),bin:s.p.bin.slice()},
+ e:{...s.e,units:s.e.units.map((u,i)=>({...u,origin:u.origin??i})),bin:s.e.bin.slice()}};
+}
+function minimaxOpponentCombat(s){
+ let nodes=0,worst=Infinity,best=-Infinity,worstLife=Infinity,anyLoss=false,worstOrder=[],truncated=false;
+ function walk(snapshot,order){
+  if(nodes>=MAX_RESPONSE_NODES){truncated=true;return;}
+  nodes++;
+  const score=positionValue(boardPosition(snapshot)),life=Math.min(snapshot.p.bf,snapshot.p.mf);
+  if(score<worst||(score===worst&&(life<worstLife||(life===worstLife&&order.join(',')<worstOrder.join(','))))){
+   worst=score;worstOrder=order.slice();
+  }
+  best=Math.max(best,score);worstLife=Math.min(worstLife,life);
+  if(snapshot.p.bf<=0||snapshot.p.mf<=0)anyLoss=true;
+  if(snapshot.done||order.length>=5)return;
+  const ready=snapshot.e.units.filter(u=>!u.used&&card(u.n).a>0).map(u=>u.origin).sort((a,b)=>a-b);
+  for(const origin of ready){
+   if(nodes>=MAX_RESPONSE_NODES){truncated=true;break;}
+   const child=cloneCombat(snapshot);
+   if(simulateSequenceAttack(child,'e',origin))walk(child,[...order,origin]);
+  }
+ }
+ walk(cloneCombat(s),[]);
+ return {worst,best,worstLife,anyLoss,worstOrder,nodes,exhaustive:!truncated,cap:MAX_RESPONSE_NODES};
+}
 function robustSequenceEvaluation(s,k,order){
  if(k!=='p'||!order.length)return null;
- const scores=[],responses=[];
+ const base=cloneCombat(s);let completed=0;
+ for(const source of order){if(base.done)break;if(!simulateSequenceAttack(base,'p',source))break;completed++;}
+ if(!completed)return null;
+ const afterPlan=boardPosition(base),playerWin=base.done&&(base.e.bf<=0||base.e.mf<=0);
+ if(!base.done){
+  for(const q of [base.p,base.e])q.units.forEach(u=>{u.hp=card(u.n).d});
+  base.active='e';base.phase=2;base.e.units.forEach(u=>{u.used=false});
+ }
+ const adversary=minimaxOpponentCombat(base),policies=[];
  for(const policy of RESPONSE_POLICIES){
-  const sim={...s,p:{...s.p,units:s.p.units.map((u,i)=>({...u,origin:i})),bin:s.p.bin.slice()},
-   e:{...s.e,units:s.e.units.map((u,i)=>({...u,origin:i})),bin:s.e.bin.slice()}};
-  let completed=0;
-  for(const source of order){
-   if(sim.done)break;
-   const t=simulateSequenceAttack(sim,'p',source);if(!t)break;
-   completed++;
+  const sim=cloneCombat(base),attacks=[];
+  while(!sim.done&&attacks.length<5){
+   const candidates=sim.e.units.map((u,i)=>({u,i})).filter(x=>!x.u.used&&card(x.u.n).a>0);
+   if(!candidates.length)break;
+   const pick=selectResponseAttacker(candidates,policy),t=simulateSequenceAttack(sim,'e',pick.u.origin);
+   if(!t)break;
+   attacks.push({source:pick.u.origin,card:t.attacker,kind:t.kind,damage:t.damage});
   }
-  if(!completed)return null;
-  const afterPlan=boardPosition(sim);
-  const playerWin=sim.done&&(sim.e.bf<=0||sim.e.mf<=0);
-  const attacks=[];
-  if(!sim.done){
-   for(const q of [sim.p,sim.e])q.units.forEach(u=>{u.hp=card(u.n).d});
-   sim.active='e';sim.phase=2;sim.e.units.forEach(u=>{u.used=false});
-   while(!sim.done&&attacks.length<5){
-    const candidates=sim.e.units.map((u,i)=>({u,i})).filter(x=>!x.u.used&&card(x.u.n).a>0);
-    if(!candidates.length)break;
-    const attacker=selectResponseAttacker(candidates,policy),t=simulateSequenceAttack(sim,'e',attacker.u.origin);
-    if(!t)break;
-    attacks.push({source:attacker.u.origin,card:t.attacker,kind:t.kind,damage:t.damage});
-   }
-  }
-  const score=positionValue(boardPosition(sim));
-  scores.push(score);
-  responses.push({policy,score,opponentAttacks:attacks.length,playerMoves:completed,afterPlan,
-   playerWin,playerLoss:sim.p.bf<=0||sim.p.mf<=0,
+  policies.push({policy,score:positionValue(boardPosition(sim)),opponentAttacks:attacks.length,
+   playerMoves:completed,afterPlan,playerWin,playerLoss:sim.p.bf<=0||sim.p.mf<=0,
    remainingLife:Math.min(sim.p.bf,sim.p.mf)});
  }
- const worst=Math.min(...scores),best=Math.max(...scores);
- return {worst,best,spread:best-worst,policies:responses,agrees:scores.every(v=>v===scores[0]),
-  guaranteedWin:responses.every(r=>r.playerWin),anyLoss:responses.some(r=>r.playerLoss),
-  worstLife:Math.min(...responses.map(r=>r.remainingLife))};
+ return {worst:adversary.worst,best:adversary.best,spread:adversary.best-adversary.worst,
+  policies,agrees:policies.every(x=>x.score===policies[0].score),
+  guaranteedWin:playerWin,anyLoss:adversary.anyLoss,worstLife:adversary.worstLife,adversary};
 }
 /* Phase 33 turn 5: lexicographic precedence cannot be overruled by
    arbitrary score magnitude or learned bonuses. These are modeled outcomes,
@@ -1450,7 +1471,7 @@ function renderSequences(){
  renderLearning();
  const panel=$('sequencePanel'),options=$('sequenceOptions'),all=mode==='human'?compareSequences(state,'p'):[];
  panel.hidden=!all.length;renderBestAction(all);const shown=all.slice(0,6);
- $('sequenceCount').textContent=TACTICAL_WEIGHTS[tacticalPriority].label+' · VICTORY > SURVIVAL > SCORE · '+shown.length+' / '+all.length+' analysis paths · '+RESPONSE_POLICIES.length+' policies';
+ $('sequenceCount').textContent=TACTICAL_WEIGHTS[tacticalPriority].label+' · VICTORY > SURVIVAL > SCORE · '+shown.length+' / '+all.length+' analysis paths · EXHAUSTIVE RESPONSES';
  options.replaceChildren(...shown.map((s,i)=>{
   const btn=document.createElement('button');btn.type='button';btn.className='sequenceOption'+(s.opening?' sequenceOpening':'');
   const head=document.createElement('strong');head.textContent=(i===0?'ONE BEST PLAN · ':'')+s.steps.map((x,j)=>(j+1)+'. '+x.name).join(' → ');
@@ -1458,12 +1479,12 @@ function renderSequences(){
   const note=document.createElement('span');note.className='sequenceNote';note.textContent=s.win?'PROJECTED FINISH · '+s.steps.length+' MOVE'+(s.steps.length===1?'':'S'):s.opening?'BLOCKER → DIRECT '+s.directDamage:s.directDamage?'DIRECT '+s.directDamage+' · LOSSES '+s.losses:'BLOCKED · LOSSES '+s.losses;
   const why=explainSequence(s);
   const explanation=document.createElement('small');explanation.className='sequenceWhy';
-  explanation.textContent='WHY #'+(i+1)+' · '+precedenceLabel(s)+' · '+why.reason+' · WORST '+s.robust.worst+' / BEST '+s.robust.best+' · BASE '+why.score+
+  explanation.textContent='WHY #'+(i+1)+' · '+precedenceLabel(s)+' · '+why.reason+' · MINIMAX '+s.robust.worst+' / MAX '+s.robust.best+' · BASE '+why.score+
    (s.accuracyBonus?' · ACCURACY +'+s.accuracyBonus:'')+
    (s.outcomeBonus?' · OUTCOME '+(s.outcomeBonus>0?'+':'')+s.outcomeBonus:'')+
    (s.temporalBonus?' · NEXT-TURN '+(s.temporalBonus>0?'+':'')+s.temporalBonus:'')+' · RANK '+s.score;
   const math=document.createElement('small');math.className='sequenceScore';
-  math.textContent='RESPONSE '+s.robust.policies.map(x=>x.policy.toUpperCase()+' '+x.score).join(' / ')+' · '+why.parts.join('  |  ');
+  math.textContent='ADVERSARY '+s.robust.adversary.nodes+'/'+MAX_RESPONSE_NODES+' NODES · WORST '+(s.robust.adversary.worstOrder.map(x=>x+1).join('→')||'PASS')+' · POLICIES '+s.robust.policies.map(x=>x.policy.toUpperCase()+' '+x.score).join(' / ')+' · '+why.parts.join('  |  ');
   btn.append(head,detail,note,explanation,math);
   btn.setAttribute('aria-label','Forecast '+head.textContent+'. '+detail.textContent+'. '+note.textContent+'. '+explanation.textContent+'. '+math.textContent+'. Execute only the first attack.');
   btn.addEventListener('pointerenter',()=>previewTarget(s.first));btn.addEventListener('pointerleave',clearPreview);
