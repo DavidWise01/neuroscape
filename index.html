@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.45 — Combat Experience Memory</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.46 — Adaptive Combat Confidence</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -889,7 +889,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
 @media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.45 · BONE WHITE / BOT EXPERIENCE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.46 · BONE WHITE / CONFIDENCE GATE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1183,9 +1183,29 @@ function recordBotExperience(side,event){
  if(list.length>BOT_MEMORY_LIMIT)list.splice(0,list.length-BOT_MEMORY_LIMIT);
  return true;
 }
-function botExperienceScore(side,id,kind,experience=botMemory){
+/* v2.8.46: conservative confidence for empirical observations.
+   Wilson lower bound: a single success can never steer an equal-power tie.
+   Neither a forecast nor a different card/target type counts as evidence. */
+const BOT_CONFIDENCE_MIN=3;
+const BOT_CONFIDENCE_BOUND=0.35;
+function wilsonLowerBound(successes,total){
+ if(total<=0)return 0;
+ const z=1.96,p=successes/total,den=1+z*z/total;
+ return Math.max(0,(p+z*z/(2*total)-z*Math.sqrt((p*(1-p)+z*z/(4*total))/total))/den);
+}
+function botExperienceConfidence(side,id,kind,experience=botMemory){
  const matching=(experience[side]||[]).filter(x=>x.cardId===String(id)&&x.kind===kind);
- return matching.length?matching.reduce((v,x)=>v+(x.defenderLost?2:0)+(x.damage>0?1:0)-(x.attackerLost?3:0),0)/matching.length:0;
+ const n=matching.length;
+ const positive=matching.filter(x=>x.defenderLost||x.damage>0&&!x.attackerLost).length;
+ const negative=matching.filter(x=>x.attackerLost).length;
+ const lowerPositive=wilsonLowerBound(positive,n),lowerNegative=wilsonLowerBound(negative,n);
+ const average=n?matching.reduce((v,x)=>v+(x.defenderLost?2:0)+(x.damage>0?1:0)-(x.attackerLost?3:0),0)/n:0;
+ const confident=n>=BOT_CONFIDENCE_MIN&&Math.max(lowerPositive,lowerNegative)>=BOT_CONFIDENCE_BOUND;
+ return Object.freeze({samples:n,positive,negative,lowerPositive,lowerNegative,
+  confident,score:confident?average*n/(n+4):0});
+}
+function botExperienceScore(side,id,kind,experience=botMemory){
+ return botExperienceConfidence(side,id,kind,experience).score;
 }
 function chooseBotAttack(s,k,actions,experience=botMemory){
  const attacks=actions.filter(x=>x.kind==='attack');
@@ -1213,7 +1233,8 @@ function botMemoryRegression(){
   e:{units:[],bf:20,mf:20},active:'p',phase:2,done:false};
  const actions=legalActions(s,'p'),snapshot=JSON.stringify(s),original=JSON.stringify(botMemory);
  check('no memory defaults to first equal-power slot',chooseBotAttack(s,'p',actions,{p:[],e:[]})?.i===0);
- check('observed favorable outcome breaks tie',chooseBotAttack(s,'p',actions,{p:[record],e:[]})?.i===1);
+ check('one observation does not break tie',chooseBotAttack(s,'p',actions,{p:[record],e:[]})?.i===0);
+ check('three consistent outcomes break tie',chooseBotAttack(s,'p',actions,{p:[record,record,record],e:[]})?.i===1);
  check('unrelated side memory cannot alter choice',chooseBotAttack(s,'p',actions,{p:[],e:[record]})?.i===0);
  check('pure selection does not change board',JSON.stringify(s)===snapshot);
  check('regression never alters live memory',JSON.stringify(botMemory)===original);
@@ -1221,6 +1242,28 @@ function botMemoryRegression(){
  return Object.freeze({passed,total:cases.length,checks:Object.freeze(cases)});
 }
 const botMemoryChecks=botMemoryRegression();
+/* Phase 34 turn 2: uncertainty gates for bot combat decisions. */
+function botConfidenceRegression(){
+ const checks=[],check=(name,ok)=>checks.push(Object.freeze({name,pass:!!ok}));
+ const pair=CATALOG.cards.filter(c=>c.a>0&&c.d>0);
+ const c=pair[0],r={cardId:String(c.num),kind:'direct',damage:c.a,attackerLost:false,defenderLost:true,turn:1};
+ const e={p:[],e:[]},sample=(n,entry=r)=>{const x={p:[],e:[]};for(let i=0;i<n;i++)x.p.push(Object.freeze({...entry,turn:i+1}));return x};
+ check('empty memory remains neutral',botExperienceScore('p',c.num,'direct',e)===0);
+ check('one success insufficient',botExperienceConfidence('p',c.num,'direct',sample(1)).confident===false);
+ check('two successes insufficient',botExperienceConfidence('p',c.num,'direct',sample(2)).confident===false);
+ check('three successes clear gate',botExperienceConfidence('p',c.num,'direct',sample(3)).confident);
+ check('four successes strengthen lower bound',wilsonLowerBound(4,4)>wilsonLowerBound(3,3));
+ check('mixed evidence stays uncertain',!botExperienceConfidence('p',c.num,'direct',{p:[r,{...r,attackerLost:true,defenderLost:false,damage:0},r],e:[]}).confident);
+ check('wrong card cannot transfer confidence',!botExperienceConfidence('p',9999,'direct',sample(6)).confident);
+ check('blocked and direct evidence distinct',!botExperienceConfidence('p',c.num,'blocked',sample(6)).confident);
+ check('opponent observations remain independent',!botExperienceConfidence('e',c.num,'direct',sample(6)).confident);
+ check('repeated losses generate cautious score',botExperienceScore('p',c.num,'direct',sample(3,{...r,damage:0,defenderLost:false,attackerLost:true}))<0);
+ check('bounded record count',BOT_MEMORY_LIMIT===48);
+ const passed=checks.filter(x=>x.pass).length;
+ return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
+}
+const botConfidenceChecks=botConfidenceRegression();
+
 const makePlayer=(main,deck)=>({main,bf:20,mf:20,ram:0,hand:deck.slice(0,5),deck:deck.slice(5),units:[],bin:[]});
 const committed=p=>p.units.reduce((a,u)=>a+cost(card(u.n)),0);
 const free=p=>p.ram-committed(p);
@@ -1698,7 +1741,7 @@ function routeAuthoritativeAction(proposal){
  routeEvidence.rejected++;routeEvidence.last='REJECT · ENGINE DECLINED';return false;
 }
 function renderRouteStatus(){
- $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' '+(botMemoryChecks.passed===botMemoryChecks.total?'PASS':'FAIL');
+ $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' '+(botConfidenceChecks.passed===botConfidenceChecks.total?'PASS':'FAIL');
 }
 function renderBestAction(all){
  const panel=$('bestActionPanel'),button=$('bestActionButton'),label=$('bestActionText');
