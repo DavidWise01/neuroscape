@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.27 — Adaptive Tactical Learning</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.28 — Learning From Outcomes</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -833,8 +833,11 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 /* v2.8.27: transparent, session-only observation counter; no gameplay automation. */
 .learningStatus{margin-top:7px;padding:5px 8px;border-top:1px solid #c592e7;color:#7946a3;font:800 10px/1.45 monospace;overflow-wrap:anywhere;background:#faf4ff}
 @media(max-width:650px){.learningStatus{font-size:9px;padding:4px}}
+
+/* v2.8.28: opportunity gap is observational, not an automatic policy. */
+.learningStatus{border-left:3px solid #ec7d25;box-shadow:inset 0 0 9px #d987392b}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.27 · BONE WHITE / ADAPTIVE TACTICAL LEARNING</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.28 · BONE WHITE / LEARNING FROM OUTCOMES</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -868,14 +871,37 @@ function learnedBonus(n,priority){
  // Small confidence tie-break from directly observed prediction accuracy (0..12).
  return Math.round(12*x.filter(v=>v.matched).length/x.length);
 }
+/* Immediate, priority-specific opportunity costs. Alternative attacks are
+   counterfactual model forecasts, not observed facts or causal evidence. */
+function attackOutcomeValue(t,priority=tacticalPriority){
+ if(!t)return null;
+ const w=TACTICAL_WEIGHTS[priority]||TACTICAL_WEIGHTS.win;
+ const win=t.kind==='direct'&&t.meterAfter<=0;
+ const direct=t.kind==='direct'?t.damage:0;
+ const breakCount=t.kind==='blocked'&&t.defenderDestroyed?1:0;
+ const losses=t.attackerDestroyed?1:0;
+ return (win?1000:0)+direct*(priority==='damage'?30:priority==='preserve'?5:10)+breakCount*8-
+   losses*(priority==='preserve'?100:priority==='damage'?3:12);
+}
+function outcomeLearningBonus(n,priority){
+ const evidence=tacticalEvidence.observed.filter(v=>v.bucket===evidenceBucket(n,priority)&&v.competitive&&v.matched);
+ if(evidence.length<3)return 0;
+ const avg=evidence.reduce((sum,v)=>sum+v.regret,0)/evidence.length;
+ // Max +6 for repeatedly matching best immediate option; -12 for missed opportunities.
+ return Math.max(-12,Math.min(6,Math.round(6-avg/10)));
+}
 function captureAttackEvidence(k,i){
  if(k!=='p'||mode!=='human'||state.phase!==2)return null;
  const t=predictedTarget(state,k,i);if(!t)return null;
  const defender=state[other(k)].units[t.target];
+ const alternatives=legalActions(state,k).filter(a=>a.kind==='attack').map(a=>({slot:a.i,value:attackOutcomeValue(predictedTarget(state,k,a.i),tacticalPriority)}));
+ const chosen=alternatives.find(a=>a.slot===i),best=Math.max(...alternatives.map(a=>a.value));
  return {bucket:evidenceBucket(state[k].units[i].n,tacticalPriority),priority:tacticalPriority,card:state[k].units[i].n,
   predicted:{kind:t.kind,attackerAfter:t.attackerAfter,defenderAfter:t.defenderAfter,meterAfter:t.meterAfter,
    targetCard:defender?defender.n:null},
-  before:{attacker:state[k].units[i],defender,meter:t.meter},turn:state.turn};
+  before:{attacker:state[k].units[i],defender,meter:t.meter,enemyMeterBefore:t.meterHp},turn:state.turn,
+  opportunity:{chosenValue:chosen.value,bestValue:best,alternatives:alternatives.length}};
+
 }
 function commitAttackEvidence(e){
  if(!e)return;
@@ -883,15 +909,27 @@ function commitAttackEvidence(e){
  const actual={kind:lastImpact.kind,attackerAfter:p.hp,defenderAfter:d?d.hp:null,
   meterAfter:e.before.meter?state.e[e.before.meter==='MF'?'mf':'bf']:null,targetCard:d?d.n:null};
  const matched=Object.keys(e.predicted).every(key=>e.predicted[key]===actual[key]);
+ const actualForecast={kind:actual.kind,damage:lastImpact.damage,
+  meterAfter:actual.meterAfter,defenderDestroyed:!!d&&d.hp<=0,attackerDestroyed:p.hp<=0};
+ const actualValue=attackOutcomeValue(actualForecast,e.priority);
+ const regret=Math.max(0,e.opportunity.bestValue-actualValue);
  tacticalEvidence.observed.push({bucket:e.bucket,priority:e.priority,card:e.card,turn:e.turn,matched,
-  predicted:{...e.predicted},actual});
+  predicted:{...e.predicted},actual,actualValue,
+  competitive:e.opportunity.alternatives>=2,regret,
+  bestAlternativeValue:e.opportunity.bestValue,chosenForecastValue:e.opportunity.chosenValue,
+  alternatives:e.opportunity.alternatives});
  if(tacticalEvidence.observed.length>tacticalEvidence.max)tacticalEvidence.observed.shift();
 }
 function renderLearning(){
- const x=observedAccuracy();
- $('learningStatus').textContent='LEARNING · '+x.n+' observed attack'+(x.n===1?'':'s')+' · '+x.matched+'/'+x.n+
-  ' forecasts matched · PRIORITY PICKS '+['win','preserve','damage'].map(k=>TACTICAL_WEIGHTS[k].label+' '+tacticalEvidence.choices[k]).join(' / ')+
-  ' · session only';
+ const x=observedAccuracy(),competitive=tacticalEvidence.observed.filter(e=>e.competitive&&e.matched);
+ const good=competitive.filter(e=>e.regret===0).length;
+ const missed=competitive.length-good;
+ const last=tacticalEvidence.observed[tacticalEvidence.observed.length-1];
+ $('learningStatus').textContent='OUTCOME LEARNING · '+x.n+' attacks · '+x.matched+'/'+x.n+
+  ' model checks · '+good+'/'+competitive.length+' best immediate choices · '+missed+' opportunity gaps'+
+  (last&&last.competitive?' · LAST GAP '+last.regret:'')+
+  ' · PRIORITY PICKS '+['win','preserve','damage'].map(k=>TACTICAL_WEIGHTS[k].label+' '+tacticalEvidence.choices[k]).join(' / ')+
+  ' · counterfactuals modeled, not observed · session only';
 }
 
 const makePlayer=(main,deck)=>({main,bf:20,mf:20,ram:0,hand:deck.slice(0,5),deck:deck.slice(5),units:[],bin:[]});
@@ -1030,7 +1068,13 @@ function compareSequences(s,k){
   for(const slot of ready)if(!prefix.includes(slot)){enumerate([...prefix,slot]);if(evaluated>=MAX_SEQUENCE_ORDERS)break;}
  }
  enumerate([]);
- outcomes.forEach(o=>{o.baseScore=sequenceScore(o);o.learnedAdjustment=learnedBonus(s[k].units[o.first].n,tacticalPriority);o.score=o.baseScore+o.learnedAdjustment});
+ outcomes.forEach(o=>{
+  o.baseScore=sequenceScore(o);
+  o.accuracyBonus=learnedBonus(s[k].units[o.first].n,tacticalPriority);
+  o.outcomeBonus=outcomeLearningBonus(s[k].units[o.first].n,tacticalPriority);
+  o.learnedAdjustment=o.accuracyBonus+o.outcomeBonus;
+  o.score=o.baseScore+o.learnedAdjustment;
+ });
  outcomes.sort((a,b)=>b.score-a.score||a.losses-b.losses||a.order.join(',').localeCompare(b.order.join(',')));
  return outcomes;
 }
@@ -1064,7 +1108,9 @@ function renderSequences(){
   const note=document.createElement('span');note.className='sequenceNote';note.textContent=s.win?'PROJECTED FINISH · '+s.steps.length+' MOVE'+(s.steps.length===1?'':'S'):s.opening?'BLOCKER → DIRECT '+s.directDamage:s.directDamage?'DIRECT '+s.directDamage+' · LOSSES '+s.losses:'BLOCKED · LOSSES '+s.losses;
   const why=explainSequence(s);
   const explanation=document.createElement('small');explanation.className='sequenceWhy';
-  explanation.textContent='WHY #'+(i+1)+' · '+why.reason+' · BASE '+why.score+(s.learnedAdjustment?' · OBSERVED +'+s.learnedAdjustment:'')+' · RANK '+s.score;
+  explanation.textContent='WHY #'+(i+1)+' · '+why.reason+' · BASE '+why.score+
+   (s.accuracyBonus?' · ACCURACY +'+s.accuracyBonus:'')+
+   (s.outcomeBonus?' · OUTCOME '+(s.outcomeBonus>0?'+':'')+s.outcomeBonus:'')+' · RANK '+s.score;
   const math=document.createElement('small');math.className='sequenceScore';
   math.textContent=why.parts.join('  |  ');
   btn.append(head,detail,note,explanation,math);
