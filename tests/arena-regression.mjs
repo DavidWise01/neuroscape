@@ -28,6 +28,18 @@ try{
  await page.getByRole('button',{name:/Install RAM/i}).click();
  const ram=await page.locator('#pInstalled').textContent();
  if(ram!=='1')fail('Install RAM did not execute');
+ // The optional art engines observe the visible game log, never game state.
+ await page.waitForFunction(()=>document.querySelector('#coresSignal')?.textContent?.includes('CHARGE'),{timeout:3000});
+ const reactive=await page.evaluate(()=>({
+  cores:document.getElementById('coresSignal')?.textContent,
+  foundry:document.getElementById('foundrySignal')?.textContent,
+  coresKind:document.getElementById('neuroscapeArt')?.dataset.artSignal,
+  foundryKind:document.getElementById('signalFoundry')?.dataset.artSignal
+ }));
+ if(!reactive.cores?.includes('CHARGE')||!reactive.foundry?.includes('CHARGE')||
+    reactive.coresKind!=='charge'||reactive.foundryKind!=='charge')
+   fail('Artwork did not observe RAM installation: '+JSON.stringify(reactive));
+
  await page.getByRole('button',{name:'Restart match'}).click();
  if((await page.locator('#pInstalled').textContent())!=='0')fail('Restart did not reset RAM');
  await page.getByRole('button',{name:'Bot vs Bot'}).click();
