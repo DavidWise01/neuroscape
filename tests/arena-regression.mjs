@@ -92,6 +92,37 @@ try{
    fail('Defender ripple must follow blocked card target only: '+JSON.stringify(ripples));
  if(ripples.report.map(x=>x.delay).join(',')!=='0.805s,0.875s,0.945s')
    fail('Defender ripples need staggered impact timing: '+JSON.stringify(ripples.report));
+
+ // v2.8.75: real defender gets two tilted 3D shield rings and one
+ // specular arc, but direct hits never impersonate an occupied card.
+ const shimmer=await page.evaluate(()=>{
+   const svg=document.getElementById('combatPathways');
+   const rings=[...svg.querySelectorAll('.neonShieldRim')].filter(x=>x.dataset.attackSeq==='987654');
+   const glint=[...svg.querySelectorAll('.neonShieldGlint')].find(x=>x.dataset.attackSeq==='987654');
+   const board=document.getElementById('gameBoard').getBoundingClientRect();
+   const defender=document.querySelector('#eLanes > .slot').getBoundingClientRect();
+   const center=[defender.left+defender.width/2-board.left,defender.top+defender.height/2-board.top];
+   const result={
+     rings:rings.length,glint:!!glint,
+     aligned:rings.every(x=>Math.abs(+x.getAttribute('cx')-center[0])<2&&
+       Math.abs(+x.getAttribute('cy')-center[1])<2),
+     tilted:rings.every(x=>(x.getAttribute('transform')||'').startsWith('rotate(-17 ')),
+     target:rings.map(x=>x.dataset.attackTarget),
+     sequence:rings.map(x=>x.dataset.attackSeq),
+     delays:rings.map(x=>getComputedStyle(x).animationDelay),
+     glintAnimation:glint?getComputedStyle(glint).animationName:null,
+     pointer:rings.map(x=>getComputedStyle(x).pointerEvents),
+     directShimmer:[...svg.querySelectorAll('.neonShieldRim,.neonShieldGlint')]
+       .filter(x=>x.dataset.attackSeq==='987655').length
+   };
+   return result;
+ });
+ if(shimmer.rings!==2||!shimmer.glint||!shimmer.aligned||!shimmer.tilted||
+    shimmer.target.some(x=>x!=='e:0')||shimmer.sequence.some(x=>x!=='987654')||
+    shimmer.pointer.some(x=>x!=='none')||shimmer.delays.join(',')!=='0.79s,0.87s'||
+    !shimmer.glintAnimation?.includes('neonShieldSpecular')||shimmer.directShimmer!==0)
+   fail('3D shield shimmer missing or attached to wrong combat target: '+JSON.stringify(shimmer));
+ console.log('SHIELD SHIMMER PASS: two tilted elliptical rims and specular glint at real defender');
  console.log('DEFENDER RIPPLE PASS: three staggered shield rings at real defender; zero on direct hit');
  // v2.8.74: return photon is derived only from recorded positive retaliation.
  // Exercise read-only rendering with real slot coordinates; game engine untouched.
