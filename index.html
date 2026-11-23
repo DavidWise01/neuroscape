@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.74 — Retaliation Rebound</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.75 — Dimensional Shield Shimmer</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1349,6 +1349,47 @@ padding:10px 14px}
  #gameBoard .combatPathways .neonRetaliationRebound,
  #gameBoard .combatPathways .neonRetaliationCore,
  #gameBoard .combatPathways .neonRetaliationLanding{
+  animation:none!important;opacity:0!important
+ }
+}
+
+/* v2.8.75 — DEFENDER 3D SHIELD SHIMMER.
+   Three bounded, SVG-only holographic elements sit over the actual defender
+   during a blocked strike. No new UI regions or playfield mutations. */
+#gameBoard .combatPathways .neonShieldRim{
+ fill:none;stroke:#cba0ff;stroke-width:3;stroke-linecap:round;
+ stroke-dasharray:18 5 35 8;stroke-dashoffset:74;
+ opacity:0;pointer-events:none;
+ filter:drop-shadow(0 0 5px #ba67ff) drop-shadow(0 0 11px #9b45dc);
+ animation:neonShieldOrbit 780ms cubic-bezier(.13,.65,.27,1) 790ms both;
+}
+#gameBoard .combatPathways .neonShieldRim.shieldInner{
+ stroke:#fff7ff;stroke-width:1.8;stroke-dasharray:11 10 30 7;
+ animation-delay:870ms;
+}
+#gameBoard .combatPathways .neonShieldGlint{
+ fill:none;stroke:#fff9ff;stroke-linecap:round;stroke-width:5;
+ opacity:0;pointer-events:none;
+ filter:drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px #bd62ff);
+ animation:neonShieldSpecular 610ms ease-out 850ms both;
+}
+#gameBoard .combatPathways .neonShieldRim.hasRetaliation{
+ stroke:#f2bdff;filter:drop-shadow(0 0 8px #e0a0ff) drop-shadow(0 0 15px #ae54ff);
+}
+@keyframes neonShieldOrbit{
+ 0%{opacity:0;stroke-dashoffset:74;stroke-width:5}
+ 16%{opacity:.95}
+ 74%{opacity:.8}
+ 100%{opacity:0;stroke-dashoffset:-16;stroke-width:1}
+}
+@keyframes neonShieldSpecular{
+ 0%{opacity:0;stroke-dasharray:0 130;stroke-dashoffset:0}
+ 23%{opacity:1;stroke-dasharray:27 130;stroke-dashoffset:0}
+ 100%{opacity:0;stroke-dasharray:27 130;stroke-dashoffset:-105}
+}
+@media(prefers-reduced-motion:reduce){
+ #gameBoard .combatPathways .neonShieldRim,
+ #gameBoard .combatPathways .neonShieldGlint{
   animation:none!important;opacity:0!important
  }
 }
@@ -3149,6 +3190,35 @@ function drawCombatPathways(impact){
     ripple.addEventListener('animationend',()=>ripple.remove(),{once:true});
     svg.append(ripple);
    }
+   /* An elliptical, tilted shield glints across the card's real center.
+      Radius is bounded by the target's measured rectangle so the shield
+      remains decorative and cannot displace any playable square. */
+   const shieldW=Math.max(18,Math.min(68,b.width*.34));
+   const shieldH=Math.max(13,Math.min(48,b.height*.25));
+   const retaliates=Number(impact.retaliation)>0;
+   for(const [index,multiplier] of [[0,1],[1,.73]]){
+    const rim=document.createElementNS(ns,'ellipse');
+    rim.setAttribute('cx',end[0].toFixed(2));
+    rim.setAttribute('cy',end[1].toFixed(2));
+    rim.setAttribute('rx',(shieldW*multiplier).toFixed(2));
+    rim.setAttribute('ry',(shieldH*multiplier).toFixed(2));
+    rim.setAttribute('transform','rotate(-17 '+end[0].toFixed(2)+' '+end[1].toFixed(2)+')');
+    rim.setAttribute('class','neonShieldRim'+(index?' shieldInner':'')+(retaliates?' hasRetaliation':''));
+    rim.dataset.attackSeq=String(impact.seq);
+    rim.dataset.attackTarget=impact.to+':'+impact.target;
+    rim.addEventListener('animationend',()=>rim.remove(),{once:true});
+    svg.append(rim);
+   }
+   const glint=document.createElementNS(ns,'path');
+   const x=end[0],y=end[1];
+   glint.setAttribute('d','M '+(x-shieldW*.8).toFixed(2)+' '+(y+shieldH*.42).toFixed(2)+
+    ' Q '+x.toFixed(2)+' '+(y-shieldH*.95).toFixed(2)+
+    ' '+(x+shieldW*.8).toFixed(2)+' '+(y-shieldH*.42).toFixed(2));
+   glint.setAttribute('class','neonShieldGlint');
+   glint.dataset.attackSeq=String(impact.seq);
+   glint.dataset.attackTarget=impact.to+':'+impact.target;
+   glint.addEventListener('animationend',()=>glint.remove(),{once:true});
+   svg.append(glint);
   }
   /* Reverse the same measured route only if the observed combat result
      records positive retaliation. No independent gameplay calculation. */
