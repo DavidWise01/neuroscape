@@ -24,6 +24,29 @@ try{
   if(list.some(x=>x.width<70||x.height<70||x.visible!=='visible'||x.display==='none'))fail(side+' card squares have collapsed');
  }
  if(initial.hand<5)fail('Player hand not rendered');
+ // v2.8.71: the neon attack overlay must use the same measured endpoints
+ // and curve as the existing attack route; no synthetic combat state edits.
+ const routed=await page.evaluate(()=>{
+   if(typeof drawCombatPathways!=='function')return {error:'combat route missing'};
+   drawCombatPathways({from:'p',to:'e',source:0,target:0,kind:'blocked',seq:987654});
+   const overlay=document.querySelector('#combatPathways .neonAttackTrail');
+   const base=document.querySelector('#combatPathways .energyRoute.combatBlock');
+   const core=document.querySelector('#combatPathways .neonAttackCore');
+   return {
+     count:document.querySelectorAll('#combatPathways .neonAttackTrail').length,
+     from:overlay?.dataset.attackSource,to:overlay?.dataset.attackTarget,seq:overlay?.dataset.attackSeq,
+     sameCurve:overlay?.getAttribute('d')===base?.getAttribute('d')&&
+       overlay?.getAttribute('d')===core?.getAttribute('d'),
+     pointer:overlay?getComputedStyle(overlay).pointerEvents:null,
+     animation:overlay?getComputedStyle(overlay).animationName:null
+   };
+ });
+ if(routed.count!==1||routed.from!=='p:0'||routed.to!=='e:0'||
+    routed.seq!=='987654'||!routed.sameCurve||routed.pointer!=='none'||
+    !routed.animation?.includes('neonAttackTravel'))
+   fail('Neon photons diverge from real combat route: '+JSON.stringify(routed));
+ console.log('ATTACK NEON PASS: matched real route, noninteractive, animated and keyed to target');
+
  // v2.8.70 live neon tubes/trails must be rendered as pure decoration.
  const neonTubes=await page.evaluate(()=>{
   const board=document.getElementById('gameBoard');
