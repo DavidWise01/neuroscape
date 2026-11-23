@@ -122,6 +122,49 @@ try{
     shimmer.pointer.some(x=>x!=='none')||shimmer.delays.join(',')!=='0.79s,0.87s'||
     !shimmer.glintAnimation?.includes('neonShieldSpecular')||shimmer.directShimmer!==0)
    fail('3D shield shimmer missing or attached to wrong combat target: '+JSON.stringify(shimmer));
+
+ // v2.8.76: three rings and a central flash at each observed destroyed
+ // slot, strictly derived from the already-resolved destruction ledger.
+ const destruction=await page.evaluate(()=>{
+   const svg=document.getElementById('combatPathways');
+   const seq='987659';
+   drawCombatPathways({from:'p',to:'e',source:0,target:1,kind:'blocked',
+     retaliation:0,seq:987659,destroyed:[{side:'e',slot:1,name:'Test Defender',ram:2},
+                                  {side:'p',slot:0,name:'Test Attacker',ram:1}]});
+   const rings=[...svg.querySelectorAll('.neonDestructionRing')]
+     .filter(x=>x.dataset.attackSeq===seq);
+   const flashes=[...svg.querySelectorAll('.neonDestructionFlash')]
+     .filter(x=>x.dataset.attackSeq===seq);
+   const board=document.getElementById('gameBoard').getBoundingClientRect();
+   const center=(side,slot)=>{
+     const el=document.getElementById(side+'Lanes').children[slot];
+     const rect=el.getBoundingClientRect();
+     return [rect.left+rect.width/2-board.left,rect.top+rect.height/2-board.top];
+   };
+   const matches=(el,point)=>Math.abs(Number(el.getAttribute('cx'))-point[0])<2&&
+     Math.abs(Number(el.getAttribute('cy'))-point[1])<2;
+   const expected={'e:1':center('e',1),'p:0':center('p',0)};
+   const result={
+     rings:rings.length,flashes:flashes.length,
+     locations:Object.keys(expected),
+     allAligned:[...rings,...flashes].every(x=>expected[x.dataset.destroyedSlot]&&
+       matches(x,expected[x.dataset.destroyedSlot])),
+     pointerSafe:[...rings,...flashes].every(x=>getComputedStyle(x).pointerEvents==='none'),
+     delays:[...rings].filter(x=>x.dataset.destroyedSlot==='e:1').map(x=>getComputedStyle(x).animationDelay),
+     flashAnimation:flashes[0]?getComputedStyle(flashes[0]).animationName:null
+   };
+   drawCombatPathways({from:'p',to:'e',source:0,target:1,kind:'blocked',
+     retaliation:0,seq:987660,destroyed:[]});
+   result.noFalseDestruction=[...svg.querySelectorAll('.neonDestructionRing,.neonDestructionFlash')]
+     .every(x=>x.dataset.attackSeq!=='987660');
+   return result;
+ });
+ if(destruction.rings!==6||destruction.flashes!==2||!destruction.allAligned||
+    !destruction.pointerSafe||!destruction.noFalseDestruction||
+    destruction.delays.join(',')!=='0.79s,0.86s,0.93s'||
+    !destruction.flashAnimation?.includes('neonDestructionFlash'))
+   fail('Destruction shockwave must follow real destroyed slot records: '+JSON.stringify(destruction));
+ console.log('DESTRUCTION SHOCKWAVE PASS: six rings, two flashes, two recorded slots, zero false destruction');
  console.log('SHIELD SHIMMER PASS: two tilted elliptical rims and specular glint at real defender');
  console.log('DEFENDER RIPPLE PASS: three staggered shield rings at real defender; zero on direct hit');
  // v2.8.74: return photon is derived only from recorded positive retaliation.
