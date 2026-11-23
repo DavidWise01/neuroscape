@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.54 — Tactical Search Performance</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.55 — Adaptive Search Stability</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -889,7 +889,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
 @media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.54 · BONE WHITE / SEARCH EFFICIENCY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.55 · BONE WHITE / STABLE SEARCH</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1683,6 +1683,49 @@ function botPerformanceRegression(){
   sample:Object.freeze({quietAdaptive:fast,quietFull:full,threeAdaptive:a3,threeFull:f3,fiveFull})});
 }
 const botPerformanceChecks=botPerformanceRegression();
+/* v2.8.55: repeated-state decisions and stale queued-action rejection. */
+function botStabilityRegression(){
+ const checks=[],check=(name,pass)=>checks.push(Object.freeze({name,pass:!!pass}));
+ const cards=CATALOG.cards.filter(c=>c.a>0&&c.d>0),weak=cards.find(c=>c.a===1);
+ const strong=cards.find(c=>c.a>=3&&c.hit===weak.hit),foe=cards.find(c=>c.a===1);
+ const unit=(c,hp=c.d,uid=1)=>({n:Number(c.num),hp,used:false,uid});
+ const board=()=>({p:{units:[unit(strong,strong.d,10),unit(weak,weak.d,11),unit(weak,weak.d,12)],bf:20,mf:20,bin:[]},
+  e:{units:[unit(foe,1,20),unit(foe,1,21)],bf:20,mf:20,bin:[]},
+  active:'p',turn:3,phase:2,actions:2,done:false});
+ const s=board(),meter=strong.hit==='MAINFRAME'?'mf':'bf';s.e[meter]=strong.a;
+ const frozen=JSON.stringify(s),memory=JSON.stringify(botMemory),actions=legalActions(s,'p');
+ const choices=Array.from({length:6},()=>chooseBotAttack(s,'p',actions,{p:[],e:[]})?.i);
+ check('six repeated choices match',choices.every(x=>x===1));
+ check('six repeated depths match',Array.from({length:6},()=>botAdaptiveDepth(s,'p',actions).depth).every(x=>x===3));
+ check('planning does not mutate state',JSON.stringify(s)===frozen);
+ const token=actionFingerprint(s,'p');
+ check('unchanged captured action valid',botActionStillCurrent(s,s,'p',token));
+ check('wrong player invalid',!botActionStillCurrent(s,s,'e',token));
+ check('different match identity invalid',!botActionStillCurrent({...s},s,'p',token));
+ const changed=board();changed.e[meter]=strong.a;changed.e.units[0].hp=2;
+ check('changed defender rejects stale action',!botActionStillCurrent(changed,changed,'p',token));
+ const replaced=board();replaced.e[meter]=strong.a;replaced.p.units[1].uid=999;
+ check('replaced unit rejects stale action',!botActionStillCurrent(replaced,replaced,'p',token));
+ const next=board();next.e[meter]=strong.a;next.turn++;
+ check('new turn rejects stale action',!botActionStillCurrent(next,next,'p',token));
+ const flipped=board();flipped.e[meter]=strong.a;flipped.active='e';
+ check('turn swap rejects stale action',!botActionStillCurrent(flipped,flipped,'p',token));
+ const over=board();over.e[meter]=strong.a;over.done=true;
+ check('finished match rejects queued action',!botActionStillCurrent(over,over,'p',token));
+ const evolving=board();evolving.e[meter]=strong.a;const saved=JSON.stringify(evolving);
+ check('three-chain opener found',chooseBotAttack(evolving,'p',legalActions(evolving,'p'),{p:[],e:[]})?.i===1);
+ evolving.e.units=[];evolving.e[meter]=1;
+ check('new winning attack selected',chooseBotAttack(evolving,'p',legalActions(evolving,'p'),{p:[],e:[]})?.i===0);
+ check('instant win drops depth to one',botAdaptiveDepth(evolving,'p',legalActions(evolving,'p')).depth===1);
+ evolving.e.units=[unit(foe,1,20),unit(foe,1,21)];evolving.e[meter]=strong.a;
+ check('restored board restores winning opener',chooseBotAttack(evolving,'p',legalActions(evolving,'p'),{p:[],e:[]})?.i===1);
+ check('board restores exactly',JSON.stringify(evolving)===saved);
+ check('no synthetic memories recorded',JSON.stringify(botMemory)===memory);
+ const passed=checks.filter(x=>x.pass).length;
+ return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
+}
+const botStabilityChecks=botStabilityRegression();
+
 
 
 
@@ -1760,9 +1803,23 @@ if(state.phase===0){if(p.ram<5){let ram=a.find(x=>x.kind==='ram');if(ram)return 
 if(state.phase===1){let choices=a.filter(x=>x.kind==='deploy');choices.sort((x,y)=>{let cx=card(p.hand[x.i]),cy=card(p.hand[y.i]);return (cy.a*2+cy.d)-(cx.a*2+cx.d)||cost(cx)-cost(cy)});return choices[0]||a.at(-1)}
 if(state.phase===2)return chooseBotAttack(state,k,a);
 return a.at(-1)}
-function scheduleBot(){if(botTimer!==null){clearTimeout(botTimer);botTimer=null}if(state.done)return;if(mode==='auto'||state.active==='e'){botTimer=setTimeout(()=>{botTimer=null;const d=botChoice();if(d)act(state.active,d.kind,d.i??null)},mode==='auto'?360:220)}}
-
-
+/* v2.8.55: queued bot actions carry an exact board version. */
+function botActionStillCurrent(current,captured,side,token){
+ return current===captured&&!current.done&&current.active===side&&actionFingerprint(current,side)===token;
+}
+function scheduleBot(){
+ if(botTimer!==null){clearTimeout(botTimer);botTimer=null}
+ if(state.done)return;
+ if(mode==='auto'||state.active==='e'){
+  const captured=state,side=state.active,token=actionFingerprint(state,side);
+  botTimer=setTimeout(()=>{
+   botTimer=null;
+   if(!botActionStillCurrent(state,captured,side,token))return;
+   const d=botChoice();
+   if(d)act(side,d.kind,d.i??null,d.kind==='attack'?captured[side].units[d.i]?.uid??null:null,token);
+  },mode==='auto'?360:220);
+ }
+}
 
 /* Read-only preview: follows the same deterministic defender selection as act(). */
 function predictedTarget(s,k,i){if(s.done||s.active!==k||s.phase!==2)return null;const u=s[k].units[i];if(!u||u.used||card(u.n).a<=0)return null;const defender=s[other(k)].units.find(x=>!x.used);const c=card(u.n),dc=defender?card(defender.n):null;
@@ -2169,7 +2226,7 @@ function routeAuthoritativeAction(proposal){
  routeEvidence.rejected++;routeEvidence.last='REJECT · ENGINE DECLINED';return false;
 }
 function renderRouteStatus(){
- $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' · RISK '+botRiskChecks.passed+'/'+botRiskChecks.total+' · COMBOS '+botComboChecks.passed+'/'+botComboChecks.total+' · THREE CHAIN '+botThreeChainChecks.passed+'/'+botThreeChainChecks.total+' · DEPTH '+botDepthChecks.passed+'/'+botDepthChecks.total+' · PERFORMANCE '+botPerformanceChecks.passed+'/'+botPerformanceChecks.total+' '+(botPerformanceChecks.passed===botPerformanceChecks.total?'PASS':'FAIL');
+ $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' · RISK '+botRiskChecks.passed+'/'+botRiskChecks.total+' · COMBOS '+botComboChecks.passed+'/'+botComboChecks.total+' · THREE CHAIN '+botThreeChainChecks.passed+'/'+botThreeChainChecks.total+' · DEPTH '+botDepthChecks.passed+'/'+botDepthChecks.total+' · PERFORMANCE '+botPerformanceChecks.passed+'/'+botPerformanceChecks.total+' · STABILITY '+botStabilityChecks.passed+'/'+botStabilityChecks.total+' '+(botStabilityChecks.passed===botStabilityChecks.total?'PASS':'FAIL');
 }
 function renderBestAction(all){
  const panel=$('bestActionPanel'),button=$('bestActionButton'),label=$('bestActionText');
