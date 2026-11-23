@@ -32,19 +32,43 @@ try{
    const overlay=document.querySelector('#combatPathways .neonAttackTrail');
    const base=document.querySelector('#combatPathways .energyRoute.combatBlock');
    const core=document.querySelector('#combatPathways .neonAttackCore');
+   const corona=document.querySelector('#combatPathways .neonImpactCorona');
+   const sparks=document.querySelector('#combatPathways .neonImpactSpark');
+   const target=document.querySelector('#eLanes > .slot');
+   const board=document.getElementById('gameBoard').getBoundingClientRect();
+   const rect=target.getBoundingClientRect();
+   const expectedX=rect.left+rect.width/2-board.left;
+   const expectedY=rect.top+rect.height/2-board.top;
    return {
      count:document.querySelectorAll('#combatPathways .neonAttackTrail').length,
      from:overlay?.dataset.attackSource,to:overlay?.dataset.attackTarget,seq:overlay?.dataset.attackSeq,
      sameCurve:overlay?.getAttribute('d')===base?.getAttribute('d')&&
        overlay?.getAttribute('d')===core?.getAttribute('d'),
      pointer:overlay?getComputedStyle(overlay).pointerEvents:null,
-     animation:overlay?getComputedStyle(overlay).animationName:null
+     animation:overlay?getComputedStyle(overlay).animationName:null,
+     impact:{
+       target:corona?.dataset.attackTarget,
+       x:corona?Number(corona.getAttribute('cx')):null,
+       y:corona?Number(corona.getAttribute('cy')):null,
+       geometryMatches:corona?Math.abs(Number(corona.getAttribute('cx'))-expectedX)<2&&
+         Math.abs(Number(corona.getAttribute('cy'))-expectedY)<2:false,
+       rayCount:sparks?(sparks.getAttribute('d')?.match(/ M |^M /g)||[]).length:0,
+       pointer:corona?getComputedStyle(corona).pointerEvents:null,
+       animation:corona?getComputedStyle(corona).animationName:null,
+       delay:corona?getComputedStyle(corona).animationDelay:null
+     }
    };
  });
  if(routed.count!==1||routed.from!=='p:0'||routed.to!=='e:0'||
     routed.seq!=='987654'||!routed.sameCurve||routed.pointer!=='none'||
     !routed.animation?.includes('neonAttackTravel'))
    fail('Neon photons diverge from real combat route: '+JSON.stringify(routed));
+ if(routed.impact.target!=='e:0'||!routed.impact.geometryMatches||
+    routed.impact.rayCount!==6||routed.impact.pointer!=='none'||
+    !routed.impact.animation?.includes('neonCoronaDischarge')||
+    routed.impact.delay!=='0.77s')
+   fail('Impact discharge not aligned to real target: '+JSON.stringify(routed.impact));
+ console.log('IMPACT DISCHARGE PASS: real target, six rays, delayed corona, noninteractive');
  console.log('ATTACK NEON PASS: matched real route, noninteractive, animated and keyed to target');
 
  // v2.8.70 live neon tubes/trails must be rendered as pure decoration.
