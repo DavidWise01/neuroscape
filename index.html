@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.83 — Neon Afterglow</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.84 — Overlapping Recovery Cycles</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1566,6 +1566,10 @@ padding:10px 14px}
  100%{opacity:0;transform:scaleY(1)}
 }
 @media(prefers-reduced-motion:reduce){#gameBoard .neonRamAfterglow{animation:none!important;opacity:0!important}}
+/* v2.8.84 — concurrent cycles retain independent identity and animation
+   timeline; no shared CSS animation resets and no cross-cycle removal. */
+#gameBoard .neonRamReservoir,#gameBoard .neonRamDischarge,
+#gameBoard .neonRamAfterglow{isolation:isolate;pointer-events:none}
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
    Card playfield outranks forecast, status, log and decorative panels. */
@@ -3292,6 +3296,10 @@ function drawEnergyPathways(snapshot){
   if(bounds.width<=0||bounds.height<=0)continue;
   svg.setAttribute('viewBox','0 0 '+bounds.width+' '+bounds.height);
   const mx=meter.left+meter.width*.5-bounds.left,my=meter.top+meter.height*.5-bounds.top,slots=Array.from($(key+'Lanes').children);
+  /* A flow sequence and its attack origin together distinguish overlapping
+     visuals, even when a later combat result reaches the same meter. */
+  const cycleOrigin=Number.isInteger(snapshot.impactSeq)?'attack:'+snapshot.impactSeq:'release:'+snapshot.seq;
+  const cycleId=cycleOrigin+':flow:'+snapshot.seq+':'+key;
   /* One purely visual reservoir per positive release, backed only by
      the sum of its recorded transfers. Never touch the authoritative fill. */
   if(flow.type==='release'&&!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
@@ -3303,6 +3311,7 @@ function drawEnergyPathways(snapshot){
     reservoir.className='neonRamReservoir';
     reservoir.setAttribute('aria-hidden','true');
     reservoir.dataset.lifecycleId=lifecycle;
+    reservoir.dataset.cycleId=cycleId;
     reservoir.dataset.flowSeq=String(snapshot.seq);
     reservoir.dataset.recoverySide=key;
     reservoir.dataset.returnedRam=String(total);
@@ -3319,6 +3328,7 @@ function drawEnergyPathways(snapshot){
     discharge.className='neonRamDischarge';
     discharge.setAttribute('aria-hidden','true');
     discharge.dataset.lifecycleId=lifecycle;
+    discharge.dataset.cycleId=cycleId;
     discharge.dataset.flowSeq=String(snapshot.seq);
     discharge.dataset.recoverySide=key;
     discharge.dataset.returnedRam=String(total);
@@ -3334,6 +3344,7 @@ function drawEnergyPathways(snapshot){
     afterglow.className='neonRamAfterglow';
     afterglow.setAttribute('aria-hidden','true');
     afterglow.dataset.lifecycleId=lifecycle;
+    afterglow.dataset.cycleId=cycleId;
     afterglow.dataset.flowSeq=String(snapshot.seq);
     afterglow.dataset.recoverySide=key;
     afterglow.dataset.returnedRam=String(total);
@@ -3362,6 +3373,7 @@ function drawEnergyPathways(snapshot){
      bolt.setAttribute('class',cls);
      bolt.dataset.flowSeq=String(snapshot.seq);
      bolt.dataset.lifecycleId=lifecycle;
+     bolt.dataset.cycleId=cycleId;
      bolt.dataset.recoverySide=key;
      bolt.dataset.recoverySlot=String(seg.slot);
      bolt.dataset.transferId=lifecycle+':'+key+':'+seg.slot;
@@ -3376,6 +3388,7 @@ function drawEnergyPathways(snapshot){
     arrival.setAttribute('class','neonRecoveryArrival');
     arrival.dataset.flowSeq=String(snapshot.seq);
     arrival.dataset.lifecycleId=lifecycle;
+    arrival.dataset.cycleId=cycleId;
     arrival.dataset.recoverySide=key;
     arrival.dataset.recoverySlot=String(seg.slot);
     arrival.dataset.transferId=lifecycle+':'+key+':'+seg.slot;
@@ -3392,6 +3405,7 @@ function drawEnergyPathways(snapshot){
      charge.style.setProperty('--charge-strength',intensity.toFixed(3));
      charge.style.setProperty('--charge-width',(8+Math.min(32,seg.amount*4))+'%');
      charge.dataset.lifecycleId=lifecycle;
+     charge.dataset.cycleId=cycleId;
      charge.dataset.flowSeq=String(snapshot.seq);
      charge.dataset.recoverySide=key;
      charge.dataset.recoverySlot=String(seg.slot);
