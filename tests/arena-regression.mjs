@@ -240,6 +240,25 @@ try{
    lifecycle.shockStart!=='0.79s'||lifecycle.returnStart!=='1.37s'||
    lifecycle.arrivalStart!=='2.05s'||!lifecycle.pointerSafe)
     fail('Unified lifecycle not temporally/provenance aligned: '+JSON.stringify(lifecycle));
+ const meterCharge=await page.evaluate(()=>{
+   const track=document.getElementById('eRamAvailable').parentElement;
+   const charge=[...track.querySelectorAll('.neonRamCharge')].find(x=>x.dataset.flowSeq==='987665');
+   const before=charge&&{amount:charge.dataset.returnedRam,id:charge.dataset.lifecycleId,
+     delay:getComputedStyle(charge).animationDelay,
+     strength:Number(charge.style.getPropertyValue('--charge-strength')),
+     pointer:getComputedStyle(charge).pointerEvents};
+   drawEnergyPathways({seq:987666,impactSeq:987664,events:[{side:'e',type:'release',amount:8,slots:[{slot:1,amount:8}]}]});
+   const strong=[...track.querySelectorAll('.neonRamCharge')].find(x=>x.dataset.flowSeq==='987666');
+   return {before,strongAmount:strong?.dataset.returnedRam,
+      strongStrength:strong?Number(strong.style.getPropertyValue('--charge-strength')):null,
+      currentWidth:document.getElementById('eRamAvailable').style.width};
+ });
+ if(meterCharge.before?.amount!=='3'||meterCharge.before.id!=='attack:987664'||
+    meterCharge.before.delay!=='2.05s'||meterCharge.before.pointer!=='none'||
+    !(meterCharge.strongStrength>meterCharge.before.strength)||
+    meterCharge.strongAmount!=='8')
+   fail('Amount-scaled RAM meter charging not attached to release: '+JSON.stringify(meterCharge));
+ console.log('METER CHARGE PASS: amount-scaled intensity and original lifecycle lineage');
  console.log('ENERGY LIFECYCLE PASS: attack evidence ties shockwave, RAM packet and arrival to one source');
 
 
