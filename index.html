@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.78 — Unified Energy Lifecycle</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.79 — Meter Recovery Charge</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1490,6 +1490,23 @@ padding:10px 14px}
  #gameBoard .energyPathways .neonRecoveryCore,
  #gameBoard .energyPathways .neonRecoveryArrival{animation:none!important}
 }
+/* v2.8.79 — observed recovery amount charges the actual RAM track.
+   The glow is decorative, delayed until arrival, and never edits fill width. */
+#gameBoard .ramGaugeTrack .neonRamCharge{
+ position:absolute;inset:-7px 0 -7px auto;width:var(--charge-width,8%);
+ border-radius:6px;pointer-events:none;z-index:4;opacity:0;
+ background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);
+ box-shadow:0 0 calc(7px + 20px * var(--charge-strength,0)) #d580ff;
+ animation:neonRamMeterCharge 800ms ease-out 2050ms both;
+}
+#gameBoard .side.you .ramGaugeTrack .neonRamCharge{background:linear-gradient(90deg,transparent,#ffae5a,transparent)}
+#gameBoard .side.opponent .ramGaugeTrack .neonRamCharge{background:linear-gradient(90deg,transparent,#d39dff,transparent)}
+@keyframes neonRamMeterCharge{
+ 0%{opacity:0;transform:scaleX(.3)}
+ 28%{opacity:calc(.28 + .72 * var(--charge-strength,0));transform:scaleX(1)}
+ 100%{opacity:0;transform:scaleX(1.18)}
+}
+@media(prefers-reduced-motion:reduce){#gameBoard .neonRamCharge{animation:none!important;opacity:0!important}}
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
    Card playfield outranks forecast, status, log and decorative panels. */
@@ -3213,7 +3230,7 @@ function drawEnergyPathways(snapshot){
  for(const key of ['p','e']){
   const flow=snapshot.events.find(x=>x.side===key),segments=pathwaySegments(flow);if(!segments.length)continue;
   const svg=$(key+'Pathways'),side=svg.closest('.side'),bounds=side.getBoundingClientRect(),meter=$(key+'RamAvailable').getBoundingClientRect();
-  if(bounds.width<=0||bounds.height<=0||meter.width<=0)continue;
+  if(bounds.width<=0||bounds.height<=0)continue;
   svg.setAttribute('viewBox','0 0 '+bounds.width+' '+bounds.height);
   const mx=meter.left+meter.width*.5-bounds.left,my=meter.top+meter.height*.5-bounds.top,slots=Array.from($(key+'Lanes').children);
   for(const seg of segments){
@@ -3250,6 +3267,24 @@ function drawEnergyPathways(snapshot){
     arrival.dataset.recoverySide=key;
     arrival.addEventListener('animationend',()=>arrival.remove(),{once:true});
     svg.append(arrival);
+    /* The charge rides the same positive release ledger and arrives at
+       the same 2.05s marker; amount maps to bounded light intensity. */
+    const track=$(key+'RamAvailable').parentElement;
+    if(track){
+     const charge=document.createElement('span');
+     charge.className='neonRamCharge';
+     const intensity=Math.min(1,Math.max(0,seg.amount)/8);
+     charge.style.setProperty('--charge-strength',intensity.toFixed(3));
+     charge.style.setProperty('--charge-width',(8+Math.min(32,seg.amount*4))+'%');
+     charge.dataset.lifecycleId=lifecycle;
+     charge.dataset.flowSeq=String(snapshot.seq);
+     charge.dataset.recoverySide=key;
+     charge.dataset.recoverySlot=String(seg.slot);
+     charge.dataset.returnedRam=String(seg.amount);
+     charge.setAttribute('aria-hidden','true');
+     charge.addEventListener('animationend',()=>charge.remove(),{once:true});
+     track.append(charge);
+    }
    }
   }
  }
