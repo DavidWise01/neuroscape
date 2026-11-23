@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.64 — Divergent Generative Signatures</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.65 — Sustained Combat Resonance</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -985,7 +985,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
  #gameBoard .lanes>.slot{min-height:52px!important}
 }
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.64 · BONE WHITE / DIVERGENT SIGNALS</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.65 · BONE WHITE / SUSTAINED RESONANCE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText">STARTING ARCADE · FIVE SQUARES PER PLAYER</strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" data-arena-invariant="5x2-visible-square-card-slots" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes" aria-label="Five bot card squares"><div class="slot" data-slot="1"></div><div class="slot" data-slot="2"></div><div class="slot" data-slot="3"></div><div class="slot" data-slot="4"></div><div class="slot" data-slot="5"></div></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -2870,20 +2870,45 @@ restart('human');
     contact with the engine's state or memory. Values influence art only. */
  const artHistory=[];
  const artSignatures=[document.getElementById('coresSignature'),document.getElementById('foundrySignature')];
- function updateArtSignatures(){
-  const recent=artHistory.slice(-8);
-  const impact=recent.filter(x=>x==='strike'||x==='recycle').length;
-  const growth=recent.filter(x=>x==='deploy'||x==='charge').length;
-  const level=impact>=3?'STORM':impact>=1?'SURGE':growth>=2?'BUILD':'QUIET';
-  for(let i=0;i<engines.length;i++){
-   engines[i].group.dataset.patternPhase=level.toLowerCase();
-   engines[i].group.dataset.observedEvents=String(artHistory.length);
+ /* A leaky, bounded, observation-only combat pressure window.
+    A single hit is a spark. A continued exchange becomes sustained.
+    Every sample decays by age; old hits cannot make a permanent storm.
+    The window never exceeds twelve records and never affects combat. */
+ function artCombatPressure(now){
+  let intensity=0,impact=0,growth=0;
+  for(const item of artHistory){
+   const age=Math.max(0,now-item.at);
+   const weight=Math.max(0,1-age/12000);
+   if(item.kind==='strike'||item.kind==='recycle'){
+    intensity+=(item.kind==='recycle'?1.2:1)*weight;
+    if(age<8000)impact++;
+   }else if(item.kind==='deploy'||item.kind==='charge'){
+    intensity+=.12*weight;
+    if(age<8000)growth++;
+   }
   }
-  if(artSignatures[0])artSignatures[0].textContent='HELIX · '+level;
-  if(artSignatures[1])artSignatures[1].textContent='LATTICE · '+level;
-  return {impact,growth,level};
+  const pressure=Math.max(0,Math.min(1,intensity/3));
+  const level=pressure>=.67?'SUSTAINED':pressure>=.28?'ENGAGED':
+    pressure>=.04?'SPARK':'QUIET';
+  return {pressure,impact,growth,level};
  }
- let artWeather={impact:0,growth:0,level:'QUIET'};
+ let artWeather={impact:0,growth:0,level:'QUIET',pressure:0};
+ function updateArtSignatures(now){
+  const next=artCombatPressure(now);
+  /* Skip needless text and attribute writes when the phase is unchanged. */
+  const changed=next.level!==artWeather.level;
+  artWeather=next;
+  for(let i=0;i<engines.length;i++){
+   if(changed)engines[i].group.dataset.patternPhase=next.level.toLowerCase();
+   engines[i].group.dataset.observedEvents=String(artHistory.length);
+   engines[i].group.dataset.combatPressure=next.pressure.toFixed(3);
+  }
+  if(changed){
+   if(artSignatures[0])artSignatures[0].textContent='HELIX · '+next.level;
+   if(artSignatures[1])artSignatures[1].textContent='LATTICE · '+next.level;
+  }
+  return next;
+ }
  function observeGameEvent(){
   const line=log?.firstElementChild?.textContent?.trim()||'';
   if(!line||line===lastGameEvent)return;
@@ -2895,8 +2920,9 @@ restart('human');
   else if(/install|draw/i.test(line))kind='charge';
   const side=/^You\b|^Player\b/i.test(line)?1:/^Bot\b/i.test(line)?-1:0;
   artSignal={kind,side,at:performance.now(),seq:artSignal.seq+1};
-  artHistory.push(kind);if(artHistory.length>12)artHistory.shift();
-  artWeather=updateArtSignatures();
+  artHistory.push({kind,at:performance.now()});
+  if(artHistory.length>12)artHistory.shift();
+  artWeather=updateArtSignatures(performance.now());
   const label=({strike:'IMPACT',recycle:'RECYCLE',deploy:'DEPLOY',charge:'CHARGE',turn:'TURN'})[kind];
   for(const e of engines){
    e.host.dataset.artSignal=kind;
@@ -2968,6 +2994,8 @@ restart('human');
   if(document.hidden||ms-last<40)return;last=ms;
   if(reduced?.matches)return;
   const t=ms*.001;
+  /* Decay is time-driven, not event-driven: quiet play cools both murals. */
+  artWeather=updateArtSignatures(ms);
   for(const en of engines){
    if(!en.visible)continue;
    const {cfg}=en;
@@ -2976,9 +3004,9 @@ restart('human');
    const burst=reduced?.matches?0:Math.max(0,1-age/1400);
    const hue=artSignal.side===1?cfg.orange:artSignal.side===-1?cfg.purple:null;
    const momentumHue=momentum.score>.025?cfg.orange:momentum.score<-.025?cfg.purple:null;
-   const weatherStrength=Math.min(1,(artWeather.impact*2+artWeather.growth*.5)/8);
+   const weatherStrength=artWeather.pressure;
    for(const {p,e} of en.particles){
-    const drift=t*p.speed*(1+burst*.55)+p.phase,swirl=p.a+Math.sin(drift*.7)*.38;
+    const drift=t*p.speed*(1+burst*.55+weatherStrength*.32)+p.phase,swirl=p.a+Math.sin(drift*.7)*.38;
     const halo=cfg.offset===0?142:164;
     /* Orbit stretches vertically under pressure, compresses horizontally.
        On equal health geometry returns to its original central symmetry. */
@@ -3000,7 +3028,7 @@ restart('human');
     }
 
     e.setAttribute('cx',x.toFixed(2));e.setAttribute('cy',y.toFixed(2));
-    e.setAttribute('opacity',Math.min(1,0.28+0.58*(.5+.5*Math.sin(drift*2+p.a))+burst*.16).toFixed(2));
+    e.setAttribute('opacity',Math.min(1,0.28+0.58*(.5+.5*Math.sin(drift*2+p.a))+burst*.16+weatherStrength*.12).toFixed(2));
     e.setAttribute('fill',burst>.05&&hue?hue:momentumHue&&Math.abs(momentum.score)>.08?momentumHue:(p.side?cfg.orange:cfg.purple));
    }
    for(const {p,e} of en.paths){
