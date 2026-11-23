@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.67 — Live Combat Recovery</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.68 — Dimensional Arcade</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -963,6 +963,125 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
  color:#7b389f;font:900 10px/1.5 monospace;white-space:nowrap;
 }
 #signalFoundry .artSignature{color:#bc5a17}
+
+/* v2.8.68 — REAL 3D ARCADE SKIN, following the approved illustrated mockup.
+   Presentation-only. This intentionally changes neither gameplay nor the
+   immutable ten-card playfield markup and size constraints. */
+:root{--chrome:white;--arcade-plum:#70249d;--arcade-orange:#ff761d;--arcade-lilac:#bc6df5}
+body{background:radial-gradient(ellipse 85% 65% at 18% 0,#ffdecf 0%,transparent 75%),
+radial-gradient(ellipse 90% 70% at 95% 10%,#dcc8fa 0%,transparent 67%),
+linear-gradient(165deg,#fffefa 0%,#f8f0fa 47%,#fff7ef 100%);perspective:1600px}
+header{position:relative;border:1px solid #d6b6e8;border-bottom:3px solid #b55df2;
+border-radius:0 0 18px 18px;
+background:linear-gradient(170deg,#ffffff 0%,#f7eafb 44%,#eee0f9 50%,#fffef8 75%);
+box-shadow:inset 0 2px 0 #fff,0 5px 0 #c3a2d8,0 8px 0 #e5d6ef,0 19px 26px #62397738,0 0 22px #ff863327}
+header::after{content:"";position:absolute;left:12px;right:12px;bottom:-3px;height:2px;
+background:linear-gradient(90deg,#ff963b,#fff5d1 35%,#ac4bf6 70%,#fca253);pointer-events:none}
+header h1{font-size:clamp(21px,2.8vw,32px);letter-spacing:.095em;
+color:#4c166d;text-shadow:0 1px 0 #fff,0 2px 0 #d9b4ff,0 4px 7px #9f6bd466}
+header nav button,header nav a{border-radius:11px;padding:9px 15px;
+background:linear-gradient(155deg,#fff,#f4e8ff 50%,#ead7ff);
+border:2px solid #b978ee;color:#672896;box-shadow:inset 0 2px 1px #fff,
+0 3px 0 #b47acb,0 5px 0 #dfc1ea,0 7px 13px #673a8945,0 0 12px #b45dff46;
+text-shadow:0 1px 0 #fff;transition:transform .15s,box-shadow .15s}
+header nav button.active{background:linear-gradient(135deg,#fff5e3,#ffa04b 40%,#f16b0c);
+border-color:#ff8d19;color:#7b2d00;box-shadow:inset 0 2px 0 #fff6db,
+0 3px 0 #b64c06,0 5px 0 #ffd2a6,0 7px 18px #e35e1780}
+header nav button:not(:disabled):active,.actions button:not(:disabled):active{transform:translateY(2px)!important}
+main{width:min(1220px,100%)}
+.turnbar{position:relative;border-radius:13px;padding:11px 16px;
+background:linear-gradient(110deg,#f1d9fe,#fffefa 42%,#f4e6ff);
+border:2px solid #d7a7f6;box-shadow:inset 0 2px 0 #fff,
+0 4px 0 #d4b9e6,0 9px 18px #8042ae26}
+.turnbar strong{padding:7px 13px;border-radius:7px;color:#fff;
+background:linear-gradient(130deg,#963ce0,#521889);
+text-shadow:0 1px 0 #361260;box-shadow:inset 0 1px 0 #e9bfff,
+0 3px 0 #43205b,0 0 16px #b34cf48a}
+#gameBoard{position:relative;isolation:isolate;border:4px ridge #ab62dd;
+border-radius:24px;padding:clamp(11px,1.2vw,18px);
+background:linear-gradient(132deg,#fffefe 0%,#f4e3fc 49%,#fff6e8 100%);
+box-shadow:inset 0 3px 0 #fff,0 0 0 3px #fffefa,
+0 5px 0 #ab75cc,0 10px 0 #e7c9f2,0 17px 25px #46225450,
+0 0 32px #ba54f777,0 0 40px #ff8b2c50!important}
+#gameBoard::before{content:"";position:absolute;inset:5px;border:2px solid #e8bdff;
+border-radius:18px;pointer-events:none;z-index:0;box-shadow:inset 0 0 13px #a450f54a}
+#gameBoard .side{position:relative;border-radius:18px;padding:clamp(9px,1.1vw,16px);
+isolation:isolate;box-shadow:inset 0 2px 0 #fff,0 4px 0 #ceb5df,0 8px 15px #73418d3a!important}
+#gameBoard .side.opponent{background:linear-gradient(150deg,#fefbff,#f0e0fc 55%,#e8d3fc);
+border:3px solid #a656ef;box-shadow:inset 0 2px 1px #fff,0 3px 0 #793ab6,0 6px 18px #a349ee72!important}
+#gameBoard .side.you{background:linear-gradient(155deg,#fffefa,#fff0df 60%,#ffe1bf);
+border:3px solid #ff922f;box-shadow:inset 0 2px 1px #fff,0 3px 0 #e67b25,0 6px 18px #fa832d77!important}
+#gameBoard .side-head{position:relative;z-index:2}
+#gameBoard .side-head strong{padding:6px 10px;border-radius:8px;
+background:linear-gradient(135deg,#fffefa,#f2e3ff);
+border:1px solid #c98af3;text-shadow:0 1px #fff;
+box-shadow:inset 0 1px 0 #fff,0 3px 0 #d3a7ee}
+#gameBoard .side.you .side-head strong{background:linear-gradient(135deg,#fffefa,#fff0dc);
+border-color:#ffb36d;box-shadow:inset 0 1px 0 #fff,0 3px 0 #ffc898}
+#gameBoard .lanes>.slot{position:relative;z-index:1;isolation:isolate;
+border-radius:clamp(8px,1vw,16px);border:3px solid #aa5deb!important;
+background:linear-gradient(142deg,#e7c8ff 0%,#9f71ce 10%,#775294 52%,#b485dc 89%,#e1bbff 100%)!important;
+box-shadow:inset 0 0 0 3px #e9c9ff,inset 0 0 0 7px #693c92,
+inset 0 9px 18px #f1ddff57,inset 0 -10px 12px #3e215771,
+0 4px 0 #6e2ba7,0 7px 0 #d5a7fa,0 10px 17px #662d904c,
+0 0 18px #ac4afa8f!important;
+transition:box-shadow .2s,filter .2s;overflow:hidden}
+#gameBoard .side.you .lanes>.slot{border-color:#ff8724!important;
+background:linear-gradient(145deg,#ffe9cd 0%,#ffbd7a 9%,#af7a76 54%,#ecaa79 90%,#ffe2bb)!important;
+box-shadow:inset 0 0 0 3px #fff0cd,inset 0 0 0 7px #b76731,
+inset 0 9px 18px #ffe6c26b,inset 0 -10px 14px #763b3c55,
+0 4px 0 #c95d0e,0 7px 0 #ffd4a0,0 10px 17px #903f204c,
+0 0 18px #ff882f9f!important}
+#gameBoard .lanes>.slot:empty::after{content:"+"!important;font:300 clamp(26px,4vw,48px)/1 monospace!important;
+color:#e9cfff!important;opacity:.83!important;text-shadow:0 1px 12px #fff6!important}
+#gameBoard .side.you .lanes>.slot:empty::after{color:#fff4d9!important}
+#gameBoard .lanes>.slot::before{content:"";position:absolute;inset:12%;border-radius:50%;
+border:1px solid #ead6ff67;box-shadow:0 0 9px #fff8;pointer-events:none;z-index:2}
+#gameBoard .side.you .lanes>.slot::before{border-color:#fff1d6aa}
+#gameBoard .lanes>.slot:has(.sqcard){background:#fffefa!important}
+#gameBoard .lanes>.slot .sqcard{position:relative;z-index:3;border-radius:9px;
+box-shadow:inset 0 1px 2px #fff,0 3px 8px #61367969!important}
+#gameBoard .lanes>.slot.available{outline:3px solid #fff;outline-offset:-7px}
+#gameBoard .divider{position:relative;z-index:2;border-radius:12px;
+background:linear-gradient(90deg,#ffebc7,#f8d8fc,#ffe6c6);
+border:2px solid #d68af4;box-shadow:inset 0 2px 0 #fff,0 3px 0 #dc9af2,
+0 0 22px #ff923078!important}
+.actions,.hand-area{border-radius:15px;
+background:linear-gradient(120deg,#fffefc,#f4e6fd 52%,#fff1e4);
+border:2px solid #d1a1ef;box-shadow:inset 0 2px 0 #fff,0 4px 0 #d6b2e8,
+0 8px 17px #8156a936!important}
+.actions button{border-radius:10px;border:2px solid #a869db;
+box-shadow:inset 0 2px 0 #fff,0 3px 0 #a883c8,0 5px 12px #754e8b4d}
+.actions button.primary{border-color:#ff841e;background:linear-gradient(130deg,#ffaf52,#ff8426 45%,#e95c0c);
+box-shadow:inset 0 2px 0 #ffe7bd,0 4px 0 #b74b06,0 6px 18px #ff77238c!important}
+.hand-area .sqcard{border-radius:10px;border:2px solid #b473ea;
+box-shadow:inset 0 1px 0 #fff,0 4px 0 #9253c0,0 6px 13px #643d8b42}
+#neuroscapeArt,#signalFoundry{position:relative;border-radius:22px;
+background:linear-gradient(140deg,#fff,#f1dcff 30%,#fff3e3);
+border:4px solid #c988f3;overflow:hidden;
+box-shadow:inset 0 3px 0 #fff,0 5px 0 #9265b2,
+0 9px 0 #dfc0ef,0 14px 23px #58347851,0 0 21px #a34eea6e!important}
+#signalFoundry{border-color:#f3a463;
+box-shadow:inset 0 3px 0 #fff,0 5px 0 #e8914b,
+0 9px 0 #ffe0ba,0 14px 23px #58347851,0 0 24px #fe913678!important}
+#neuroscapeArt svg,#signalFoundry svg{background:radial-gradient(ellipse at center,#431569 0%,#170c2b 62%,#0f071e 100%)}
+#neuroscapeArt .artHead,#signalFoundry .foundryHeader{background:linear-gradient(135deg,#fff,#f1dfff,#ffedda);
+border-bottom:2px solid #c587f2;padding:11px 15px}
+#neuroscapeArt .artFoot,#signalFoundry .foundryCaption{background:linear-gradient(95deg,#fffefa,#f0e1ff);
+padding:10px 14px}
+@media(max-width:650px){
+ header{border-radius:0 0 12px 12px}
+ header nav button,header nav a{padding:7px 8px;border-radius:7px}
+ #gameBoard{border-radius:12px;padding:6px}
+ #gameBoard .side{border-radius:10px;padding:6px}
+ #gameBoard .lanes>.slot{border-radius:5px;border-width:2px!important}
+ #gameBoard .lanes>.slot::before{inset:8%}
+ #neuroscapeArt,#signalFoundry{border-radius:13px}
+}
+@media(prefers-reduced-motion:reduce){
+ header nav button,#gameBoard .lanes>.slot{transition:none!important}
+}
+
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
    Card playfield outranks forecast, status, log and decorative panels. */
