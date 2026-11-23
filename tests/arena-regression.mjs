@@ -202,9 +202,46 @@ try{
  if(recoveryPhoton.side!=='p'||recoveryPhoton.slot!=='1'||recoveryPhoton.amount!=='2'||
    recoveryPhoton.seq!=='987661'||!recoveryPhoton.matched||!recoveryPhoton.arrival||
    recoveryPhoton.pointer!=='none'||!recoveryPhoton.animation?.includes('neonRecoveryTravel')||
-   recoveryPhoton.delay!=='1.18s'||!recoveryPhoton.noFalseReturn)
-   fail('RAM recovery photon diverged from positive release ledger: '+JSON.stringify(recovery));
+   recoveryPhoton.delay!=='1.37s'||!recoveryPhoton.noFalseReturn)
+   fail('RAM recovery photon diverged from positive release ledger: '+JSON.stringify(recoveryPhoton));
  console.log('RAM RECOVERY PASS: original square → actual available RAM meter, positive release only');
+ // v2.8.78 — destruction and RAM return share a single attack-origin
+ // lineage when the observed release flow records the attack sequence.
+ const lifecycle=await page.evaluate(()=>{
+   const attack={from:'p',to:'e',source:0,target:1,kind:'blocked',
+     retaliation:0,seq:987664,
+     destroyed:[{side:'e',slot:1,name:'Observed fallen card',ram:3}]};
+   drawCombatPathways(attack);
+   drawEnergyPathways({seq:987665,impactSeq:987664,events:[
+     {side:'e',type:'release',amount:3,slots:[{slot:1,amount:3}]}]});
+   const shock=[...document.querySelectorAll('#combatPathways .neonDestructionRing')]
+      .find(x=>x.dataset.attackSeq==='987664');
+   const returnPath=[...document.querySelectorAll('#ePathways .neonRecoveryReturn')]
+      .find(x=>x.dataset.flowSeq==='987665');
+   const arrive=[...document.querySelectorAll('#ePathways .neonRecoveryArrival')]
+      .find(x=>x.dataset.flowSeq==='987665');
+   const s=shock&&getComputedStyle(shock),r=returnPath&&getComputedStyle(returnPath),
+      a=arrive&&getComputedStyle(arrive);
+   return {
+     shockId:shock?.dataset.lifecycleId,recoveryId:returnPath?.dataset.lifecycleId,
+     arrivalId:arrive?.dataset.lifecycleId,
+     side:returnPath?.dataset.recoverySide,slot:returnPath?.dataset.recoverySlot,
+     amount:returnPath?.dataset.returnedRam,
+     shockStart:s?.animationDelay,shockDuration:s?.animationDuration,
+     returnStart:r?.animationDelay,returnDuration:r?.animationDuration,
+     arrivalStart:a?.animationDelay,
+     pointerSafe:[shock,returnPath,arrive].every(x=>x&&getComputedStyle(x).pointerEvents==='none')
+   };
+ });
+ if(lifecycle.shockId!=='attack:987664'||
+   lifecycle.recoveryId!==lifecycle.shockId||
+   lifecycle.arrivalId!==lifecycle.shockId||
+   lifecycle.side!=='e'||lifecycle.slot!=='1'||lifecycle.amount!=='3'||
+   lifecycle.shockStart!=='0.79s'||lifecycle.returnStart!=='1.37s'||
+   lifecycle.arrivalStart!=='2.05s'||!lifecycle.pointerSafe)
+    fail('Unified lifecycle not temporally/provenance aligned: '+JSON.stringify(lifecycle));
+ console.log('ENERGY LIFECYCLE PASS: attack evidence ties shockwave, RAM packet and arrival to one source');
+
 
  console.log('SHIELD SHIMMER PASS: two tilted elliptical rims and specular glint at real defender');
  console.log('DEFENDER RIPPLE PASS: three staggered shield rings at real defender; zero on direct hit');
