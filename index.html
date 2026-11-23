@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.77 — Destruction to RAM Recovery</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.78 — Unified Energy Lifecycle</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1471,6 +1471,25 @@ padding:10px 14px}
  #gameBoard .energyPathways .neonRecoveryCore,
  #gameBoard .energyPathways .neonRecoveryArrival{animation:none!important;opacity:0!important}
 }
+
+/* v2.8.78 — A SINGLE OBSERVED ENERGY LIFECYCLE.
+   Attack sequenced impact → destruction (~790ms) → shockwave
+   (~790–1640ms) → RAM release (~1370–2130ms) → meter arrival.
+   Identifiers are provenance for display/testing, not game authority. */
+#gameBoard .energyPathways .neonRecoveryReturn,
+#gameBoard .energyPathways .neonRecoveryCore{
+ animation-delay:1370ms;
+}
+#gameBoard .energyPathways .neonRecoveryArrival{animation-delay:2050ms}
+#gameBoard .combatPathways .neonDestructionRing,
+#gameBoard .combatPathways .neonDestructionFlash{
+ will-change:opacity,transform;
+}
+@media(prefers-reduced-motion:reduce){
+ #gameBoard .energyPathways .neonRecoveryReturn,
+ #gameBoard .energyPathways .neonRecoveryCore,
+ #gameBoard .energyPathways .neonRecoveryArrival{animation:none!important}
+}
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
    Card playfield outranks forecast, status, log and decorative panels. */
@@ -2517,7 +2536,7 @@ for(let x of removed)lastImpact.destroyed.push({side,slot:x.slot,name:card(x.v.n
 q.bin.push(...removed.map(x=>x.v.n));q.units=q.units.filter(v=>v.hp>0);
 if(removed.length)lastImpact.recycle.push({side,count:removed.length,freed:free(q)-beforeFree,freeNow:free(q),binNow:q.bin.length});}
 if(lastImpact.destroyed.length){
-lastRamFlow={seq:++flowSeq,events:lastImpact.recycle.map(x=>({side:x.side,type:'release',amount:x.freed,name:lastImpact.destroyed.filter(y=>y.side===x.side).map(y=>y.name).join(' + '),slots:lastImpact.destroyed.filter(y=>y.side===x.side&&y.ram>0).map(y=>({slot:y.slot,amount:y.ram}))}))};
+lastRamFlow={seq:++flowSeq,impactSeq:lastImpact.seq,events:lastImpact.recycle.map(x=>({side:x.side,type:'release',amount:x.freed,name:lastImpact.destroyed.filter(y=>y.side===x.side).map(y=>y.name).join(' + '),slots:lastImpact.destroyed.filter(y=>y.side===x.side&&y.ram>0).map(y=>({slot:y.slot,amount:y.ram}))}))};
 log('RECYCLED: '+lastImpact.destroyed.map(x=>x.name).join(' + ')+'. RAM returned: '+lastImpact.recycle.map(x=>(x.side==='p'?'PLAYER':'BOT')+' +'+x.freed).join(' / ')+'.');}
 if(mode==='auto'||k==='e'){
  recordBotExperience(k,{cardId:u.n,kind:lastImpact.kind,context:combatMemoryContext(lastImpact.kind,lastImpact.meter),defenderCardId:block?.n??null,damage:c.a,
@@ -3205,6 +3224,8 @@ function drawEnergyPathways(snapshot){
       positive returned RAM. Trace only those recorded transfers. */
    if(flow.type==='release'&&seg.direction==='back'&&seg.amount>0&&
       !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
+    const observedImpact=Number.isInteger(snapshot.impactSeq)?snapshot.impactSeq:null;
+    const lifecycle=observedImpact===null?'release:'+snapshot.seq:'attack:'+observedImpact;
     const ns='http://www.w3.org/2000/svg',curve=routeBetween(origin,dest);
     for(const cls of ['neonRecoveryReturn','neonRecoveryCore']){
      const bolt=document.createElementNS(ns,'path');
@@ -3212,6 +3233,7 @@ function drawEnergyPathways(snapshot){
      bolt.setAttribute('pathLength','100');
      bolt.setAttribute('class',cls);
      bolt.dataset.flowSeq=String(snapshot.seq);
+     bolt.dataset.lifecycleId=lifecycle;
      bolt.dataset.recoverySide=key;
      bolt.dataset.recoverySlot=String(seg.slot);
      bolt.dataset.returnedRam=String(seg.amount);
@@ -3224,6 +3246,7 @@ function drawEnergyPathways(snapshot){
     arrival.setAttribute('r','13');
     arrival.setAttribute('class','neonRecoveryArrival');
     arrival.dataset.flowSeq=String(snapshot.seq);
+    arrival.dataset.lifecycleId=lifecycle;
     arrival.dataset.recoverySide=key;
     arrival.addEventListener('animationend',()=>arrival.remove(),{once:true});
     svg.append(arrival);
@@ -3375,6 +3398,7 @@ function drawCombatPathways(impact){
     ring.setAttribute('transform','rotate(-22 '+cx.toFixed(2)+' '+cy.toFixed(2)+')');
     ring.setAttribute('class','neonDestructionRing destructionRing'+n);
     ring.dataset.attackSeq=String(impact.seq);
+    ring.dataset.lifecycleId='attack:'+impact.seq;
     ring.dataset.destroyedSlot=tag;
     ring.addEventListener('animationend',()=>ring.remove(),{once:true});
     svg.append(ring);
@@ -3384,6 +3408,7 @@ function drawCombatPathways(impact){
    flashRing.setAttribute('r',String(Math.max(8,Math.min(23,width*.4))));
    flashRing.setAttribute('class','neonDestructionFlash');
    flashRing.dataset.attackSeq=String(impact.seq);
+   flashRing.dataset.lifecycleId='attack:'+impact.seq;
    flashRing.dataset.destroyedSlot=tag;
    flashRing.addEventListener('animationend',()=>flashRing.remove(),{once:true});
    svg.append(flashRing);
