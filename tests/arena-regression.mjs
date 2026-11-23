@@ -63,6 +63,34 @@ try{
    return a.length===5&&a.every(e=>e.getBoundingClientRect().height>=70);
  }));
  if(!still)fail('Artwork regenerate changed protected card-space dimensions');
+ // Rendered-health-only test: simulate readout changes without altering combat state.
+ const originalHealth=await page.evaluate(()=>({
+  p:document.getElementById('pHealth').textContent,
+  e:document.getElementById('eHealth').textContent
+ }));
+ const assertMomentum=async(p,e,want)=>{
+  await page.evaluate(({p,e})=>{
+   document.getElementById('pHealth').textContent=p;
+   document.getElementById('eHealth').textContent=e;
+  },{p,e});
+  await page.waitForFunction(label=>document.getElementById('coresMomentumText')?.textContent===label,want);
+  const both=await page.locator('#foundryMomentumText').textContent();
+  if(both!==want)fail('Foundry and Two Cores momentum diverged: '+both);
+ };
+ await assertMomentum('BF 20 / MF 20','BF 20 / MF 20','BALANCED');
+ await assertMomentum('BF 20 / MF 20','BF 12 / MF 8','PLAYER ADVANTAGE');
+ const orangePosition=await page.locator('#coresMomentumNeedle').evaluate(e=>parseFloat(e.style.left));
+ if(orangePosition<=50)fail('Player advantage must move momentum needle orange/right');
+ await assertMomentum('BF 8 / MF 12','BF 20 / MF 20','BOT ADVANTAGE');
+ const purplePosition=await page.locator('#coresMomentumNeedle').evaluate(e=>parseFloat(e.style.left));
+ if(purplePosition>=50)fail('Bot advantage must move momentum needle violet/left');
+ await page.evaluate(({p,e})=>{
+   document.getElementById('pHealth').textContent=p;
+   document.getElementById('eHealth').textContent=e;
+ },originalHealth);
+ if(errors.length)fail('Browser errors during momentum response');
+ console.log('MOMENTUM PASS: both murals follow only displayed health, balanced/player/bot, without changing game state');
+
  if(errors.length)fail('Browser error after artwork regeneration');
  console.log('ART GENERATION PASS: exactly two active procedural scenes, both regenerate, card space unchanged');
  console.log('ARENA PASS: five large squares per side, hand, controls, RAM install/restart and bot start',JSON.stringify(initial));
