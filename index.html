@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.69 — Active Neon Arcade</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.70 — Neon Tubes and Light Trails</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1149,6 +1149,67 @@ padding:10px 14px}
  #gameBoard .lanes>.slot.available,#gameBoard .sqcard.playable,#gameBoard .sqcard.attack,
  .hand-area .sqcard.playable,.hand-area .sqcard.attack,.actions #next:not(:disabled),
  #gameBoard .divider::after{animation:none!important}
+}
+
+
+/* v2.8.70 — ACTIVE NEON TUBES + DIRECTIONAL LIGHT TRAILS.
+   Decorative-only, added on top of the accepted 3D chrome.
+   No playfield dimensions, gameplay logic, hit targets, or artwork count change. */
+#gameBoard{isolation:isolate}
+#gameBoard::after{
+ content:"";position:absolute;inset:2px;z-index:0;pointer-events:none;
+ border-radius:20px;border:3px solid transparent;
+ background:linear-gradient(110deg,#ff862700,#ff8528e8,#fff8eb,#ba67ffed,#9b37d900) border-box;
+ background-size:320% 100%;
+ -webkit-mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);
+ -webkit-mask-composite:xor;mask-composite:exclude;
+ filter:drop-shadow(0 0 6px #aa59f4);
+ animation:neonTubeCircuit 5.5s linear infinite;
+}
+#gameBoard .side{isolation:isolate}
+#gameBoard .side::after{
+ content:"";position:absolute;left:12px;right:12px;bottom:3px;height:3px;
+ z-index:2;pointer-events:none;border-radius:10px;
+ background:linear-gradient(90deg,transparent 0%,#b45af4 20%,#fff8f4 50%,#b45af4 80%,transparent 100%);
+ background-size:250% 100%;
+ box-shadow:0 0 8px #ae52eeae,0 0 19px #a451ee8f;
+ animation:neonLaneTravel 3.2s linear infinite;
+}
+#gameBoard .side.you::after{
+ background:linear-gradient(90deg,transparent 0%,#ff7f22 20%,#fff7e7 50%,#ff9e47 80%,transparent 100%);
+ background-size:250% 100%;
+ box-shadow:0 0 8px #ff8527b8,0 0 19px #ff852789;
+ animation-direction:reverse;
+}
+#gameBoard .lanes>.slot:has(.sqcard.playable),
+#gameBoard .lanes>.slot:has(.sqcard.attack){
+ filter:brightness(1.09) drop-shadow(0 0 8px #ff9a3fbe);
+}
+#gameBoard .side.opponent .lanes>.slot:has(.sqcard.attack){
+ filter:brightness(1.09) drop-shadow(0 0 9px #b36affbf);
+}
+.hand-area .sqcard.playable,.hand-area .sqcard.attack{
+ outline:2px solid #ffe3b5;outline-offset:0;
+ filter:drop-shadow(0 0 6px #ff8e2da8);
+}
+#gameBoard[data-active-side="p"] .side.you::after{animation-duration:1.8s}
+#gameBoard[data-active-side="e"] .side.opponent::after{animation-duration:1.8s}
+#gameBoard[data-neon-intensity="combat"]::after{animation-duration:1.9s;filter:drop-shadow(0 0 12px #ff7e23)}
+#neuroscapeArt,#signalFoundry{position:relative}
+#neuroscapeArt::after,#signalFoundry::after{
+ content:"";position:absolute;left:12px;right:12px;bottom:0;height:3px;
+ pointer-events:none;z-index:4;
+ background:linear-gradient(90deg,transparent,#ad51fd,#fff,#ff9c39,transparent);
+ background-size:280% 100%;
+ animation:neonLaneTravel 7s linear infinite;
+ box-shadow:0 0 10px #aa55f89b;
+}
+#signalFoundry::after{animation-direction:reverse;box-shadow:0 0 10px #ff8d31a8}
+@keyframes neonTubeCircuit{from{background-position:0% 50%}to{background-position:320% 50%}}
+@keyframes neonLaneTravel{from{background-position:250% 50%}to{background-position:0% 50%}}
+@media(prefers-reduced-motion:reduce){
+ #gameBoard::after,#gameBoard .side::after,
+ #neuroscapeArt::after,#signalFoundry::after{animation:none!important}
 }
 
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
