@@ -68,6 +68,31 @@ try{
     !routed.impact.animation?.includes('neonCoronaDischarge')||
     routed.impact.delay!=='0.77s')
    fail('Impact discharge not aligned to real target: '+JSON.stringify(routed.impact));
+ // Defender shield ripple: actual blocked target receives exactly three rings.
+ // Direct health attacks must never manufacture a defending card's shield.
+ const ripples=await page.evaluate(()=>{
+  const rings=[...document.querySelectorAll('#combatPathways .neonDefenderRipple')];
+  const report=rings.map(x=>({
+    seq:x.dataset.attackSeq,target:x.dataset.attackTarget,
+    cx:Number(x.getAttribute('cx')),cy:Number(x.getAttribute('cy')),
+    delay:getComputedStyle(x).animationDelay,
+    animation:getComputedStyle(x).animationName,
+    pointer:getComputedStyle(x).pointerEvents
+  }));
+  drawCombatPathways({from:'p',to:'e',source:0,target:-1,kind:'direct',seq:987655});
+  const directRings=[...document.querySelectorAll('#combatPathways .neonDefenderRipple')]
+    .filter(x=>x.dataset.attackSeq==='987655').length;
+  return {report,directRings};
+ });
+ if(ripples.report.length!==3||ripples.report.some(x=>
+    x.seq!=='987654'||x.target!=='e:0'||x.pointer!=='none'||
+    !x.animation.includes('neonDefenderRipple')||
+    Math.abs(x.cx-routed.impact.x)>2||Math.abs(x.cy-routed.impact.y)>2)||
+    ripples.directRings!==0)
+   fail('Defender ripple must follow blocked card target only: '+JSON.stringify(ripples));
+ if(ripples.report.map(x=>x.delay).join(',')!=='0.805s,0.875s,0.945s')
+   fail('Defender ripples need staggered impact timing: '+JSON.stringify(ripples.report));
+ console.log('DEFENDER RIPPLE PASS: three staggered shield rings at real defender; zero on direct hit');
  console.log('IMPACT DISCHARGE PASS: real target, six rays, delayed corona, noninteractive');
  console.log('ATTACK NEON PASS: matched real route, noninteractive, animated and keyed to target');
 
