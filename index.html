@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.56 — Phase 34 Gameplay Closure</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.57 — Permanent Card Arena Invariant</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -888,13 +888,34 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 #gameBoard .side.opponent .slot.available{outline-color:#bb54fa}
 .sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
 @media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
+/* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
+   Five square card stations per side, including empty and pre-init state.
+   Card playfield outranks forecast, status, log and decorative panels. */
+#gameBoard{min-height:460px!important}
+#gameBoard .side{min-height:200px!important}
+#gameBoard .lanes{
+ display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+ min-height:clamp(125px,14vw,220px)!important;gap:clamp(4px,.7vw,12px)!important;
+}
+#gameBoard .lanes>.slot{
+ display:grid!important;visibility:visible!important;
+ min-height:clamp(72px,10vw,170px)!important;
+ aspect-ratio:1/1!important;border-width:2px!important;border-style:dashed!important;
+}
+#gameBoard .slot:empty::after{content:"SQUARE " attr(data-slot);font:800 clamp(9px,.85vw,13px)/1.3 monospace;opacity:.75}
+#gameBoard .slot .sqcard{min-width:0;min-height:0;width:100%!important;height:100%!important;aspect-ratio:1/1!important}
+@media(max-width:650px){
+ #gameBoard{min-height:340px!important}#gameBoard .side{min-height:135px!important}
+ #gameBoard .lanes{min-height:75px!important;gap:3px!important}
+ #gameBoard .lanes>.slot{min-height:52px!important}
+}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.56 · BONE WHITE / PHASE CLOSURE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
-<main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
-<section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
-<div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.57 · BONE WHITE / ARENA LOCK</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<main><div class="turnbar" id="turnbar"><strong id="turnText">STARTING ARCADE · FIVE SQUARES PER PLAYER</strong><div class="phases" id="phaseStrip"></div></div>
+<section class="board" id="gameBoard" data-arena-invariant="5x2-visible-square-card-slots" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
+<div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes" aria-label="Five bot card squares"><div class="slot" data-slot="1"></div><div class="slot" data-slot="2"></div><div class="slot" data-slot="3"></div><div class="slot" data-slot="4"></div><div class="slot" data-slot="5"></div></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
 <div class="divider"><span>⚔ COMBAT</span><span id="combatEnergy" class="combatEnergy" aria-hidden="true"></span><small id="combatFeed" aria-live="polite">Ready defender blocks first · otherwise direct BF / MF damage</small><span id="gameResult"></span></div>
-<div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Player RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="pInstalled">0</b></span><span>COMMITTED <b id="pCommitted">0</b></span><span>AVAILABLE <b id="pAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="pRamCommitted" class="ramCommitted"></i><i id="pRamAvailable" class="ramAvailable"></i></div><div id="pFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="pLanes"></div><svg id="pPathways" class="energyPathways" aria-hidden="true"></svg></div>
+<div class="side you"><div class="side-head"><strong>PLAYER / SYNTHETIX</strong><div class="meters"><span id="pHealth"></span><span id="pRam"></span><span id="pDeck"></span><span id="pBin"></span><span id="pCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Player RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="pInstalled">0</b></span><span>COMMITTED <b id="pCommitted">0</b></span><span>AVAILABLE <b id="pAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="pRamCommitted" class="ramCommitted"></i><i id="pRamAvailable" class="ramAvailable"></i></div><div id="pFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="pLanes" aria-label="Five player card squares"><div class="slot" data-slot="1"></div><div class="slot" data-slot="2"></div><div class="slot" data-slot="3"></div><div class="slot" data-slot="4"></div><div class="slot" data-slot="5"></div></div><svg id="pPathways" class="energyPathways" aria-hidden="true"></svg></div>
 </section>
 <section id="choicePanel" class="choicePanel" aria-label="Available attack comparison"><div class="choiceHeader"><strong>ATTACK COMPARISON</strong><span id="choiceCount">No attacks ready</span></div><div id="choiceOptions" class="choiceOptions"></div></section><section id="sequencePanel" class="sequencePanel" aria-label="Adaptive attack sequence forecast"><div class="sequenceHead"><strong>ADAPTIVE FORECAST · UP TO FIVE ATTACKS</strong><div class="priorityGroup" role="group" aria-label="Forecast ranking preference"><button type="button" id="priorityWin" class="priorityButton" aria-pressed="true">QUICK WIN</button><button type="button" id="priorityPreserve" class="priorityButton" aria-pressed="false">PRESERVE</button><button type="button" id="priorityDamage" class="priorityButton" aria-pressed="false">DIRECT DAMAGE</button></div><span id="sequenceCount">Choose an opening</span></div><div id="bestActionPanel" class="bestActionPanel" aria-live="polite"><strong id="bestActionText">AUTHORITATIVE ACTION · evaluating</strong><button type="button" id="bestActionButton" class="bestActionButton" disabled>EXECUTE FIRST MOVE</button><small id="routeStatus" class="routeStatus">DIODIC GATE · No submission yet</small></div><div id="sequenceOptions" class="sequenceOptions"></div><div id="learningStatus" class="learningStatus" aria-live="polite">LEARNING · No observed attacks yet · forecasts remain deterministic</div></section><div id="decisionStatus" class="decisionStatus" aria-live="off">Hover an attack-ready card to assess its outcome</div><aside id="cardIntel" class="cardIntel" aria-label="Card tactical information"><strong id="intelName">CARD INTELLIGENCE</strong><span id="intelFacts">Hover or focus a card for cost, target, and tactical status.</span><span id="intelDecision">Tactical readout</span><div id="combatProjection" class="combatProjection" aria-live="off" hidden></div></aside><div class="actions"><strong>YOUR ACTIONS</strong><button id="install" type="button">+ Install RAM</button><button id="draw" type="button">+ Draw card</button><button id="next" class="primary" type="button">Advance phase →</button></div>
 <section class="hand-area"><div class="hand-heading"><strong id="handLabel">YOUR HAND</strong><span id="handStatus"></span></div><div id="hand" class="hand"></div></section>
@@ -2572,4 +2593,17 @@ $('priorityPreserve').onclick=()=>setTacticalPriority('preserve');
 $('priorityDamage').onclick=()=>setTacticalPriority('damage');
 $('install').onclick=()=>act('p','ram');$('draw').onclick=()=>act('p','draw');$('next').onclick=()=>act('p','next');
 restart('human');
+</script><script>
+/* Post-engine startup guard: report blank initialization without hiding slots. */
+(function(){
+ const turn=document.getElementById('turnText'),p=document.getElementById('pLanes'),e=document.getElementById('eLanes');
+ if(!turn||!p||!e)return;
+ if(p.children.length!==5||e.children.length!==5){
+  turn.textContent='ARENA ERROR · FIVE CARD SQUARES REQUIRED';turn.style.color='#b42911';
+ }else if(turn.textContent.includes('STARTING ARCADE')){
+  turn.textContent='ARCADE INITIALIZATION FAILED · CARD SPACES PRESERVED';turn.style.color='#b42911';
+  const message=document.getElementById('message');
+  if(message)message.textContent='Game startup failed. Reload the page; all ten card stations remain reserved.';
+ }
+})();
 </script></body></html>
