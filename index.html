@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.52 — Three-Attack Tactical Chains</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.53 — Adaptive Chain Depth</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -889,7 +889,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
 @media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.52 · BONE WHITE / THREE-CHAIN</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.53 · BONE WHITE / ADAPTIVE DEPTH</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1305,15 +1305,39 @@ function botThreeAttackPlan(s,k,actions){
  }
  return best?Object.freeze({...best,examined,cap:BOT_THREE_CHAIN_CAP}):null;
 }
+/* Phase 34 turn 9: conservative pruning. Sum of all ready cards' damage
+   upper-bounds all possible direct damage. Blockers can only reduce it. */
+function botAdaptiveDepth(s,k,actions){
+ const ready=actions.filter(a=>a.kind==='attack');
+ if(!ready.length)return Object.freeze({depth:0,reason:'NO READY ATTACKS',potential:false});
+ if(ready.some(a=>botAttackRisk(predictedTarget(s,k,a.i)).immediateWin))
+  return Object.freeze({depth:1,reason:'IMMEDIATE FINISH',potential:true});
+ const totals={BF:0,MF:0};
+ for(const a of ready){
+  const c=card(s[k].units[a.i].n);
+  totals[c.hit==='MAINFRAME'?'MF':'BF']+=c.a;
+ }
+ const enemy=s[other(k)];
+ const potential=totals.BF>=enemy.bf||totals.MF>=enemy.mf;
+ if(!potential)return Object.freeze({depth:1,reason:'NO TERMINAL CHAIN POSSIBLE',potential:false});
+ return Object.freeze({depth:Math.min(3,ready.length),
+  reason:ready.length>=3?'THREE-MOVE FINISH POSSIBLE':'TWO-MOVE FINISH POSSIBLE',potential:true});
+}
 function chooseBotAttack(s,k,actions,experience=botMemory){
  const attacks=actions.filter(x=>x.kind==='attack');
  if(!attacks.length)return actions.find(x=>x.kind==='next')||null;
  const ranked=attacks.slice().sort((a,b)=>compareBotAttacks(s,k,a,b,experience));
- if(botAttackRisk(predictedTarget(s,k,ranked[0].i)).immediateWin)return ranked[0];
- const plan=botTwoAttackPlan(s,k,attacks);
- if(plan?.win)return attacks.find(x=>x.i===plan.first)||ranked[0];
- const chain=botThreeAttackPlan(s,k,attacks);
- return chain?.win?attacks.find(x=>x.i===chain.first)||ranked[0]:ranked[0];
+ const depth=botAdaptiveDepth(s,k,attacks);
+ if(depth.depth===1)return ranked[0];
+ if(depth.depth>=2){
+  const plan=botTwoAttackPlan(s,k,attacks);
+  if(plan?.win)return attacks.find(x=>x.i===plan.first)||ranked[0];
+ }
+ if(depth.depth>=3){
+  const chain=botThreeAttackPlan(s,k,attacks);
+  if(chain?.win)return attacks.find(x=>x.i===chain.first)||ranked[0];
+ }
+ return ranked[0];
 }
 function botMemoryRegression(){
  const cases=[],check=(name,pass)=>cases.push(Object.freeze({name,pass:!!pass}));
@@ -1565,6 +1589,43 @@ function botThreeChainRegression(){
  const passed=checks.filter(x=>x.pass).length;return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
 }
 const botThreeChainChecks=botThreeChainRegression();
+/* Phase 34 turn 9: depth gating cannot conceal decisive chains. */
+function botAdaptiveDepthRegression(){
+ const checks=[],check=(name,ok)=>checks.push(Object.freeze({name,pass:!!ok}));
+ const cards=CATALOG.cards.filter(c=>c.a>0&&c.d>0),weak=cards.find(c=>c.a===1);
+ const strong=cards.find(c=>c.a>=3&&c.hit===weak.hit),foe=cards.find(c=>c.a===1);
+ const unit=(c,hp=c.d)=>({n:Number(c.num),hp,used:false});
+ const board=()=>({p:{units:[unit(strong),unit(weak),unit(weak)],bf:20,mf:20,bin:[]},
+  e:{units:[unit(foe,1),unit(foe,1)],bf:20,mf:20,bin:[]},active:'p',phase:2,done:false});
+ const sample=board(),meter=strong.hit==='MAINFRAME'?'mf':'bf';sample.e[meter]=strong.a;
+ const before=JSON.stringify(sample),a=legalActions(sample,'p');
+ check('three-step win searched',botAdaptiveDepth(sample,'p',a).depth===3);
+ check('three-step winning opener retained',chooseBotAttack(sample,'p',a,{p:[],e:[]})?.i===1);
+ const immediate=board();immediate.e.units=[];immediate.e[meter]=1;
+ check('instant finish depth one',botAdaptiveDepth(immediate,'p',legalActions(immediate,'p')).depth===1);
+ check('instant finish selected',chooseBotAttack(immediate,'p',legalActions(immediate,'p'),{p:[],e:[]})?.i===0);
+ const impossible=board();
+ check('high health prunes deep search',botAdaptiveDepth(impossible,'p',legalActions(impossible,'p')).depth===1);
+ check('pruned case selects baseline',chooseBotAttack(impossible,'p',legalActions(impossible,'p'),{p:[],e:[]})?.i===0);
+ const two=board();two.p.units=two.p.units.slice(0,2);two.e.units=[unit(foe,1)];two.e[meter]=strong.a;
+ check('two attackers limit depth two',botAdaptiveDepth(two,'p',legalActions(two,'p')).depth===2);
+ const single=board();single.p.units=single.p.units.slice(0,1);
+ check('one attacker limit depth one',botAdaptiveDepth(single,'p',legalActions(single,'p')).depth===1);
+ const exhausted=board();exhausted.p.units.forEach(u=>u.used=true);
+ check('exhausted depth zero',botAdaptiveDepth(exhausted,'p',legalActions(exhausted,'p')).depth===0);
+ const done=board();done.done=true;
+ check('terminal depth zero',botAdaptiveDepth(done,'p',legalActions(done,'p')).depth===0);
+ const mixed=board();mixed.e[meter]=strong.a+weak.a+1;
+ check('potential 3-step damage not pruned',botAdaptiveDepth(mixed,'p',legalActions(mixed,'p')).depth===3);
+ check('read-only planning',JSON.stringify(sample)===before);
+ const five=board();five.p.units=[unit(strong),unit(weak),unit(weak),unit(weak),unit(weak)];five.e[meter]=strong.a;
+ const chain=botThreeAttackPlan(five,'p',legalActions(five,'p'));
+ check('60-node cap retained',chain?.examined===BOT_THREE_CHAIN_CAP);
+ check('bot memory unaffected',botMemory.p.length===0&&botMemory.e.length===0);
+ const passed=checks.filter(x=>x.pass).length;return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
+}
+const botDepthChecks=botAdaptiveDepthRegression();
+
 
 
 
@@ -2049,7 +2110,7 @@ function routeAuthoritativeAction(proposal){
  routeEvidence.rejected++;routeEvidence.last='REJECT · ENGINE DECLINED';return false;
 }
 function renderRouteStatus(){
- $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' · RISK '+botRiskChecks.passed+'/'+botRiskChecks.total+' · COMBOS '+botComboChecks.passed+'/'+botComboChecks.total+' · THREE CHAIN '+botThreeChainChecks.passed+'/'+botThreeChainChecks.total+' '+(botThreeChainChecks.passed===botThreeChainChecks.total?'PASS':'FAIL');
+ $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' · RISK '+botRiskChecks.passed+'/'+botRiskChecks.total+' · COMBOS '+botComboChecks.passed+'/'+botComboChecks.total+' · THREE CHAIN '+botThreeChainChecks.passed+'/'+botThreeChainChecks.total+' · DEPTH '+botDepthChecks.passed+'/'+botDepthChecks.total+' '+(botDepthChecks.passed===botDepthChecks.total?'PASS':'FAIL');
 }
 function renderBestAction(all){
  const panel=$('bestActionPanel'),button=$('bestActionButton'),label=$('bestActionText');
