@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.85 — Rapid Recovery Cleanup</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.86 — Complete Visual Quiescence</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1570,6 +1570,13 @@ padding:10px 14px}
    timeline; no shared CSS animation resets and no cross-cycle removal. */
 #gameBoard .neonRamReservoir,#gameBoard .neonRamDischarge,
 #gameBoard .neonRamAfterglow{isolation:isolate;pointer-events:none}
+/* v2.8.86 — all ephemeral energy nodes are strictly pointer transparent,
+   including SVG circles and child paths, independent of inherited SVG defaults. */
+#gameBoard [data-cycle-id],
+#gameBoard [data-cycle-id] *,
+#gameBoard .energyPathways .neonRecoveryReturn,
+#gameBoard .energyPathways .neonRecoveryCore,
+#gameBoard .energyPathways .neonRecoveryArrival{pointer-events:none!important}
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
    Card playfield outranks forecast, status, log and decorative panels. */
