@@ -2952,7 +2952,7 @@ restart('human');
   let generation=0,particles=[],paths=[];
   function regenerate(){
    generation++;const rnd=randomFrom((0x6e6f6e^Math.imul(index+1,0x9e3779b9)^Math.imul(generation,0x85ebca6b))>>>0);
-   group.replaceChildren();group.dataset.geometryReady='pending';particles=[];paths=[];
+   group.replaceChildren();group.dataset.geometryReady='pending';particles.length=0;paths.length=0;
    for(let j=0;j<cfg.count;j++){
     const p={a:rnd()*Math.PI*2,r:30+rnd()*280,speed:.13+rnd()*.38,phase:rnd()*Math.PI*2,
       size:1.4+rnd()*3.2,offset:15+rnd()*90,side:j%2};
