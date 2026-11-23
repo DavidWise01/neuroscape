@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.62 — Generative Combat Momentum</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.63 — Momentum Geometry</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -951,6 +951,11 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
  border-radius:3px;background:#fff;box-shadow:0 0 0 1px #361f4c,0 0 7px #ffae64;
  transform:translateX(-50%);
 }
+
+/* v2.8.63: the two generative galleries bend with combat momentum.
+   Artwork-only geometry; protected arena/card CSS remains frozen. */
+#neuroscapeArt .momentumMeter,#signalFoundry .momentumMeter{white-space:nowrap}
+#neuroscapeArt .generativeLayer,#signalFoundry .generativeLayer{will-change:contents}
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
    Card playfield outranks forecast, status, log and decorative panels. */
@@ -973,7 +978,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
  #gameBoard .lanes>.slot{min-height:52px!important}
 }
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.62 · BONE WHITE / COMBAT MOMENTUM</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.63 · BONE WHITE / LIVING GEOMETRY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText">STARTING ARCADE · FIVE SQUARES PER PLAYER</strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" data-arena-invariant="5x2-visible-square-card-slots" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes" aria-label="Five bot card squares"><div class="slot" data-slot="1"></div><div class="slot" data-slot="2"></div><div class="slot" data-slot="3"></div><div class="slot" data-slot="4"></div><div class="slot" data-slot="5"></div></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -2889,18 +2894,37 @@ restart('human');
   const score=Math.max(-1,Math.min(1,(p-e)/40));
   return {score,label:score>.025?'PLAYER ADVANTAGE':score<-.025?'BOT ADVANTAGE':'BALANCED',valid:true};
  }
+ /* A bounded, deterministic geometry mapping from the read-only health lead.
+    Player advantage bows the energy toward the orange/right core; bot advantage
+    toward the violet/left core. No stored history, random game influence or mutations. */
+ function artMomentumGeometry(score){
+  const m=Math.max(-1,Math.min(1,Number.isFinite(score)?score:0));
+  return Object.freeze({
+   shift:Math.round(m*95),
+   orbitX:Math.round((1-Math.abs(m)*.25)*1000)/1000,
+   orbitY:Math.round((1+Math.abs(m)*.34)*1000)/1000,
+   bend:Math.round(m*76),
+   spread:Math.round(Math.abs(m)*36),
+   tilt:Math.round(m*18)
+  });
+ }
  const healthP=document.getElementById('pHealth'),healthE=document.getElementById('eHealth');
  const needles=['coresMomentumNeedle','foundryMomentumNeedle'].map(id=>document.getElementById(id));
  const labels=['coresMomentumText','foundryMomentumText'].map(id=>document.getElementById(id));
  let momentum=momentumFromReadouts(healthP?.textContent,healthE?.textContent);
+ let geometry=artMomentumGeometry(momentum.score);
  function observeMomentum(){
   momentum=momentumFromReadouts(healthP?.textContent,healthE?.textContent);
+  geometry=artMomentumGeometry(momentum.score);
   const percent=(50+momentum.score*50).toFixed(2)+'%';
   for(const n of needles)if(n)n.style.left=percent;
   for(const l of labels)if(l)l.textContent=momentum.label;
   for(const en of engines){
    en.host.dataset.momentum=momentum.label;
    en.host.style.setProperty('--momentum',String(momentum.score));
+   en.group.dataset.geometryShift=String(geometry.shift);
+   en.group.dataset.geometryBend=String(geometry.bend);
+   en.group.dataset.geometryTilt=String(geometry.tilt);
   }
  }
  if(healthP&&healthE&&typeof MutationObserver!=='undefined'){
@@ -2926,8 +2950,11 @@ restart('human');
    for(const {p,e} of en.particles){
     const drift=t*p.speed*(1+burst*.55)+p.phase,swirl=p.a+Math.sin(drift*.7)*.38;
     const halo=cfg.offset===0?142:164;
-    const x=600+Math.cos(swirl+drift*.06)*(p.r+Math.sin(drift*.9)*p.offset*.13);
-    const y=halo+Math.sin(swirl*1.7+drift*.4)*(p.offset+Math.sin(drift)*p.r*.32);
+    /* Orbit stretches vertically under pressure, compresses horizontally.
+       On equal health geometry returns to its original central symmetry. */
+    const x=600+geometry.shift+Math.cos(swirl+drift*.06)*(p.r+Math.sin(drift*.9)*p.offset*.13)*geometry.orbitX;
+    const y=halo+Math.sin(swirl*1.7+drift*.4)*(p.offset+Math.sin(drift)*p.r*.32)*geometry.orbitY;
+
     e.setAttribute('cx',x.toFixed(2));e.setAttribute('cy',y.toFixed(2));
     e.setAttribute('opacity',Math.min(1,0.28+0.58*(.5+.5*Math.sin(drift*2+p.a))+burst*.16).toFixed(2));
     e.setAttribute('fill',burst>.05&&hue?hue:momentumHue&&Math.abs(momentum.score)>.08?momentumHue:(p.side?cfg.orange:cfg.purple));
@@ -2935,8 +2962,11 @@ restart('human');
    for(const {p,e} of en.paths){
     const t0=t*p.speed+p.phase,x0=cfg.offset===0?390:320;
     const direction=p.side?1:-1,y=145+p.dy*.7+Math.sin(t0)*20;
-    const x=600+direction*x0,e1=600+direction*(65+Math.sin(t0*.8)*38);
-    e.setAttribute('d',`M ${x.toFixed(1)} ${y.toFixed(1)} Q 600 ${(y+p.dy).toFixed(1)} ${e1.toFixed(1)} ${(160+Math.cos(t0)*45).toFixed(1)}`);
+    /* The signal stream curves toward the side with the health advantage. */
+    const x=600+direction*(x0+geometry.spread),e1=600+direction*(65+Math.sin(t0*.8)*38)+geometry.shift*.32;
+    const controlX=600+geometry.bend+Math.sin(t0*.5)*geometry.tilt;
+    e.setAttribute('d',`M ${x.toFixed(1)} ${y.toFixed(1)} Q ${controlX.toFixed(1)} ${(y+p.dy).toFixed(1)} ${e1.toFixed(1)} ${(160+Math.cos(t0)*45).toFixed(1)}`);
+
     e.setAttribute('opacity',Math.min(1,0.22+0.44*(.5+.5*Math.cos(t0*1.7))+burst*.3+Math.abs(momentum.score)*.12).toFixed(2));
    }
   }
