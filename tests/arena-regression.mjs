@@ -33,6 +33,26 @@ try{
  await page.getByRole('button',{name:'Bot vs Bot'}).click();
  await page.waitForTimeout(900);
  if(errors.length)fail('Browser error after bot start');
+ const artCount=await page.locator('#neuroscapeArt, #signalFoundry').count();
+ if(artCount!==2)fail('Generative gallery must contain exactly two murals');
+ for(const [label,layer,button] of [
+   ['Two Cores','generativeCores','regenerateCores'],
+   ['Signal Foundry','generativeFoundry','regenerateFoundry']
+ ]){
+   const before=await page.locator('#'+layer+' circle').first().getAttribute('r');
+   const particles=await page.locator('#'+layer+' circle').count();
+   if(particles<25)fail(label+' does not have a populated procedural particle field');
+   await page.locator('#'+button).click();
+   const after=await page.locator('#'+layer+' circle').first().getAttribute('r');
+   if(before===after)fail(label+' regenerate did not produce a new procedural seed');
+ }
+ const still=await page.evaluate(()=>['pLanes','eLanes'].every(id=>{
+   const a=[...document.querySelectorAll('#'+id+' > .slot')];
+   return a.length===5&&a.every(e=>e.getBoundingClientRect().height>=70);
+ }));
+ if(!still)fail('Artwork regenerate changed protected card-space dimensions');
+ if(errors.length)fail('Browser error after artwork regeneration');
+ console.log('ART GENERATION PASS: exactly two active procedural scenes, both regenerate, card space unchanged');
  console.log('ARENA PASS: five large squares per side, hand, controls, RAM install/restart and bot start',JSON.stringify(initial));
 }finally{
  await page.screenshot({path:'arena-regression.png',fullPage:true});
