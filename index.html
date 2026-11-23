@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.70 — Neon Tubes and Light Trails</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.71 — Real Combat Neon Routing</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1210,6 +1210,51 @@ padding:10px 14px}
 @media(prefers-reduced-motion:reduce){
  #gameBoard::after,#gameBoard .side::after,
  #neuroscapeArt::after,#signalFoundry::after{animation:none!important}
+}
+
+
+/* v2.8.71 — CARD-TO-CARD ATTACK NEON. Reuses real combat SVG geometry.
+   Attack pulse is non-interactive; no card geometry or game logic changes. */
+#gameBoard .combatPathways .neonAttackTrail{
+ fill:none;stroke-width:7;stroke-linecap:round;pathLength:100;
+ stroke-dasharray:10 90;stroke-dashoffset:100;
+ opacity:0;pointer-events:none;
+ animation:neonAttackTravel 850ms cubic-bezier(.14,.58,.25,1) both;
+}
+#gameBoard .combatPathways .neonAttackTrail.combatBlock{
+ stroke:#c36aff;filter:drop-shadow(0 0 6px #ae52ff) drop-shadow(0 0 13px #a54cff);
+}
+#gameBoard .combatPathways .neonAttackTrail.combatDirect{
+ stroke:#ff9e31;filter:drop-shadow(0 0 6px #ff8428) drop-shadow(0 0 13px #ff6b17);
+}
+#gameBoard .combatPathways .neonAttackCore{
+ fill:none;stroke:#fff9eb;stroke-width:2.8;stroke-linecap:round;
+ stroke-dasharray:4 96;stroke-dashoffset:100;opacity:0;pointer-events:none;
+ animation:neonAttackTravel 850ms cubic-bezier(.14,.58,.25,1) both;
+ filter:drop-shadow(0 0 6px #fff5e2);
+}
+#gameBoard .lanes>.slot.neonStrikeOrigin{
+ outline:3px solid #fff8df!important;outline-offset:-5px;
+ filter:brightness(1.23) drop-shadow(0 0 12px #ff9d42)!important;
+}
+#gameBoard .lanes>.slot.neonStrikeTarget{
+ outline:3px solid #fff8f0!important;outline-offset:-5px;
+ filter:brightness(1.20) drop-shadow(0 0 12px #b267fa)!important;
+}
+#gameBoard .meters #pHealth.neonStrikeTarget,
+#gameBoard .meters #eHealth.neonStrikeTarget{
+ box-shadow:0 0 12px #ff9c42,0 0 22px #ad59f0!important;
+ outline:2px solid #f7cdff;
+}
+@keyframes neonAttackTravel{
+ 0%{stroke-dashoffset:105;opacity:0}
+ 8%{opacity:1}
+ 88%{opacity:1}
+ 100%{stroke-dashoffset:0;opacity:0}
+}
+@media(prefers-reduced-motion:reduce){
+ #gameBoard .combatPathways .neonAttackTrail,
+ #gameBoard .combatPathways .neonAttackCore{animation:none!important;opacity:0!important}
 }
 
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
@@ -2955,7 +3000,36 @@ function drawCombatPathways(impact){
  let a=src.getBoundingClientRect(),b=dst.getBoundingClientRect();
  svg.setAttribute('viewBox','0 0 '+bounds.width+' '+bounds.height);
  let start=[a.left+a.width*.5-bounds.left,a.top+a.height*.5-bounds.top],end=[b.left+b.width*.5-bounds.left,b.top+b.height*.5-bounds.top];
- addPulsePath(svg,routeBetween(start,end),impact.kind==='blocked'?'combatBlock':'combatDirect');
+ const curve=routeBetween(start,end),kind=impact.kind==='blocked'?'combatBlock':'combatDirect';
+ addPulsePath(svg,curve,kind);
+ /* Visual-only photon follows the same measured endpoints as the
+    authoritative attack. Never invent a different defender or target. */
+ if(!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
+  const photon=document.createElementNS('http://www.w3.org/2000/svg','path');
+  photon.setAttribute('d',curve);photon.setAttribute('pathLength','100');
+  photon.setAttribute('class','neonAttackTrail '+kind);
+  photon.dataset.attackSource=impact.from+':'+impact.source;
+  photon.dataset.attackTarget=impact.to+':'+(impact.target>=0?impact.target:'health');
+  photon.dataset.attackSeq=String(impact.seq);
+  photon.addEventListener('animationend',()=>photon.remove(),{once:true});
+  svg.append(photon);
+  const core=document.createElementNS('http://www.w3.org/2000/svg','path');
+  core.setAttribute('d',curve);core.setAttribute('pathLength','100');
+  core.setAttribute('class','neonAttackCore');
+  core.addEventListener('animationend',()=>core.remove(),{once:true});
+  svg.append(core);
+ }
+ const flash=(element,token)=>{
+  if(!element)return;
+  element.classList.remove(token);void element.offsetWidth;
+  element.classList.add(token);
+  const marker=String(impact.seq);
+  element.dataset.neonAttackSeq=marker;
+  setTimeout(()=>{
+   if(element.dataset.neonAttackSeq===marker)element.classList.remove(token);
+  },850);
+ };
+ flash(src,'neonStrikeOrigin');flash(dst,'neonStrikeTarget');
 }
 function schedulePathways(){
  const ram=lastRamFlow,impact=lastImpact;
