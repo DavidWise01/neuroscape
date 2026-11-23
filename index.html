@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.79 — Meter Recovery Charge</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.80 — Synchronized RAM Recovery</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -3253,6 +3253,7 @@ function drawEnergyPathways(snapshot){
      bolt.dataset.lifecycleId=lifecycle;
      bolt.dataset.recoverySide=key;
      bolt.dataset.recoverySlot=String(seg.slot);
+     bolt.dataset.transferId=lifecycle+':'+key+':'+seg.slot;
      bolt.dataset.returnedRam=String(seg.amount);
      bolt.addEventListener('animationend',()=>bolt.remove(),{once:true});
      svg.append(bolt);
@@ -3265,6 +3266,9 @@ function drawEnergyPathways(snapshot){
     arrival.dataset.flowSeq=String(snapshot.seq);
     arrival.dataset.lifecycleId=lifecycle;
     arrival.dataset.recoverySide=key;
+    arrival.dataset.recoverySlot=String(seg.slot);
+    arrival.dataset.transferId=lifecycle+':'+key+':'+seg.slot;
+    arrival.dataset.returnedRam=String(seg.amount);
     arrival.addEventListener('animationend',()=>arrival.remove(),{once:true});
     svg.append(arrival);
     /* The charge rides the same positive release ledger and arrives at
@@ -3280,6 +3284,7 @@ function drawEnergyPathways(snapshot){
      charge.dataset.flowSeq=String(snapshot.seq);
      charge.dataset.recoverySide=key;
      charge.dataset.recoverySlot=String(seg.slot);
+     charge.dataset.transferId=lifecycle+':'+key+':'+seg.slot;
      charge.dataset.returnedRam=String(seg.amount);
      charge.setAttribute('aria-hidden','true');
      charge.addEventListener('animationend',()=>charge.remove(),{once:true});
