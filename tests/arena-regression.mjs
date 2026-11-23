@@ -24,6 +24,18 @@ try{
   if(list.some(x=>x.width<70||x.height<70||x.visible!=='visible'||x.display==='none'))fail(side+' card squares have collapsed');
  }
  if(initial.hand<5)fail('Player hand not rendered');
+ // Active-neon skin uses the original live game turn metadata, without replacing the board.
+ const turnNeon=await page.evaluate(()=>({
+  active:document.getElementById('gameBoard')?.dataset.activeSide,
+  phase:document.getElementById('gameBoard')?.dataset.rhythm,
+  neon:document.getElementById('gameBoard')?.dataset.neonIntensity,
+  animation:getComputedStyle(document.querySelector('#turnbar strong')).animationName,
+  divider:getComputedStyle(document.querySelector('#gameBoard .divider'),'::after').animationName
+ }));
+ if(turnNeon.active!=='p'||!turnNeon.animation.includes('neonPlayerTurn')||
+    !turnNeon.divider.includes('neonDividerSweep')||turnNeon.neon!=='normal')
+   fail('Active neon initialization failed: '+JSON.stringify(turnNeon));
+
  if(initial.installDisabled)fail('Install RAM button disabled at match start');
  await page.getByRole('button',{name:/Install RAM/i}).click();
  const ram=await page.locator('#pInstalled').textContent();
