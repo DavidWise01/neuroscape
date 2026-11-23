@@ -93,6 +93,47 @@ try{
  if(ripples.report.map(x=>x.delay).join(',')!=='0.805s,0.875s,0.945s')
    fail('Defender ripples need staggered impact timing: '+JSON.stringify(ripples.report));
  console.log('DEFENDER RIPPLE PASS: three staggered shield rings at real defender; zero on direct hit');
+ // v2.8.74: return photon is derived only from recorded positive retaliation.
+ // Exercise read-only rendering with real slot coordinates; game engine untouched.
+ const rebound=await page.evaluate(()=>{
+   const svg=document.getElementById('combatPathways');
+   drawCombatPathways({from:'p',to:'e',source:0,target:0,kind:'blocked',retaliation:3,seq:987656});
+   const ray=[...svg.querySelectorAll('.neonRetaliationRebound')]
+     .find(x=>x.dataset.attackSeq==='987656');
+   const core=[...svg.querySelectorAll('.neonRetaliationCore')]
+     .find(x=>x.dataset.attackSeq==='987656');
+   const ring=[...svg.querySelectorAll('.neonRetaliationLanding')]
+     .find(x=>x.dataset.attackSeq==='987656');
+   const board=document.getElementById('gameBoard').getBoundingClientRect();
+   const source=document.querySelector('#pLanes > .slot').getBoundingClientRect();
+   const target=document.querySelector('#eLanes > .slot').getBoundingClientRect();
+   const pos=r=>[r.left+r.width/2-board.left,r.top+r.height/2-board.top];
+   const [px,py]=pos(source),[ex,ey]=pos(target);
+   const shape=ray?.getAttribute('d')||'';
+   const expected=typeof routeBetween==='function'?routeBetween([ex,ey],[px,py]):null;
+   const result={
+    from:ray?.dataset.from,to:ray?.dataset.to,retaliation:ray?.dataset.retaliation,
+    reverse:shape===expected,paired:core?.getAttribute('d')===shape,
+    pointer:ray?getComputedStyle(ray).pointerEvents:null,
+    animation:ray?getComputedStyle(ray).animationName:null,
+    delay:ray?getComputedStyle(ray).animationDelay:null,
+    landing:ring?Math.abs(Number(ring.getAttribute('cx'))-px)<2&&
+      Math.abs(Number(ring.getAttribute('cy'))-py)<2:false,
+    landingDelay:ring?getComputedStyle(ring).animationDelay:null
+   };
+   drawCombatPathways({from:'p',to:'e',source:0,target:0,kind:'blocked',retaliation:0,seq:987657});
+   drawCombatPathways({from:'p',to:'e',source:0,target:-1,kind:'direct',retaliation:9,seq:987658});
+   result.noFalseReturn=!['987657','987658'].some(seq=>
+     [...svg.querySelectorAll('.neonRetaliationRebound')].some(x=>x.dataset.attackSeq===seq));
+   return result;
+ });
+ if(rebound.from!=='e:0'||rebound.to!=='p:0'||rebound.retaliation!=='3'||
+    !rebound.reverse||!rebound.paired||rebound.pointer!=='none'||
+    !rebound.animation?.includes('neonRetaliationTravel')||rebound.delay!=='1.1s'||
+    !rebound.landing||rebound.landingDelay!=='1.66s'||!rebound.noFalseReturn)
+   fail('Retaliation photon must reverse actual positive return damage: '+JSON.stringify(rebound));
+ console.log('RETALIATION PASS: real reverse slot route, 3 damage, return core, delayed landing; no false rebounds');
+
  console.log('IMPACT DISCHARGE PASS: real target, six rays, delayed corona, noninteractive');
  console.log('ATTACK NEON PASS: matched real route, noninteractive, animated and keyed to target');
 
