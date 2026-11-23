@@ -75,13 +75,38 @@ try{
    fail('Generative signatures not displayed');
  // Actual SVG primitives must be distinct: helix uses cubic C, lattice uses L.
  await page.locator('#neuroscapeArt').scrollIntoViewIfNeeded();
- await page.waitForTimeout(175);
- const coresPath=await page.locator('#generativeCores > path').first().getAttribute('d');
+ await page.waitForFunction(()=>[...document.querySelectorAll('#generativeCores > path')].some(p=>/ C /.test(p.getAttribute('d')||'')),null,{timeout:4500});
  await page.locator('#signalFoundry').scrollIntoViewIfNeeded();
- await page.waitForTimeout(175);
- const foundryPath=await page.locator('#generativeFoundry > path').first().getAttribute('d');
- if(!/ C /.test(coresPath||'')||!/ L /.test(foundryPath||''))
-   fail('Generated paths must actually differ between helix and crystal lattice');
+ await page.waitForFunction(()=>[...document.querySelectorAll('#generativeFoundry > path')].some(p=>/ L /.test(p.getAttribute('d')||'')),null,{timeout:4500});
+ const coresPath=await page.locator('#generativeCores > path[d*=" C "]').first().getAttribute('d');
+ const foundryPath=await page.locator('#generativeFoundry > path[d*=" L "]').first().getAttribute('d');
+ if(!coresPath||!foundryPath)fail('Generated SVG path geometry missing');
+ // Sustained combat must derive from observed events and fade over time.
+ // Inject synthetic display-log entries ONLY; no engine actions or state edits.
+ const artificial=await page.evaluate(()=>{
+   const log=document.getElementById('events');
+   const marker=log.firstElementChild?.textContent;
+   for(let i=0;i<4;i++){
+     const el=document.createElement('li');
+     el.textContent='VISUAL TEST '+i+' attacked defender for 1 damage';
+     log.prepend(el);
+   }
+   return marker;
+ });
+ await page.waitForFunction(()=>document.getElementById('generativeCores')?.dataset.patternPhase==='sustained',null,{timeout:3000});
+ const pressure=await page.evaluate(()=>({
+   a:document.getElementById('generativeCores').dataset.combatPressure,
+   b:document.getElementById('generativeFoundry').dataset.combatPressure,
+   aPhase:document.getElementById('generativeCores').dataset.patternPhase,
+   bPhase:document.getElementById('generativeFoundry').dataset.patternPhase
+ }));
+ if(pressure.aPhase!=='sustained'||pressure.bPhase!=='sustained'||
+    Number(pressure.a)<.67||pressure.a!==pressure.b)
+   fail('Sustained pattern not synchronized: '+JSON.stringify(pressure));
+ // Restore engine-owned log on next legitimate gameplay render.
+ await page.getByRole('button',{name:'Play vs Bot'}).click();
+ if(errors.length)fail('Browser error after simulated visual-only combat pressure');
+ console.log('SUSTAINED RESPONSE PASS: bounded combat pressure drives both murals');
  console.log('GENERATIVE SIGNATURES PASS: dual helix, faceted lattice, bounded observed-event history');
  const still=await page.evaluate(()=>['pLanes','eLanes'].every(id=>{
    const a=[...document.querySelectorAll('#'+id+' > .slot')];
