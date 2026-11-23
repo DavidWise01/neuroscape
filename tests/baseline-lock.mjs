@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 /* Baseline is a separate branch; modifications to main are additive only.
    This test enforces protected card-space markup and CSS byte-for-byte
    against the accepted frozen snapshot. Browser CI verifies visual size. */
-const baseline=execFileSync('git',['show','baseline/v2.8.57-locked-arena:index.html'],{encoding:'utf8'});
+const baseline=execFileSync('git',['show','refs/remotes/origin/baseline/v2.8.57-locked-arena:index.html'],{encoding:'utf8'});
 const current=readFileSync('index.html','utf8');
 const fixed=(source)=>{
  const from=source.indexOf('/* PERMANENT PLAYFIELD INVARIANT:');
