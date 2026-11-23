@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.72 — Neon Impact Discharge</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.73 — Defender Energy Ripples</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1289,6 +1289,27 @@ padding:10px 14px}
 @media(prefers-reduced-motion:reduce){
  #gameBoard .combatPathways .neonImpactCorona,
  #gameBoard .combatPathways .neonImpactSpark{animation:none!important;opacity:0!important}
+}
+
+/* v2.8.73 — DEFENDER ENERGY RIPPLES.
+   Only a real blocked/card-target impact produces shield ripples.
+   Bounded three-ring SVG decoration, pointer-safe, reduced-motion aware. */
+#gameBoard .combatPathways .neonDefenderRipple{
+ fill:none;stroke:#c77aff;stroke-width:3.5;opacity:0;
+ pointer-events:none;transform-box:fill-box;transform-origin:center;
+ filter:drop-shadow(0 0 6px #b866ff) drop-shadow(0 0 12px #a23bfa);
+ animation:neonDefenderRipple 620ms ease-out both;
+}
+#gameBoard .combatPathways .neonDefenderRipple.ripple2{animation-delay:875ms}
+#gameBoard .combatPathways .neonDefenderRipple.ripple1{animation-delay:805ms}
+#gameBoard .combatPathways .neonDefenderRipple.ripple3{animation-delay:945ms}
+@keyframes neonDefenderRipple{
+ 0%{opacity:0;transform:scale(.2);stroke-width:5}
+ 22%{opacity:.98}
+ 100%{opacity:0;transform:scale(1.9);stroke-width:1}
+}
+@media(prefers-reduced-motion:reduce){
+ #gameBoard .combatPathways .neonDefenderRipple{animation:none!important;opacity:0!important}
 }
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
@@ -3073,6 +3094,21 @@ function drawCombatPathways(impact){
   spark.dataset.attackSeq=String(impact.seq);
   spark.addEventListener('animationend',()=>spark.remove(),{once:true});
   svg.append(spark);
+  /* A blocked attack into a real defender card produces three
+     outward shield ripples. Direct BF/MF hits do not simulate a defender. */
+  if(impact.kind==='blocked'&&impact.target>=0){
+   for(let index=1;index<=3;index++){
+    const ripple=document.createElementNS(ns,'circle');
+    ripple.setAttribute('cx',end[0].toFixed(2));
+    ripple.setAttribute('cy',end[1].toFixed(2));
+    ripple.setAttribute('r',String(13+index*6));
+    ripple.setAttribute('class','neonDefenderRipple ripple'+index);
+    ripple.dataset.attackSeq=String(impact.seq);
+    ripple.dataset.attackTarget=impact.to+':'+impact.target;
+    ripple.addEventListener('animationend',()=>ripple.remove(),{once:true});
+    svg.append(ripple);
+   }
+  }
  }
  const flash=(element,token)=>{
   if(!element)return;
