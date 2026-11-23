@@ -258,6 +258,53 @@ try{
     !(meterCharge.strongStrength>meterCharge.before.strength)||
     meterCharge.strongAmount!=='8')
    fail('Amount-scaled RAM meter charging not attached to release: '+JSON.stringify(meterCharge));
+ // v2.8.80: simultaneous independent card releases preserve per-slot
+ // lineage on both sides, without synthesizing a RAM amount or altering fills.
+ const simultaneous=await page.evaluate(()=>{
+   const seq=987680,impactSeq=987679;
+   const read=(side,cls)=>[...document.querySelectorAll('#'+side+'Pathways .'+cls)]
+      .filter(x=>x.dataset.flowSeq===String(seq));
+   const before=['p','e'].map(k=>document.getElementById(k+'RamAvailable').style.width);
+   drawEnergyPathways({seq,impactSeq,events:[
+     {side:'p',type:'release',amount:5,slots:[{slot:0,amount:2},{slot:3,amount:3},{slot:4,amount:0}]},
+     {side:'e',type:'release',amount:4,slots:[{slot:1,amount:4}]}]});
+   const records=['p','e'].map(side=>{
+     const photons=read(side,'neonRecoveryReturn');
+     const cores=read(side,'neonRecoveryCore');
+     const arrivals=read(side,'neonRecoveryArrival');
+     const charges=[...document.querySelectorAll('#'+side+'RamAvailable')]
+       .flatMap(x=>[...x.parentElement.querySelectorAll('.neonRamCharge')])
+       .filter(x=>x.dataset.flowSeq===String(seq));
+     const row=els=>els.map(x=>({
+       transfer:x.dataset.transferId,side:x.dataset.recoverySide,slot:x.dataset.recoverySlot,
+       amount:x.dataset.returnedRam,lifecycle:x.dataset.lifecycleId,
+       delay:getComputedStyle(x).animationDelay,pointer:getComputedStyle(x).pointerEvents
+     }));
+     return {side,photons:row(photons),cores:row(cores),
+       arrivals:row(arrivals),charges:row(charges),
+       chargeStrength:charges.map(x=>Number(x.style.getPropertyValue('--charge-strength'))),
+       slotCount:document.getElementById(side+'Lanes').children.length};
+   });
+   const after=['p','e'].map(k=>document.getElementById(k+'RamAvailable').style.width);
+   return {records,before,after};
+ });
+ const expected={p:['0:2','3:3'],e:['1:4']};
+ if(simultaneous.before.join(',')!==simultaneous.after.join(','))
+   fail('Visual recovery changed actual meter fill width: '+JSON.stringify(simultaneous));
+ for(const record of simultaneous.records){
+   const expectedPairs=expected[record.side];
+   for(const group of ['photons','cores','arrivals','charges']){
+     const seen=record[group].map(x=>x.slot+':'+x.amount).sort();
+     if(seen.join(',')!==expectedPairs.join(',')||
+       record[group].some(x=>x.lifecycle!=='attack:987679'||
+        x.transfer!=='attack:987679:'+record.side+':'+x.slot||
+        x.side!==record.side||x.pointer!=='none'))
+       fail('Simultaneous recovery lost per-slot lineage: '+JSON.stringify({record,group}));
+   }
+   if(record.slotCount!==5||record.charges.some(x=>x.delay!=='2.05s'))
+     fail('Simultaneous recovery changed arena or charge timing: '+JSON.stringify(record));
+ }
+ console.log('SIMULTANEOUS RECOVERY PASS: three positive card transfers, both RAM meters, zero false releases, unchanged fill widths');
  console.log('METER CHARGE PASS: amount-scaled intensity and original lifecycle lineage');
  console.log('ENERGY LIFECYCLE PASS: attack evidence ties shockwave, RAM packet and arrival to one source');
 
