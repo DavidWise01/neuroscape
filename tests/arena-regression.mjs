@@ -304,6 +304,36 @@ try{
    if(record.slotCount!==5||record.charges.some(x=>x.delay!=='2.05s'))
      fail('Simultaneous recovery changed arena or charge timing: '+JSON.stringify(record));
  }
+ const reservoirs=await page.evaluate(()=>{
+   const result=['p','e'].map(side=>{
+     const track=document.getElementById(side+'RamAvailable').parentElement;
+     const reservoir=[...track.querySelectorAll('.neonRamReservoir')].find(x=>x.dataset.flowSeq==='987680');
+     return reservoir?{
+       side,id:reservoir.dataset.lifecycleId,total:reservoir.dataset.returnedRam,
+       count:reservoir.dataset.transferCount,
+       transfers:reservoir.dataset.transferIds.split(',').sort(),
+       delay:getComputedStyle(reservoir).animationDelay,
+       pointer:getComputedStyle(reservoir).pointerEvents,
+       strength:Number(reservoir.style.getPropertyValue('--reservoir-strength'))
+     }:null;
+   });
+   const widths=['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width);
+   drawEnergyPathways({seq:987681,impactSeq:987679,events:[
+     {side:'p',type:'release',amount:0,slots:[{slot:2,amount:0}]}]});
+   return {result,widths,zeroReservoir:!!document.querySelector('.neonRamReservoir[data-flow-seq="987681"]')};
+ });
+ if(reservoirs.zeroReservoir||reservoirs.widths.join(',')!==simultaneous.after.join(','))
+   fail('Reservoir changed authoritative meter or emitted zero-flow charge: '+JSON.stringify(reservoirs));
+ for(const [index,side] of ['p','e'].entries()){
+   const row=reservoirs.result[index];
+   const amount=side==='p'?'5':'4';
+   const ids=side==='p'?['attack:987679:p:0','attack:987679:p:3']:['attack:987679:e:1'];
+   if(!row||row.side!==side||row.id!=='attack:987679'||row.total!==amount||
+      row.count!==String(ids.length)||row.transfers.join(',')!==ids.join(',')||
+      row.delay!=='2.05s'||row.pointer!=='none'||row.strength<=0)
+     fail('Pooled reservoir lost observed transfer evidence: '+JSON.stringify(reservoirs));
+ }
+ console.log('NEON RESERVOIR PASS: pooled positive releases, both sides, no RAM mutation');
  console.log('SIMULTANEOUS RECOVERY PASS: three positive card transfers, both RAM meters, zero false releases, unchanged fill widths');
  console.log('METER CHARGE PASS: amount-scaled intensity and original lifecycle lineage');
  console.log('ENERGY LIFECYCLE PASS: attack evidence ties shockwave, RAM packet and arrival to one source');
