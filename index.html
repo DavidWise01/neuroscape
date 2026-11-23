@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.84 — Overlapping Recovery Cycles</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.85 — Rapid Recovery Cleanup</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -3288,6 +3288,18 @@ function routeBetween(a,b){
  const mid=(a[1]+b[1])*.5;
  return 'M '+a[0]+' '+a[1]+' C '+a[0]+' '+mid+', '+b[0]+' '+mid+', '+b[0]+' '+b[1];
 }
+/* v2.8.85 — cap VISUAL recovery histories per side, retaining the newest
+   12 cycles. This is a DOM safety bound, not evidence-ledger deletion or
+   game-state pruning. Every cycle is identified independently. */
+const MAX_VISIBLE_RECOVERY_CYCLES=12;
+function pruneRecoveryVisualCycles(sideKey){
+ const side=document.querySelector('#gameBoard .side.'+(sideKey==='p'?'you':'opponent'));
+ if(!side)return;
+ const nodes=[...side.querySelectorAll('[data-cycle-id]')];
+ const order=[...new Set(nodes.map(node=>node.dataset.cycleId).filter(Boolean))];
+ const expired=new Set(order.slice(0,Math.max(0,order.length-MAX_VISIBLE_RECOVERY_CYCLES)));
+ for(const node of nodes)if(expired.has(node.dataset.cycleId))node.remove();
+}
 function drawEnergyPathways(snapshot){
  if(!snapshot)return;
  for(const key of ['p','e']){
@@ -3417,6 +3429,7 @@ function drawEnergyPathways(snapshot){
     }
    }
   }
+  pruneRecoveryVisualCycles(key);
  }
 }
 function drawCombatPathways(impact){
