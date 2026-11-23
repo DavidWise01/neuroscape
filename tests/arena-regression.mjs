@@ -74,13 +74,13 @@ try{
  if(!signatures.labelCores?.startsWith('HELIX')||!signatures.labelFoundry?.startsWith('LATTICE'))
    fail('Generative signatures not displayed');
  // Actual SVG primitives must be distinct: helix uses cubic C, lattice uses L.
- await page.locator('#neuroscapeArt').scrollIntoViewIfNeeded();
- await page.waitForFunction(()=>[...document.querySelectorAll('#generativeCores > path')].some(p=>/ C /.test(p.getAttribute('d')||'')),null,{timeout:4500});
- await page.locator('#signalFoundry').scrollIntoViewIfNeeded();
- await page.waitForFunction(()=>[...document.querySelectorAll('#generativeFoundry > path')].some(p=>/ L /.test(p.getAttribute('d')||'')),null,{timeout:4500});
- const coresPath=await page.locator('#generativeCores > path[d*=" C "]').first().getAttribute('d');
- const foundryPath=await page.locator('#generativeFoundry > path[d*=" L "]').first().getAttribute('d');
- if(!coresPath||!foundryPath)fail('Generated SVG path geometry missing');
+ await page.waitForFunction(()=>['generativeCores','generativeFoundry'].every(id=>document.getElementById(id)?.dataset.geometryReady==='yes'),null,{timeout:4500});
+ const actualPaths=await page.evaluate(()=>({
+   cores:[...document.querySelectorAll('#generativeCores > path')].map(e=>e.getAttribute('d')),
+   foundry:[...document.querySelectorAll('#generativeFoundry > path')].map(e=>e.getAttribute('d'))
+ }));
+ if(!actualPaths.cores.some(d=>/ C /.test(d||''))||!actualPaths.foundry.some(d=>/ L /.test(d||'')))
+   fail('Generated path geometries must differ and initialize before scrolling: '+JSON.stringify(actualPaths));
  // Sustained combat must derive from observed events and fade over time.
  // Inject synthetic display-log entries ONLY; no engine actions or state edits.
  for(let i=0;i<4;i++){
@@ -101,6 +101,20 @@ try{
  if(pressure.aPhase!=='sustained'||pressure.bPhase!=='sustained'||
     Number(pressure.a)<.67||pressure.a!==pressure.b)
    fail('Sustained pattern not synchronized: '+JSON.stringify(pressure));
+ // Read-only virtual-horizon verification: no 12-second real wait, no game edits.
+ const recovery=await page.evaluate(()=>({
+   current:window.neuroscapeArtRecovery.snapshot(0),
+   afterSix:window.neuroscapeArtRecovery.snapshot(6000),
+   afterThirteen:window.neuroscapeArtRecovery.snapshot(13000)
+ }));
+ if(recovery.current.level!=='SUSTAINED'||
+    recovery.afterSix.pressure>=recovery.current.pressure||
+    recovery.afterThirteen.level!=='QUIET'||recovery.afterThirteen.pressure!==0)
+   fail('Combat pressure must cool monotonically to quiet: '+JSON.stringify(recovery));
+ if(recovery.current.samples>12||recovery.current.panels!==2)
+   fail('Visual recovery exceeded history/panel limits: '+JSON.stringify(recovery));
+ console.log('RECOVERY PASS: sustained → cooling → quiet, observation only, no gameplay acceleration');
+
  // Restore engine-owned log on next legitimate gameplay render.
  await page.getByRole('button',{name:'Play vs Bot'}).click();
  if(errors.length)fail('Browser error after simulated visual-only combat pressure');
