@@ -441,6 +441,37 @@ try{
       g.entries.some(x=>x.pointer!=='none'||x.cycle!==x.lifecycle+':flow:'+x.seq+':p'))
      fail('Overlapping '+g.name+' events lost independent lineage: '+JSON.stringify(overlaps));
  }
+ // v2.8.85: high-frequency release bursts must keep newest twelve visual
+ // cycle groups per side, without ever touching the underlying RAM width.
+ const rapid=await page.evaluate(()=>{
+   const fill=document.getElementById('pRamAvailable');
+   const before=fill.style.width;
+   for(let n=0;n<30;n++)drawEnergyPathways({seq:989000+n,impactSeq:989500+n,
+     events:[{side:'p',type:'release',amount:1,slots:[{slot:n%5,amount:1}]}]});
+   const parent=document.querySelector('#gameBoard .side.you');
+   const nodes=[...parent.querySelectorAll('[data-cycle-id]')];
+   const ids=[...new Set(nodes.map(el=>el.dataset.cycleId))];
+   const newest='attack:989529:flow:989029:p';
+   const oldest='attack:989500:flow:989000:p';
+   const latestNodes=nodes.filter(x=>x.dataset.cycleId===newest);
+   const firstOlder=nodes.filter(x=>x.dataset.cycleId===oldest);
+   // An individual animationend is allowed to remove only its own element.
+   const oldGlow=parent.querySelector('.neonRamAfterglow[data-flow-seq="989018"]');
+   const newestGlow=parent.querySelector('.neonRamAfterglow[data-flow-seq="989029"]');
+   oldGlow?.dispatchEvent(new Event('animationend'));
+   return {limit:MAX_VISIBLE_RECOVERY_CYCLES,cycleCount:ids.length,latestNodes:latestNodes.length,
+     firstOlder:firstOlder.length,oldGlowGone:!oldGlow?.isConnected,
+     newestGlowIntact:!!newestGlow?.isConnected,
+     widthBefore:before,widthAfter:fill.style.width,
+     cardSlots:document.querySelectorAll('#pLanes > .slot').length,
+     latestCycle:ids.includes(newest),invalidPointer:nodes.some(x=>getComputedStyle(x).pointerEvents!=='none')};
+ });
+ if(rapid.cycleCount>rapid.limit||rapid.cycleCount!==12||rapid.latestNodes<5||
+    rapid.firstOlder!==0||!rapid.oldGlowGone||!rapid.newestGlowIntact||
+    rapid.widthBefore!==rapid.widthAfter||rapid.cardSlots!==5||
+    !rapid.latestCycle||rapid.invalidPointer)
+   fail('Rapid recovery cleanup did not bound visual cycles independently: '+JSON.stringify(rapid));
+ console.log('RAPID CLEANUP PASS: 30 releases bounded to 12 visual cycles, newest kept, RAM unchanged');
  console.log('OVERLAP PASS: two independent recovery cycles, old cleanup cannot erase new cycle');
  console.log('AFTERGLOW PASS: delayed bounded fading overlay, both sides, zero RAM mutation');
  console.log('RESERVOIR DISCHARGE PASS: delayed sweep over available RAM fill, both sides, provenance intact');
