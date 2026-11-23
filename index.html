@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.68 — Dimensional Arcade</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.69 — Active Neon Arcade</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1080,6 +1080,75 @@ padding:10px 14px}
 }
 @media(prefers-reduced-motion:reduce){
  header nav button,#gameBoard .lanes>.slot{transition:none!important}
+}
+
+
+/* v2.8.69 — ACTIVE NEON | append-only visual effects on the 3D arcade.
+   Observe authoritative DOM readouts; never resize card slots or alter game rules. */
+#turnbar[data-active-side="p"] strong{animation:neonPlayerTurn 2s ease-in-out infinite alternate}
+#turnbar[data-active-side="e"] strong{animation:neonBotTurn 2s ease-in-out infinite alternate}
+#gameBoard[data-active-side="p"] .side.you{animation:neonOrangeSide 2.5s ease-in-out infinite alternate}
+#gameBoard[data-active-side="e"] .side.opponent{animation:neonPurpleSide 2.5s ease-in-out infinite alternate}
+#gameBoard .lanes>.slot.available{animation:neonSlotReady 1.5s ease-in-out infinite alternate}
+#gameBoard .side.you .lanes>.slot.available{
+ box-shadow:inset 0 0 0 3px #fff0cd,inset 0 0 0 7px #b76731,
+ 0 4px 0 #c95d0e,0 7px 0 #ffd4a0,0 0 18px #ff7d26,0 0 30px #ff9f4699!important}
+#gameBoard .side.opponent .lanes>.slot.available{
+ box-shadow:inset 0 0 0 3px #e9c9ff,inset 0 0 0 7px #693c92,
+ 0 4px 0 #6e2ba7,0 7px 0 #d5a7fa,0 0 18px #a94cf5,0 0 30px #ba79ffa8!important}
+#gameBoard .sqcard.playable,#gameBoard .sqcard.attack,
+.hand-area .sqcard.playable,.hand-area .sqcard.attack{
+ animation:neonCardReady 1.6s ease-in-out infinite alternate;
+}
+.actions #next:not(:disabled){animation:neonActionPulse 1.7s ease-in-out infinite alternate}
+#gameBoard .divider{isolation:isolate}
+#gameBoard .divider::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+ background:linear-gradient(90deg,transparent,#ff8b3c00 22%,#ff983855 42%,#a755ff68 55%,transparent 78%);
+ transform:translateX(-110%);animation:neonDividerSweep 3.4s linear infinite}
+#gameBoard .divider>*{position:relative;z-index:1}
+#gameBoard[data-neon-intensity="combat"] .divider::after{animation-duration:1.2s}
+#gameBoard[data-neon-intensity="combat"] .meters span{
+ box-shadow:0 0 10px #ff8d2b77,0 0 21px #aa53ef77!important;border-color:#ca8bf6!important}
+#gameBoard[data-neon-intensity="combat"] .side.you{
+ filter:drop-shadow(0 0 5px #ff983a88)}
+#gameBoard[data-neon-intensity="combat"] .side.opponent{
+ filter:drop-shadow(0 0 5px #b45dff88)}
+#neuroscapeArt[data-art-signal="strike"],#signalFoundry[data-art-signal="strike"]{
+ filter:brightness(1.10) drop-shadow(0 0 9px #ff8f3595)}
+#neuroscapeArt[data-art-signal="charge"],#signalFoundry[data-art-signal="charge"]{
+ filter:brightness(1.05) drop-shadow(0 0 8px #af5af58c)}
+#neuroscapeArt .artPulse,#signalFoundry .foundryPulse{filter:drop-shadow(0 0 5px #b36aff)}
+@keyframes neonPlayerTurn{
+ 0%{filter:brightness(1);text-shadow:0 1px #fff,0 0 7px #ff862255}
+ 100%{filter:brightness(1.14);text-shadow:0 1px #fff,0 0 13px #ff8622cc,0 0 24px #ff9639aa}
+}
+@keyframes neonBotTurn{
+ 0%{filter:brightness(1);text-shadow:0 1px #fff,0 0 7px #a94dec55}
+ 100%{filter:brightness(1.13);text-shadow:0 1px #fff,0 0 13px #b768ffdd,0 0 24px #a94deca8}
+}
+@keyframes neonOrangeSide{
+ 0%{filter:brightness(1)}100%{filter:brightness(1.04) drop-shadow(0 0 8px #ff8f4588)}
+}
+@keyframes neonPurpleSide{
+ 0%{filter:brightness(1)}100%{filter:brightness(1.04) drop-shadow(0 0 8px #ad54f48d)}
+}
+@keyframes neonSlotReady{
+ 0%{filter:brightness(1)}100%{filter:brightness(1.12)}
+}
+@keyframes neonCardReady{
+ 0%{filter:brightness(1)}100%{filter:brightness(1.09) drop-shadow(0 0 5px #ff9c4dbb)}
+}
+@keyframes neonActionPulse{
+ 0%{filter:brightness(1);box-shadow:inset 0 2px 0 #ffe7bd,0 4px 0 #b74b06,0 6px 17px #ff77238c}
+ 100%{filter:brightness(1.13);box-shadow:inset 0 2px 0 #ffe7bd,0 4px 0 #b74b06,0 6px 23px #ff7723dd,0 0 23px #ff9d4b9c}
+}
+@keyframes neonDividerSweep{from{transform:translateX(-110%)}to{transform:translateX(110%)}}
+@media(prefers-reduced-motion:reduce){
+ #turnbar[data-active-side="p"] strong,#turnbar[data-active-side="e"] strong,
+ #gameBoard[data-active-side="p"] .side.you,#gameBoard[data-active-side="e"] .side.opponent,
+ #gameBoard .lanes>.slot.available,#gameBoard .sqcard.playable,#gameBoard .sqcard.attack,
+ .hand-area .sqcard.playable,.hand-area .sqcard.attack,.actions #next:not(:disabled),
+ #gameBoard .divider::after{animation:none!important}
 }
 
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
@@ -3189,5 +3258,33 @@ restart('human');
   }
  }
  if(typeof requestAnimationFrame==='function')requestAnimationFrame(tick);
+})();
+</script>
+<script>
+/* v2.8.69 Active Neon — purely presentational, uses rendered combat feedback.
+   #turnbar and #gameBoard already receive authoritative data-active-side.
+   No mutation of state, legal actions, card markup, or game timers. */
+(()=>{'use strict';
+ const board=document.getElementById('gameBoard');
+ const feed=document.getElementById('combatFeed');
+ const log=document.getElementById('events');
+ if(!board)return;
+ let last='',release=null;
+ function observe(){
+  const entry=log?.firstElementChild?.textContent?.trim()||'';
+  const strike=!!feed?.classList.contains('activeStrike')||
+    (entry!==last&&/attack|direct hit|damage|destroy|recycl|retaliat/i.test(entry));
+  if(entry)last=entry;
+  if(!strike)return;
+  board.dataset.neonIntensity='combat';
+  if(release!==null)clearTimeout(release);
+  release=setTimeout(()=>{board.dataset.neonIntensity='normal';release=null},1100);
+ }
+ board.dataset.neonIntensity='normal';
+ if(log&&typeof MutationObserver!=='undefined')
+   new MutationObserver(observe).observe(log,{childList:true});
+ if(feed&&typeof MutationObserver!=='undefined')
+   new MutationObserver(observe).observe(feed,{childList:true,characterData:true,attributes:true,attributeFilter:['class']});
+ observe();
 })();
 </script></body></html>
