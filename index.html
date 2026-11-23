@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.53 — Adaptive Chain Depth</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.54 — Tactical Search Performance</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -889,7 +889,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
 @media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.53 · BONE WHITE / ADAPTIVE DEPTH</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.54 · BONE WHITE / SEARCH EFFICIENCY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1249,7 +1249,7 @@ function compareBotAttacks(s,k,a,b,experience=botMemory){
   a.i-b.i;
 }
 /* Two-move deterministic lookahead. Match-local, read-only, no UI change. */
-function botTwoAttackPlan(s,k,actions){
+function botTwoAttackPlan(s,k,actions,metrics=null){
  const legal=actions.filter(x=>x.kind==='attack');
  if(legal.length<2)return null;
  let best=null,examined=0;
@@ -1258,11 +1258,13 @@ function botTwoAttackPlan(s,k,actions){
   const source={...s,p:{...s.p,bin:s.p.bin||[]},e:{...s.e,bin:s.e.bin||[]}};
   const simulation=cloneCombat(source),first=simulation[k].units[a.i]?.origin,second=simulation[k].units[b.i]?.origin;
   if(first==null||second==null)continue;
+  if(metrics)metrics.simulated++;
   const firstResult=simulateSequenceAttack(simulation,k,first);
   if(!firstResult||simulation.done)continue;
+  if(metrics)metrics.simulated++;
   const secondResult=simulateSequenceAttack(simulation,k,second);
   if(!secondResult)continue;
-  examined++;
+  examined++;if(metrics)metrics.paths++;
   const win=!!simulation.done&&(simulation[other(k)].bf<=0||simulation[other(k)].mf<=0);
   const loss=source[k].units.length-simulation[k].units.length;
   const direct=(firstResult.kind==='direct'?firstResult.damage:0)+(secondResult.kind==='direct'?secondResult.damage:0);
@@ -1276,7 +1278,7 @@ function botTwoAttackPlan(s,k,actions){
 }
 /* Bounded 3-move lookahead: up to 60 ordered permutations of 5 units. */
 const BOT_THREE_CHAIN_CAP=60;
-function botThreeAttackPlan(s,k,actions){
+function botThreeAttackPlan(s,k,actions,metrics=null){
  const ready=actions.filter(a=>a.kind==='attack');
  if(ready.length<3)return null;
  const source={...s,p:{...s.p,bin:s.p.bin||[]},e:{...s.e,bin:s.e.bin||[]}};
@@ -1287,12 +1289,13 @@ function botThreeAttackPlan(s,k,actions){
  for(const a of ready)for(const b of ready)for(const c of ready){
   if(a.i===b.i||a.i===c.i||b.i===c.i)continue;
   if(examined>=BOT_THREE_CHAIN_CAP)break;
-  examined++;
+  examined++;if(metrics)metrics.paths++;
   const sim=cloneCombat(source),order=[a.i,b.i,c.i],origins=order.map(i=>sim[k].units[i]?.origin);
   if(origins.some(i=>i==null))continue;
   let direct=0,valid=true,cleared=0;
   for(const origin of origins){
    if(sim.done){valid=false;break}
+   if(metrics)metrics.simulated++;
    const t=simulateSequenceAttack(sim,k,origin);
    if(!t){valid=false;break}
    if(t.kind==='direct')direct+=t.damage;
@@ -1322,6 +1325,25 @@ function botAdaptiveDepth(s,k,actions){
  if(!potential)return Object.freeze({depth:1,reason:'NO TERMINAL CHAIN POSSIBLE',potential:false});
  return Object.freeze({depth:Math.min(3,ready.length),
   reason:ready.length>=3?'THREE-MOVE FINISH POSSIBLE':'TWO-MOVE FINISH POSSIBLE',potential:true});
+}
+/* v2.8.54: deterministic simulation-call and path counters.
+   Adaptive and fixed-depth variants use the same combat search and ranker. */
+function botSearchWork(s,k,actions,adaptive=true){
+ const a=actions.filter(x=>x.kind==='attack'),metrics={simulated:0,paths:0};
+ const ranked=a.slice().sort((x,y)=>compareBotAttacks(s,k,x,y,{p:[],e:[]}));
+ if(!ranked.length)return Object.freeze({depth:0,simulated:0,paths:0,choice:null});
+ const depth=adaptive?botAdaptiveDepth(s,k,a).depth:Math.min(3,a.length);
+ const one=ranked[0],instant=botAttackRisk(predictedTarget(s,k,one.i)).immediateWin;
+ let choice=one,pair=null;
+ if(depth>=2){
+  pair=botTwoAttackPlan(s,k,a,metrics);
+  if(pair?.win&&!instant)choice=a.find(x=>x.i===pair.first)||choice;
+ }
+ if(depth>=3){
+  const triple=botThreeAttackPlan(s,k,a,metrics);
+  if(!instant&&!pair?.win&&triple?.win)choice=a.find(x=>x.i===triple.first)||choice;
+ }
+ return Object.freeze({depth,simulated:metrics.simulated,paths:metrics.paths,choice:choice.i});
 }
 function chooseBotAttack(s,k,actions,experience=botMemory){
  const attacks=actions.filter(x=>x.kind==='attack');
@@ -1625,6 +1647,43 @@ function botAdaptiveDepthRegression(){
  const passed=checks.filter(x=>x.pass).length;return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks)});
 }
 const botDepthChecks=botAdaptiveDepthRegression();
+/* v2.8.54: adaptive vs fixed-depth comparisons using measured simulations. */
+function botPerformanceRegression(){
+ const checks=[],check=(name,ok)=>checks.push(Object.freeze({name,pass:!!ok}));
+ const cards=CATALOG.cards.filter(c=>c.a>0&&c.d>0),weak=cards.find(c=>c.a===1);
+ const strong=cards.find(c=>c.a>=3&&c.hit===weak.hit),foe=cards.find(c=>c.a===1);
+ const unit=(c,hp=c.d)=>({n:Number(c.num),hp,used:false});
+ const board=()=>({p:{units:[unit(strong),unit(weak),unit(weak)],bf:20,mf:20,bin:[]},
+  e:{units:[unit(foe,1),unit(foe,1)],bf:20,mf:20,bin:[]},active:'p',phase:2,done:false});
+ const noWin=board(),legal=legalActions(noWin,'p'),frozen=JSON.stringify(noWin);
+ const fast=botSearchWork(noWin,'p',legal),full=botSearchWork(noWin,'p',legal,false);
+ check('high-health adaptive has zero simulations',fast.simulated===0&&fast.paths===0);
+ check('fixed depth simulates matches',full.simulated>0&&full.paths>0);
+ check('high-health choice parity',fast.choice===full.choice);
+ check('measured simulation savings',fast.simulated<full.simulated&&fast.paths<full.paths);
+ const three=board(),meter=strong.hit==='MAINFRAME'?'mf':'bf';three.e[meter]=strong.a;
+ const threeA=legalActions(three,'p'),a3=botSearchWork(three,'p',threeA),f3=botSearchWork(three,'p',threeA,false);
+ check('three-step decision parity',a3.choice===f3.choice&&a3.choice===1);
+ check('three-step simulations retained',a3.simulated>0&&a3.paths>0);
+ const two=board();two.e.units=[unit(foe,1)];two.e[meter]=strong.a;
+ const twoA=legalActions(two,'p'),a2=botSearchWork(two,'p',twoA),f2=botSearchWork(two,'p',twoA,false);
+ check('two-step decision parity',a2.choice===f2.choice&&a2.choice===1);
+ const instant=board();instant.e.units=[];instant.e[meter]=1;
+ const oneA=legalActions(instant,'p'),ai=botSearchWork(instant,'p',oneA),fi=botSearchWork(instant,'p',oneA,false);
+ check('immediate winning choice parity',ai.choice===fi.choice&&ai.choice===0);
+ check('immediate adaptive uses no simulations',ai.simulated===0);
+ const five=board();five.p.units=[unit(strong),unit(weak),unit(weak),unit(weak),unit(weak)];
+ const fiveFull=botSearchWork(five,'p',legalActions(five,'p'),false);
+ check('five-attacker work bounded by 220 calls',fiveFull.paths<=80&&fiveFull.simulated<=220);
+ check('repeatable work accounting',JSON.stringify(botSearchWork(noWin,'p',legal))===JSON.stringify(fast));
+ check('no state mutation during benchmarks',JSON.stringify(noWin)===frozen);
+ check('production selection agrees with benchmark',chooseBotAttack(three,'p',threeA,{p:[],e:[]})?.i===a3.choice);
+ const passed=checks.filter(x=>x.pass).length;
+ return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks),
+  sample:Object.freeze({quietAdaptive:fast,quietFull:full,threeAdaptive:a3,threeFull:f3,fiveFull})});
+}
+const botPerformanceChecks=botPerformanceRegression();
+
 
 
 
@@ -2110,7 +2169,7 @@ function routeAuthoritativeAction(proposal){
  routeEvidence.rejected++;routeEvidence.last='REJECT · ENGINE DECLINED';return false;
 }
 function renderRouteStatus(){
- $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' · RISK '+botRiskChecks.passed+'/'+botRiskChecks.total+' · COMBOS '+botComboChecks.passed+'/'+botComboChecks.total+' · THREE CHAIN '+botThreeChainChecks.passed+'/'+botThreeChainChecks.total+' · DEPTH '+botDepthChecks.passed+'/'+botDepthChecks.total+' '+(botDepthChecks.passed===botDepthChecks.total?'PASS':'FAIL');
+ $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' · RISK '+botRiskChecks.passed+'/'+botRiskChecks.total+' · COMBOS '+botComboChecks.passed+'/'+botComboChecks.total+' · THREE CHAIN '+botThreeChainChecks.passed+'/'+botThreeChainChecks.total+' · DEPTH '+botDepthChecks.passed+'/'+botDepthChecks.total+' · PERFORMANCE '+botPerformanceChecks.passed+'/'+botPerformanceChecks.total+' '+(botPerformanceChecks.passed===botPerformanceChecks.total?'PASS':'FAIL');
 }
 function renderBestAction(all){
  const panel=$('bestActionPanel'),button=$('bestActionButton'),label=$('bestActionText');
