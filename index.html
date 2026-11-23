@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.81 — Neon Energy Reservoir</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.82 — Reservoir Discharge</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1529,6 +1529,24 @@ padding:10px 14px}
  100%{opacity:0;transform:translateX(-50%) scaleX(1.3)}
 }
 @media(prefers-reduced-motion:reduce){#gameBoard .neonRamReservoir{animation:none!important;opacity:0!important}}
+/* v2.8.82 — discharge travels over the visible, authoritative RAM fill.
+   No writes to game state, no change to bar width, no card geometry changes. */
+#gameBoard .ramGaugeTrack .ramAvailable{position:relative;overflow:visible}
+#gameBoard .ramGaugeTrack .neonRamDischarge{
+ position:absolute;pointer-events:none;z-index:5;top:-7px;bottom:-7px;
+ left:0;width:var(--discharge-width,14%);border-radius:999px;
+ opacity:0;background:linear-gradient(90deg,transparent,#fff8ee 50%,transparent);
+ box-shadow:0 0 8px #f4bcff,0 0 17px #ae5bf5;
+ animation:neonRamDischargeSweep 650ms ease-in-out 3150ms both;
+}
+#gameBoard .side.you .neonRamDischarge{box-shadow:0 0 8px #fff5cb,0 0 17px #ff9f47}
+@keyframes neonRamDischargeSweep{
+ 0%{left:0;opacity:0}
+ 15%{opacity:var(--discharge-strength,1)}
+ 78%{opacity:var(--discharge-strength,1)}
+ 100%{left:calc(100% - var(--discharge-width,14%));opacity:0}
+}
+@media(prefers-reduced-motion:reduce){#gameBoard .neonRamDischarge{animation:none!important;opacity:0!important}}
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
    Card playfield outranks forecast, status, log and decorative panels. */
@@ -3275,6 +3293,22 @@ function drawEnergyPathways(snapshot){
     reservoir.style.setProperty('--reservoir-width',(12+Math.min(64,total*5))+'%');
     reservoir.addEventListener('animationend',()=>reservoir.remove(),{once:true});
     $(key+'RamAvailable').parentElement.append(reservoir);
+    /* Final discharge sweeps ONLY the already-rendered available-RAM fill.
+       It cannot mutate the RAM total, card slots, or turn sequencing. */
+    const fill=$(key+'RamAvailable');
+    const discharge=document.createElement('span');
+    discharge.className='neonRamDischarge';
+    discharge.setAttribute('aria-hidden','true');
+    discharge.dataset.lifecycleId=lifecycle;
+    discharge.dataset.flowSeq=String(snapshot.seq);
+    discharge.dataset.recoverySide=key;
+    discharge.dataset.returnedRam=String(total);
+    discharge.dataset.transferCount=String(positive.length);
+    discharge.dataset.transferIds=reservoir.dataset.transferIds;
+    discharge.style.setProperty('--discharge-strength',Math.min(1,total/12).toFixed(3));
+    discharge.style.setProperty('--discharge-width',(10+Math.min(25,total*2))+'%');
+    discharge.addEventListener('animationend',()=>discharge.remove(),{once:true});
+    fill.append(discharge);
    }
   }
   for(const seg of segments){
