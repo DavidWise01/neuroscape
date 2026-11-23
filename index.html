@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.76 — Destruction Shockwave</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.77 — Destruction to RAM Recovery</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1431,6 +1431,45 @@ padding:10px 14px}
  #gameBoard .combatPathways .neonDestructionFlash{
   animation:none!important;opacity:0!important
  }
+}
+
+/* v2.8.77 — DESTRUCTION → RAM RECOVERY PHOTON.
+   Source and destination follow the authoritative release flow only.
+   Time-lagged after the destruction shockwave; zero gameplay mutation. */
+#gameBoard .energyPathways .neonRecoveryReturn{
+ fill:none;stroke:#ffbb70;stroke-width:5;stroke-linecap:round;
+ stroke-dasharray:12 88;stroke-dashoffset:103;opacity:0;pointer-events:none;
+ filter:drop-shadow(0 0 5px #ff9d4b) drop-shadow(0 0 12px #c367fb);
+ animation:neonRecoveryTravel 760ms cubic-bezier(.18,.67,.25,1) 1180ms both;
+}
+#gameBoard .side.opponent .energyPathways .neonRecoveryReturn{
+ stroke:#d4a1ff;filter:drop-shadow(0 0 7px #ae5bfa) drop-shadow(0 0 12px #c685ff);
+}
+#gameBoard .energyPathways .neonRecoveryCore{
+ fill:none;stroke:#fffdf4;stroke-width:2;stroke-linecap:round;
+ stroke-dasharray:4 96;stroke-dashoffset:103;opacity:0;pointer-events:none;
+ filter:drop-shadow(0 0 5px #fff7ec);
+ animation:neonRecoveryTravel 760ms cubic-bezier(.18,.67,.25,1) 1180ms both;
+}
+#gameBoard .energyPathways .neonRecoveryArrival{
+ fill:none;stroke:#fff2be;stroke-width:3;opacity:0;pointer-events:none;
+ transform-box:fill-box;transform-origin:center;
+ filter:drop-shadow(0 0 7px #ffb566);
+ animation:neonRecoveryArrival 450ms ease-out 1840ms both;
+}
+@keyframes neonRecoveryTravel{
+ 0%{stroke-dashoffset:103;opacity:0}12%{opacity:1}
+ 88%{opacity:1}100%{stroke-dashoffset:0;opacity:0}
+}
+@keyframes neonRecoveryArrival{
+ 0%{opacity:0;transform:scale(.3);stroke-width:5}
+ 20%{opacity:1}
+ 100%{opacity:0;transform:scale(1.8);stroke-width:1}
+}
+@media(prefers-reduced-motion:reduce){
+ #gameBoard .energyPathways .neonRecoveryReturn,
+ #gameBoard .energyPathways .neonRecoveryCore,
+ #gameBoard .energyPathways .neonRecoveryArrival{animation:none!important;opacity:0!important}
 }
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
@@ -3162,6 +3201,33 @@ function drawEnergyPathways(snapshot){
    const node=slots[seg.slot];if(!node)continue;const rect=node.getBoundingClientRect(),tx=rect.left+rect.width*.5-bounds.left,ty=rect.top+rect.height*.5-bounds.top;
    const origin=seg.direction==='back'?[tx,ty]:[mx,my],dest=seg.direction==='back'?[mx,my]:[tx,ty];
    addPulsePath(svg,routeBetween(origin,dest),seg.direction==='back'?'returnRoute':'commitRoute');
+   /* Release events already contain the original destroyed slot and
+      positive returned RAM. Trace only those recorded transfers. */
+   if(flow.type==='release'&&seg.direction==='back'&&seg.amount>0&&
+      !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches){
+    const ns='http://www.w3.org/2000/svg',curve=routeBetween(origin,dest);
+    for(const cls of ['neonRecoveryReturn','neonRecoveryCore']){
+     const bolt=document.createElementNS(ns,'path');
+     bolt.setAttribute('d',curve);
+     bolt.setAttribute('pathLength','100');
+     bolt.setAttribute('class',cls);
+     bolt.dataset.flowSeq=String(snapshot.seq);
+     bolt.dataset.recoverySide=key;
+     bolt.dataset.recoverySlot=String(seg.slot);
+     bolt.dataset.returnedRam=String(seg.amount);
+     bolt.addEventListener('animationend',()=>bolt.remove(),{once:true});
+     svg.append(bolt);
+    }
+    const arrival=document.createElementNS(ns,'circle');
+    arrival.setAttribute('cx',dest[0].toFixed(2));
+    arrival.setAttribute('cy',dest[1].toFixed(2));
+    arrival.setAttribute('r','13');
+    arrival.setAttribute('class','neonRecoveryArrival');
+    arrival.dataset.flowSeq=String(snapshot.seq);
+    arrival.dataset.recoverySide=key;
+    arrival.addEventListener('animationend',()=>arrival.remove(),{once:true});
+    svg.append(arrival);
+   }
   }
  }
 }
