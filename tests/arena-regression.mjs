@@ -390,6 +390,58 @@ try{
       item.pointer!=='none'||!item.parentIsFill)
       fail('Afterglow does not preserve recovery evidence or delay: '+JSON.stringify(afterglows));
  }
+ // v2.8.84: inject two observed releases on the same player meter before
+ // either animation expires. Each event must remain independently removable.
+ const overlaps=await page.evaluate(()=>{
+   const fill=document.getElementById('pRamAvailable');
+   const track=fill.parentElement;
+   const before=fill.style.width;
+   const first=988401,second=988402;
+   drawEnergyPathways({seq:first,impactSeq:988400,events:[
+     {side:'p',type:'release',amount:2,slots:[{slot:0,amount:2}]}]});
+   drawEnergyPathways({seq:second,impactSeq:988401,events:[
+     {side:'p',type:'release',amount:7,slots:[{slot:2,amount:3},{slot:4,amount:4}]}]});
+   const elements=selector=>[...document.querySelectorAll(selector)];
+   const groups=[
+     {name:'reservoir',nodes:elements('#pRamAvailable ~ .neonRamReservoir')},
+     {name:'discharge',nodes:elements('#pRamAvailable > .neonRamDischarge')},
+     {name:'afterglow',nodes:elements('#pRamAvailable > .neonRamAfterglow')},
+     {name:'photon',nodes:elements('#pPathways > .neonRecoveryReturn')},
+     {name:'arrival',nodes:elements('#pPathways > .neonRecoveryArrival')}
+   ];
+   const report=groups.map(g=>{
+     const list=g.nodes.filter(x=>[String(first),String(second)].includes(x.dataset.flowSeq));
+     return {name:g.name,entries:list.map(x=>({
+       seq:x.dataset.flowSeq,cycle:x.dataset.cycleId,
+       lifecycle:x.dataset.lifecycleId,amount:x.dataset.returnedRam,
+       pointer:getComputedStyle(x).pointerEvents
+     }))};
+   });
+   // Simulate completion only of the FIRST reservoir; it must not remove
+   // the second reservoir or the second event's afterglow.
+   const old=[...track.querySelectorAll('.neonRamReservoir')]
+     .find(x=>x.dataset.flowSeq===String(first));
+   const newer=[...track.querySelectorAll('.neonRamReservoir')]
+     .find(x=>x.dataset.flowSeq===String(second));
+   old?.dispatchEvent(new Event('animationend'));
+   const independent=!!newer?.isConnected&&!old?.isConnected;
+   const newerAfterglow=!!fill.querySelector('.neonRamAfterglow[data-flow-seq="988402"]');
+   return {report,independent,newerAfterglow,before,after:fill.style.width,
+     fiveSlots:document.querySelectorAll('#pLanes>.slot').length};
+ });
+ if(!overlaps.independent||!overlaps.newerAfterglow||
+    overlaps.before!==overlaps.after||overlaps.fiveSlots!==5)
+   fail('Overlapping cycle altered game meter, destroyed other glow or collapsed cards: '+JSON.stringify(overlaps));
+ for(const g of overlaps.report){
+   const expected=g.name==='photon'||g.name==='arrival'?
+     [['988401','2'],['988402','3'],['988402','4']]:
+     [['988401','2'],['988402','7']];
+   const actual=g.entries.map(x=>[x.seq,x.amount]).sort((a,b)=>a[0].localeCompare(b[0])||Number(a[1])-Number(b[1]));
+   if(JSON.stringify(actual)!==JSON.stringify(expected)||
+      g.entries.some(x=>x.pointer!=='none'||x.cycle!==x.lifecycle+':flow:'+x.seq+':p'))
+     fail('Overlapping '+g.name+' events lost independent lineage: '+JSON.stringify(overlaps));
+ }
+ console.log('OVERLAP PASS: two independent recovery cycles, old cleanup cannot erase new cycle');
  console.log('AFTERGLOW PASS: delayed bounded fading overlay, both sides, zero RAM mutation');
  console.log('RESERVOIR DISCHARGE PASS: delayed sweep over available RAM fill, both sides, provenance intact');
  console.log('NEON RESERVOIR PASS: pooled positive releases, both sides, no RAM mutation');
