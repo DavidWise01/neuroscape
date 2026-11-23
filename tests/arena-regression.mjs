@@ -58,6 +58,31 @@ try{
    const after=await page.locator('#'+layer+' circle').first().getAttribute('r');
    if(before===after)fail(label+' regenerate did not produce a new procedural seed');
  }
+ // v2.8.64: different generators, both based on observed game events.
+ const signatures=await page.evaluate(()=>({
+  cores:document.getElementById('generativeCores')?.dataset.pattern,
+  foundry:document.getElementById('generativeFoundry')?.dataset.pattern,
+  coresEvents:Number(document.getElementById('generativeCores')?.dataset.observedEvents),
+  foundryEvents:Number(document.getElementById('generativeFoundry')?.dataset.observedEvents),
+  labelCores:document.getElementById('coresSignature')?.textContent,
+  labelFoundry:document.getElementById('foundrySignature')?.textContent
+ }));
+ if(signatures.cores!=='dual-helix'||signatures.foundry!=='crystal-lattice')
+   fail('Art panels lack distinct bounded generative signatures: '+JSON.stringify(signatures));
+ if(signatures.coresEvents<1||signatures.coresEvents>12||signatures.foundryEvents!==signatures.coresEvents)
+   fail('Art observation window absent or unbounded: '+JSON.stringify(signatures));
+ if(!signatures.labelCores?.startsWith('HELIX')||!signatures.labelFoundry?.startsWith('LATTICE'))
+   fail('Generative signatures not displayed');
+ // Actual SVG primitives must be distinct: helix uses cubic C, lattice uses L.
+ await page.locator('#neuroscapeArt').scrollIntoViewIfNeeded();
+ await page.waitForTimeout(175);
+ const coresPath=await page.locator('#generativeCores > path').first().getAttribute('d');
+ await page.locator('#signalFoundry').scrollIntoViewIfNeeded();
+ await page.waitForTimeout(175);
+ const foundryPath=await page.locator('#generativeFoundry > path').first().getAttribute('d');
+ if(!/ C /.test(coresPath||'')||!/ L /.test(foundryPath||''))
+   fail('Generated paths must actually differ between helix and crystal lattice');
+ console.log('GENERATIVE SIGNATURES PASS: dual helix, faceted lattice, bounded observed-event history');
  const still=await page.evaluate(()=>['pLanes','eLanes'].every(id=>{
    const a=[...document.querySelectorAll('#'+id+' > .slot')];
    return a.length===5&&a.every(e=>e.getBoundingClientRect().height>=70);
