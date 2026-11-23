@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.75 — Dimensional Shield Shimmer</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.76 — Destruction Shockwave</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1390,6 +1390,45 @@ padding:10px 14px}
 @media(prefers-reduced-motion:reduce){
  #gameBoard .combatPathways .neonShieldRim,
  #gameBoard .combatPathways .neonShieldGlint{
+  animation:none!important;opacity:0!important
+ }
+}
+
+/* v2.8.76 — OBSERVED CARD DESTRUCTION SHOCKWAVE.
+   Replay the destruction ledger at measured slot positions; one corona
+   and three elliptical projection rings per destroyed card, never on
+   a surviving card. Visual-only SVG; no hitboxes or arena changes. */
+#gameBoard .combatPathways .neonDestructionRing{
+ fill:none;stroke:#ff9c49;stroke-width:4;opacity:0;pointer-events:none;
+ transform-box:fill-box;transform-origin:center;
+ filter:drop-shadow(0 0 6px #ff8b29) drop-shadow(0 0 15px #ffb157);
+ animation:neonDestructionExpand 710ms ease-out 790ms both;
+}
+#gameBoard .combatPathways .neonDestructionRing.destructionRing2{
+ stroke:#d885ff;filter:drop-shadow(0 0 6px #be62f8);
+ animation-delay:860ms;
+}
+#gameBoard .combatPathways .neonDestructionRing.destructionRing3{
+ stroke:#fff8e7;stroke-width:2;animation-delay:930ms;
+}
+#gameBoard .combatPathways .neonDestructionFlash{
+ fill:#fff6df;stroke:#ff973e;stroke-width:2;opacity:0;pointer-events:none;
+ filter:drop-shadow(0 0 8px #ff9e49) drop-shadow(0 0 16px #ba63ff);
+ animation:neonDestructionFlash 560ms ease-out 770ms both;
+}
+@keyframes neonDestructionExpand{
+ 0%{opacity:0;transform:scale(.18);stroke-width:7}
+ 14%{opacity:1}
+ 100%{opacity:0;transform:scale(2.1);stroke-width:1}
+}
+@keyframes neonDestructionFlash{
+ 0%{opacity:0;transform:scale(.25)}
+ 16%{opacity:.95}
+ 100%{opacity:0;transform:scale(1.7)}
+}
+@media(prefers-reduced-motion:reduce){
+ #gameBoard .combatPathways .neonDestructionRing,
+ #gameBoard .combatPathways .neonDestructionFlash{
   animation:none!important;opacity:0!important
  }
 }
@@ -3246,6 +3285,42 @@ function drawCombatPathways(impact){
    landing.dataset.attackSeq=String(impact.seq);
    landing.addEventListener('animationend',()=>landing.remove(),{once:true});
    svg.append(landing);
+  }
+  /* v2.8.76: the immutable result ledger records the destroyed side and
+     original slot before recycling compacts units. Square stations remain
+     fixed, so use that observed station's measured on-screen coordinates.
+     Never infer a destruction from visuals, health, or attack strength. */
+  for(const fallen of (Array.isArray(impact.destroyed)?impact.destroyed:[]).slice(0,10)){
+   if(!['p','e'].includes(fallen.side)||!Number.isInteger(fallen.slot)||
+      fallen.slot<0||fallen.slot>=5)continue;
+   const station=$(fallen.side+'Lanes')?.children[fallen.slot];
+   if(!station)continue;
+   const area=station.getBoundingClientRect();
+   const cx=area.left+area.width*.5-bounds.left;
+   const cy=area.top+area.height*.5-bounds.top;
+   const width=Math.max(12,Math.min(65,area.width*.36));
+   const height=Math.max(12,Math.min(65,area.height*.36));
+   const tag=fallen.side+':'+fallen.slot;
+   for(let n=1;n<=3;n++){
+    const ring=document.createElementNS(ns,'ellipse');
+    ring.setAttribute('cx',cx.toFixed(2));ring.setAttribute('cy',cy.toFixed(2));
+    ring.setAttribute('rx',(width*(.7+n*.24)).toFixed(2));
+    ring.setAttribute('ry',(height*(.54+n*.16)).toFixed(2));
+    ring.setAttribute('transform','rotate(-22 '+cx.toFixed(2)+' '+cy.toFixed(2)+')');
+    ring.setAttribute('class','neonDestructionRing destructionRing'+n);
+    ring.dataset.attackSeq=String(impact.seq);
+    ring.dataset.destroyedSlot=tag;
+    ring.addEventListener('animationend',()=>ring.remove(),{once:true});
+    svg.append(ring);
+   }
+   const flashRing=document.createElementNS(ns,'circle');
+   flashRing.setAttribute('cx',cx.toFixed(2));flashRing.setAttribute('cy',cy.toFixed(2));
+   flashRing.setAttribute('r',String(Math.max(8,Math.min(23,width*.4))));
+   flashRing.setAttribute('class','neonDestructionFlash');
+   flashRing.dataset.attackSeq=String(impact.seq);
+   flashRing.dataset.destroyedSlot=tag;
+   flashRing.addEventListener('animationend',()=>flashRing.remove(),{once:true});
+   svg.append(flashRing);
   }
  }
  const flash=(element,token)=>{
