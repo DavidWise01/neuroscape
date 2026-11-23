@@ -471,6 +471,28 @@ try{
     rapid.widthBefore!==rapid.widthAfter||rapid.cardSlots!==5||
     !rapid.latestCycle||rapid.invalidPointer)
    fail('Rapid recovery cleanup did not bound visual cycles independently: '+JSON.stringify(rapid));
+ // v2.8.86 — every recorded ephemeral recovery overlay must disappear
+ // at the end of its OWN animation; no retained ghost overlay on either side.
+ const quiescent=await page.evaluate(()=>{
+   const selector='#gameBoard .neonRamReservoir,#gameBoard .neonRamDischarge,'+
+     '#gameBoard .neonRamAfterglow,#gameBoard .neonRamCharge,'+
+     '#gameBoard .neonRecoveryReturn,#gameBoard .neonRecoveryCore,'+
+     '#gameBoard .neonRecoveryArrival';
+   const before=[...document.querySelectorAll(selector)];
+   const blocked=before.filter(node=>getComputedStyle(node).pointerEvents!=='none').length;
+   const ramBefore=['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width);
+   for(const node of before)node.dispatchEvent(new Event('animationend'));
+   const still=document.querySelectorAll(selector).length;
+   const ramAfter=['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width);
+   return {total:before.length,blocked,remaining:still,
+     ramUnchanged:JSON.stringify(ramBefore)===JSON.stringify(ramAfter),
+     playerSlots:document.querySelectorAll('#pLanes>.slot').length,
+     botSlots:document.querySelectorAll('#eLanes>.slot').length};
+ });
+ if(quiescent.blocked||quiescent.remaining||!quiescent.ramUnchanged||
+    quiescent.playerSlots!==5||quiescent.botSlots!==5)
+   fail('Recovery visuals failed full quiescence: '+JSON.stringify(quiescent));
+ console.log('QUIESCENCE PASS: all recovery effects expired independently, meters and ten squares retained');
  console.log('RAPID CLEANUP PASS: 30 releases bounded to 12 visual cycles, newest kept, RAM unchanged');
  console.log('OVERLAP PASS: two independent recovery cycles, old cleanup cannot erase new cycle');
  console.log('AFTERGLOW PASS: delayed bounded fading overlay, both sides, zero RAM mutation');
