@@ -1194,6 +1194,7 @@ function renderLearning(){
 let nextUnitIdentity=0;
 const unitIdentity=()=>++nextUnitIdentity;
 /* Phase 34 turn 1: observed, bounded, match-local experience only. */
+const other=k=>k==='p'?'e':'p';
 const BOT_MEMORY_LIMIT=48;
 const botMemory={p:[],e:[]};
 function combatMemoryContext(kind,meter=null){
@@ -1759,7 +1760,7 @@ const botStabilityChecks=botStabilityRegression();
 const makePlayer=(main,deck)=>({main,bf:20,mf:20,ram:0,hand:deck.slice(0,5),deck:deck.slice(5),units:[],bin:[]});
 const committed=p=>p.units.reduce((a,u)=>a+cost(card(u.n)),0);
 const free=p=>p.ram-committed(p);
-const other=k=>k==='p'?'e':'p';
+
 function log(msg){state.events.unshift(msg);if(state.events.length>30)state.events.length=30}
 function restart(kind=mode){if(state&&!state.done)settleLongitudinal('interrupted');temporalEvidence.match++;if(botTimer!==null)clearTimeout(botTimer);botTimer=null;lastImpact=null;targetPreview=null;lastRamFlow=null;mode=kind;resetBotMemory();state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
 function legalActions(s,k){if(s.done||s.active!==k)return[];let p=s[k],a=[];
