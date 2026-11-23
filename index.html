@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.73 — Defender Energy Ripples</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.74 — Retaliation Rebound</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1310,6 +1310,47 @@ padding:10px 14px}
 }
 @media(prefers-reduced-motion:reduce){
  #gameBoard .combatPathways .neonDefenderRipple{animation:none!important;opacity:0!important}
+}
+
+/* v2.8.74 — AUTHORITATIVE RETALIATION REBOUND.
+   Only blocked attacks with actual positive return damage generate a
+   reverse violet bolt. 100% visual, pointer-safe, short lived. */
+#gameBoard .combatPathways .neonRetaliationRebound{
+ fill:none;stroke:#e1a7ff;stroke-width:5;stroke-linecap:round;
+ stroke-dasharray:11 89;stroke-dashoffset:100;
+ opacity:0;pointer-events:none;
+ filter:drop-shadow(0 0 6px #c76aff) drop-shadow(0 0 15px #a84ef4);
+ animation:neonRetaliationTravel 620ms cubic-bezier(.16,.63,.27,1) 1100ms both;
+}
+#gameBoard .combatPathways .neonRetaliationCore{
+ fill:none;stroke:#fffafa;stroke-width:2;stroke-linecap:round;
+ stroke-dasharray:4 96;stroke-dashoffset:100;opacity:0;pointer-events:none;
+ filter:drop-shadow(0 0 5px #fff);
+ animation:neonRetaliationTravel 620ms cubic-bezier(.16,.63,.27,1) 1100ms both;
+}
+#gameBoard .combatPathways .neonRetaliationLanding{
+ fill:none;stroke:#e9c2ff;stroke-width:3;opacity:0;pointer-events:none;
+ transform-box:fill-box;transform-origin:center;
+ filter:drop-shadow(0 0 8px #af5afc);
+ animation:neonRetaliationLanding 390ms ease-out 1660ms both;
+}
+@keyframes neonRetaliationTravel{
+ 0%{stroke-dashoffset:103;opacity:0}
+ 12%{opacity:1}
+ 88%{opacity:1}
+ 100%{stroke-dashoffset:0;opacity:0}
+}
+@keyframes neonRetaliationLanding{
+ 0%{opacity:0;transform:scale(.2);stroke-width:6}
+ 20%{opacity:1}
+ 100%{opacity:0;transform:scale(1.7);stroke-width:1}
+}
+@media(prefers-reduced-motion:reduce){
+ #gameBoard .combatPathways .neonRetaliationRebound,
+ #gameBoard .combatPathways .neonRetaliationCore,
+ #gameBoard .combatPathways .neonRetaliationLanding{
+  animation:none!important;opacity:0!important
+ }
 }
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
@@ -3108,6 +3149,33 @@ function drawCombatPathways(impact){
     ripple.addEventListener('animationend',()=>ripple.remove(),{once:true});
     svg.append(ripple);
    }
+  }
+  /* Reverse the same measured route only if the observed combat result
+     records positive retaliation. No independent gameplay calculation. */
+  if(impact.kind==='blocked'&&impact.target>=0&&
+     Number.isFinite(Number(impact.retaliation))&&Number(impact.retaliation)>0){
+   const reverse=routeBetween(end,start);
+   for(const [cls,width] of [['neonRetaliationRebound',5],['neonRetaliationCore',2]]){
+    const bolt=document.createElementNS(ns,'path');
+    bolt.setAttribute('d',reverse);
+    bolt.setAttribute('pathLength','100');
+    bolt.setAttribute('stroke-width',String(width));
+    bolt.setAttribute('class',cls);
+    bolt.dataset.attackSeq=String(impact.seq);
+    bolt.dataset.retaliation=String(impact.retaliation);
+    bolt.dataset.from=impact.to+':'+impact.target;
+    bolt.dataset.to=impact.from+':'+impact.source;
+    bolt.addEventListener('animationend',()=>bolt.remove(),{once:true});
+    svg.append(bolt);
+   }
+   const landing=document.createElementNS(ns,'circle');
+   landing.setAttribute('cx',start[0].toFixed(2));
+   landing.setAttribute('cy',start[1].toFixed(2));
+   landing.setAttribute('r','17');
+   landing.setAttribute('class','neonRetaliationLanding');
+   landing.dataset.attackSeq=String(impact.seq);
+   landing.addEventListener('animationend',()=>landing.remove(),{once:true});
+   svg.append(landing);
   }
  }
  const flash=(element,token)=>{
