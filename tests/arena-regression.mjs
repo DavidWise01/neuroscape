@@ -78,17 +78,35 @@ try{
   if(both!==want)fail('Foundry and Two Cores momentum diverged: '+both);
  };
  await assertMomentum('BF 20 / MF 20','BF 20 / MF 20','BALANCED');
+ const geometry=async layer=>page.locator('#'+layer).evaluate(e=>({
+  shift:Number(e.dataset.geometryShift),bend:Number(e.dataset.geometryBend),tilt:Number(e.dataset.geometryTilt)
+ }));
+ const balanceCores=await geometry('generativeCores'),balanceFoundry=await geometry('generativeFoundry');
+ if(balanceCores.shift!==0||balanceCores.bend!==0||balanceFoundry.shift!==0||balanceFoundry.bend!==0)
+   fail('Balanced board must have symmetrical procedural geometry');
+
  await assertMomentum('BF 20 / MF 20','BF 12 / MF 8','PLAYER ADVANTAGE');
  const orangePosition=await page.locator('#coresMomentumNeedle').evaluate(e=>parseFloat(e.style.left));
  if(orangePosition<=50)fail('Player advantage must move momentum needle orange/right');
+ const orangeCores=await geometry('generativeCores'),orangeFoundry=await geometry('generativeFoundry');
+ if(orangeCores.shift<=0||orangeCores.bend<=0||orangeFoundry.shift!==orangeCores.shift||
+    orangeFoundry.bend!==orangeCores.bend)
+   fail('Player lead must bend both art geometries right/orange');
+
  await assertMomentum('BF 8 / MF 12','BF 20 / MF 20','BOT ADVANTAGE');
  const purplePosition=await page.locator('#coresMomentumNeedle').evaluate(e=>parseFloat(e.style.left));
  if(purplePosition>=50)fail('Bot advantage must move momentum needle violet/left');
+ const purpleCores=await geometry('generativeCores'),purpleFoundry=await geometry('generativeFoundry');
+ if(purpleCores.shift>=0||purpleCores.bend>=0||purpleFoundry.shift!==purpleCores.shift||
+    purpleFoundry.bend!==purpleCores.bend)
+   fail('Bot lead must bend both art geometries left/violet');
+
  await page.evaluate(({p,e})=>{
    document.getElementById('pHealth').textContent=p;
    document.getElementById('eHealth').textContent=e;
  },originalHealth);
  if(errors.length)fail('Browser errors during momentum response');
+ console.log('GEOMETRY PASS: symmetric at zero; rightward for player and leftward for bot on both murals');
  console.log('MOMENTUM PASS: both murals follow only displayed health, balanced/player/bot, without changing game state');
 
  if(errors.length)fail('Browser error after artwork regeneration');
