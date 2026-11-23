@@ -24,6 +24,29 @@ try{
   if(list.some(x=>x.width<70||x.height<70||x.visible!=='visible'||x.display==='none'))fail(side+' card squares have collapsed');
  }
  if(initial.hand<5)fail('Player hand not rendered');
+ // v2.8.70 live neon tubes/trails must be rendered as pure decoration.
+ const neonTubes=await page.evaluate(()=>{
+  const board=document.getElementById('gameBoard');
+  const opposing=document.querySelector('#gameBoard .side.opponent');
+  const player=document.querySelector('#gameBoard .side.you');
+  const first=board?.getBoundingClientRect();
+  const tube=getComputedStyle(board,'::after'),purple=getComputedStyle(opposing,'::after'),orange=getComputedStyle(player,'::after');
+  return {
+   tubeAnimation:tube.animationName,purpleAnimation:purple.animationName,orangeAnimation:orange.animationName,
+   pointer:tube.pointerEvents,boardWidth:first?.width,
+   mural1:getComputedStyle(document.getElementById('neuroscapeArt'),'::after').animationName,
+   mural2:getComputedStyle(document.getElementById('signalFoundry'),'::after').animationName
+  };
+ });
+ if(!neonTubes.tubeAnimation.includes('neonTubeCircuit')||
+    !neonTubes.purpleAnimation.includes('neonLaneTravel')||
+    !neonTubes.orangeAnimation.includes('neonLaneTravel')||
+    !neonTubes.mural1.includes('neonLaneTravel')||
+    !neonTubes.mural2.includes('neonLaneTravel')||
+    neonTubes.pointer!=='none')
+   fail('Neon tubes/trails missing or intercepting gameplay: '+JSON.stringify(neonTubes));
+ console.log('NEON TUBES PASS: animated chrome perimeter, orange/purple lanes, both murals; pointer safe');
+
  // Active-neon skin uses the original live game turn metadata, without replacing the board.
  const turnNeon=await page.evaluate(()=>({
   active:document.getElementById('gameBoard')?.dataset.activeSide,
