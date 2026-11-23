@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.59 — Signal Foundry</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.60 — Generative Neon Gallery</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -917,6 +917,16 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 @keyframes foundryGlow{from{opacity:.36}to{opacity:1}}
 @keyframes foundryStream{to{stroke-dashoffset:-54}}
 @media(prefers-reduced-motion:reduce){#signalFoundry .foundryRings,#signalFoundry .foundryRingsReverse,#signalFoundry .foundryPulse,#signalFoundry .foundryStream{animation:none!important}}
+
+/* v2.8.60 — Two procedural art engines, additive; baseline game untouched. */
+#neuroscapeArt .artHead button,#signalFoundry .foundryHeader button{
+ appearance:none;border:1px solid #b14de6;border-radius:4px;background:#f7eaff;
+ color:#67319e;padding:5px 10px;font:900 11px/1.35 monospace;
+ box-shadow:0 0 8px #ab51e45a;cursor:pointer;
+}
+#signalFoundry .foundryHeader button{border-color:#f2862b;background:#ffefd9;color:#a44d0e}
+#neuroscapeArt .artHead button:focus-visible,#signalFoundry .foundryHeader button:focus-visible{outline:3px solid #ff8f31;outline-offset:2px}
+#neuroscapeArt .generativeLayer,#signalFoundry .generativeLayer{pointer-events:none}
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
    Card playfield outranks forecast, status, log and decorative panels. */
@@ -939,7 +949,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
  #gameBoard .lanes>.slot{min-height:52px!important}
 }
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.59 · BONE WHITE / SIGNAL FOUNDRY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.60 · BONE WHITE / GENERATIVE GALLERY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText">STARTING ARCADE · FIVE SQUARES PER PLAYER</strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" data-arena-invariant="5x2-visible-square-card-slots" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes" aria-label="Five bot card squares"><div class="slot" data-slot="1"></div><div class="slot" data-slot="2"></div><div class="slot" data-slot="3"></div><div class="slot" data-slot="4"></div><div class="slot" data-slot="5"></div></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -951,7 +961,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 <div class="foot"><section class="info"><h2>HOW TO PLAY</h2><p id="message"></p></section><section class="info"><h2>EVENT LOG</h2><ol class="log" id="events"></ol></section></div>
 
 <section id="neuroscapeArt" aria-label="Neuroscape original illustrated cyberpunk arena artwork">
-  <div class="artHead"><span>✦ NEUROSCAPE · THE TWO CORES ✦</span><span>ORIGINAL NEON ART · ARENA REMAINS LOCKED</span></div>
+  <div class="artHead"><span>✦ NEUROSCAPE · THE TWO CORES ✦</span><span>ORIGINAL NEON ART · ARENA REMAINS LOCKED</span><button type="button" id="regenerateCores" aria-label="Regenerate Two Cores artwork">↻ REGENERATE</button></div>
   <svg viewBox="0 0 1200 310" role="img" aria-labelledby="artTitle artDesc" xmlns="http://www.w3.org/2000/svg">
     <title id="artTitle">Coyote versus Synthetix — orange and violet neon cyberpunk city</title>
     <desc id="artDesc">Original neon vector art showing a violet digital coyote and an orange cybernetic guardian facing each other across a radiant five-square battlefield, against a nighttime circuit city.</desc>
@@ -1020,12 +1030,13 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
       <text x="1151" y="29" text-anchor="end" fill="#ffc28e">SYNTHETIX // SOLAR CORE</text>
       <text x="600" y="306" text-anchor="middle" font-size="10" letter-spacing="4" fill="#eec5ff">FIVE SQUARES · TWO CORES · ONE PLAYABLE ARENA</text>
     </g>
+  <g id="generativeCores" class="generativeLayer" aria-hidden="true"></g>
   </svg>
   <div class="artFoot"><span>◈ COYOTE · NEON VIOLET</span><span>✦ HAND-DRAWN VECTOR ART · PLAYFIELD UNCHANGED</span><span>SYNTHETIX · SOLAR ORANGE ◈</span></div>
 </section>
 
 <section id="signalFoundry" aria-label="Original Signal Foundry neon illustration">
- <div class="foundryHeader"><span>◈ SIGNAL FOUNDRY · FIVE PORTALS ◈</span><span>ORIGINAL NEON ILLUSTRATION · BELOW GAMEPLAY</span></div>
+ <div class="foundryHeader"><span>◈ SIGNAL FOUNDRY · FIVE PORTALS ◈</span><span>ORIGINAL NEON ILLUSTRATION · BELOW GAMEPLAY</span><button type="button" id="regenerateFoundry" aria-label="Regenerate Signal Foundry artwork">↻ REGENERATE</button></div>
  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 328" role="img" aria-labelledby="foundryTitle foundryDesc">
   <title id="foundryTitle">Signal Foundry: five square card portals forge light between neon violet and orange cores</title>
   <desc id="foundryDesc">An original futuristic illustration: five holographic card portals aligned along a chrome platform, with a spinning neon ring and streams of orange and violet energy. This is decorative art displayed below the protected gameplay arena.</desc>
@@ -1075,7 +1086,8 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
    <text x="850" y="261" fill="#ffbd7e" font-size="13">STRIKE</text>
    <text x="1051" y="260" fill="#ffa456" font-size="13">SOLAR</text>
   </g>
- </svg>
+ <g id="generativeFoundry" class="generativeLayer" aria-hidden="true"></g>
+  </svg>
  <div class="foundryCaption"><span>◈ FIVE HOLOGRAPHIC CARD PORTALS</span><span>ORANGE ↔ PURPLE · CHROME CIRCUITS</span><span>✦ BASELINE PLAYFIELD IS UNCHANGED</span></div>
 </section>
 <p class="notice">Square-card practice rules: install RAM or draw, deploy within available RAM (up to five characters), attack once per ready character, then end your turn. This simplified trainer is not the complete official card game. Original catalog artwork is loaded from external source URLs.</p>
@@ -2764,5 +2776,78 @@ restart('human');
   const message=document.getElementById('message');
   if(message)message.textContent='Game startup failed. Reload the page; all ten card stations remain reserved.';
  }
+})();
+</script>
+<script>
+/* TWO GENERATIVE SVG ENGINES — visual-only, no game-state reads or writes.
+   40ms frame budget, visibility/motion-aware, bounded reusable DOM.
+   Regeneration changes the local seeded flow field, not any playable card. */
+(()=>{'use strict';
+ const SVG_NS='http://www.w3.org/2000/svg';
+ const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)');
+ const svg=(tag,attrs={})=>{const e=document.createElementNS(SVG_NS,tag);for(const [k,v] of Object.entries(attrs))e.setAttribute(k,String(v));return e};
+ const randomFrom=seed=>()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
+ const configs=[
+  {id:'neuroscapeArt',layer:'generativeCores',button:'regenerateCores',count:32,offset:0,orange:'#ff963e',purple:'#c278ff'},
+  {id:'signalFoundry',layer:'generativeFoundry',button:'regenerateFoundry',count:38,offset:7,orange:'#ffb04e',purple:'#a868ff'}
+ ];
+ const engines=configs.map((cfg,index)=>{
+  const host=document.getElementById(cfg.id),group=document.getElementById(cfg.layer),button=document.getElementById(cfg.button);
+  if(!host||!group||!button)return null;
+  let generation=0,particles=[],paths=[];
+  function regenerate(){
+   generation++;const rnd=randomFrom((0x6e6f6e^Math.imul(index+1,0x9e3779b9)^Math.imul(generation,0x85ebca6b))>>>0);
+   group.replaceChildren();particles=[];paths=[];
+   for(let j=0;j<cfg.count;j++){
+    const p={a:rnd()*Math.PI*2,r:30+rnd()*280,speed:.13+rnd()*.38,phase:rnd()*Math.PI*2,
+      size:1.4+rnd()*3.2,offset:15+rnd()*90,side:j%2};
+    const e=svg('circle',{r:p.size,fill:p.side?cfg.orange:cfg.purple,opacity:'.7'});
+    group.append(e);particles.push({p,e});
+   }
+   for(let j=0;j<9;j++){
+    const p={phase:rnd()*Math.PI*2,speed:.18+rnd()*.2,dy:(rnd()-.5)*100,w:1+rnd()*2.1,
+      offset:10+rnd()*210,side:j%2};
+    const e=svg('path',{fill:'none',stroke:p.side?cfg.orange:cfg.purple,
+      'stroke-width':p.w,'stroke-linecap':'round',opacity:'.5'});
+    group.insertBefore(e,group.firstChild);paths.push({p,e});
+   }
+   return generation;
+  }
+  button.addEventListener('click',()=>{regenerate();button.title='Procedural artwork seed '+generation});
+  regenerate();
+  return {host,group,particles,paths,cfg,get generation(){return generation},visible:true};
+ }).filter(Boolean);
+ if(!engines.length)return;
+ if('IntersectionObserver' in window){
+  const io=new IntersectionObserver(entries=>{for(const entry of entries){const e=engines.find(x=>x.host===entry.target);if(e)e.visible=entry.isIntersecting}}, {rootMargin:'120px'});
+  for(const e of engines)io.observe(e.host);
+ }
+ let last=0;
+ function tick(ms){
+  requestAnimationFrame(tick);
+  if(document.hidden||ms-last<40)return;last=ms;
+  if(reduced?.matches)return;
+  const t=ms*.001;
+  for(const en of engines){
+   if(!en.visible)continue;
+   const {cfg}=en;
+   for(const {p,e} of en.particles){
+    const drift=t*p.speed+p.phase,swirl=p.a+Math.sin(drift*.7)*.38;
+    const halo=cfg.offset===0?142:164;
+    const x=600+Math.cos(swirl+drift*.06)*(p.r+Math.sin(drift*.9)*p.offset*.13);
+    const y=halo+Math.sin(swirl*1.7+drift*.4)*(p.offset+Math.sin(drift)*p.r*.32);
+    e.setAttribute('cx',x.toFixed(2));e.setAttribute('cy',y.toFixed(2));
+    e.setAttribute('opacity',(0.28+0.58*(.5+.5*Math.sin(drift*2+p.a))).toFixed(2));
+   }
+   for(const {p,e} of en.paths){
+    const t0=t*p.speed+p.phase,x0=cfg.offset===0?390:320;
+    const direction=p.side?1:-1,y=145+p.dy*.7+Math.sin(t0)*20;
+    const x=600+direction*x0,e1=600+direction*(65+Math.sin(t0*.8)*38);
+    e.setAttribute('d',`M ${x.toFixed(1)} ${y.toFixed(1)} Q 600 ${(y+p.dy).toFixed(1)} ${e1.toFixed(1)} ${(160+Math.cos(t0)*45).toFixed(1)}`);
+    e.setAttribute('opacity',(0.22+0.44*(.5+.5*Math.cos(t0*1.7))).toFixed(2));
+   }
+  }
+ }
+ if(typeof requestAnimationFrame==='function')requestAnimationFrame(tick);
 })();
 </script></body></html>
