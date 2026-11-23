@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.55 — Adaptive Search Stability</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.56 — Phase 34 Gameplay Closure</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -889,7 +889,7 @@ nav button.active{box-shadow:0 0 0 2px #fff,0 0 13px #ff6b17c0,0 0 24px #ff88277
 .sequenceOption:first-child,.bestActionPanel{box-shadow:0 0 17px #ff8b39a3,0 0 29px #a54df18e!important}
 @media(prefers-reduced-motion:reduce){#gameBoard .side::before,#gameBoard .lanes::before{animation:none!important}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.8.55 · BONE WHITE / STABLE SEARCH</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.8.56 · BONE WHITE / PHASE CLOSURE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText"></strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes"></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -2160,6 +2160,86 @@ function phase33FullMatchRegression(){
  return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks),sample:Object.freeze({turn:a.turn,steps:a.steps,attacks:a.attacks,recycled:a.recycled,winner:a.winner})});
 }
 const phase33Closure=phase33FullMatchRegression();
+/* Phase 34 turn 12: deterministic complete-match closure using the
+   actual bot tactical chooser and exact combat simulation. No DOM/browser
+   claims: this is a headless game-engine regression. */
+function phase34GameplayClosure(){
+ const checks=[],check=(name,pass)=>checks.push(Object.freeze({name,pass:!!pass}));
+ const emptyMemory=()=>({p:[],e:[]});
+ function play(reverse=false){
+  let uid=20000,steps=0,attacks=0,recycled=0,choices=0,invalid=0,winner=null,depths={0:0,1:0,2:0,3:0};
+  const player=deck=>({bf:20,mf:20,ram:0,hand:deck.slice(0,5),deck:deck.slice(5),units:[],bin:[]});
+  const board={p:player(reverse?deckB:deckA),e:player(reverse?deckA:deckB),active:'p',phase:0,turn:1,actions:1,done:false};
+  const trace=[],memory=emptyMemory();
+  for(let iter=0;iter<4000&&!board.done;iter++){
+   const k=board.active,p=board[k],legal=legalActions(board,k);
+   if(!legal.length){invalid++;break}
+   let action;
+   if(board.phase===0)action=(p.ram<7&&legal.find(x=>x.kind==='ram'))||legal.find(x=>x.kind==='draw')||legal.find(x=>x.kind==='ram')||legal.find(x=>x.kind==='next');
+   else if(board.phase===1)action=legal.find(x=>x.kind==='deploy')||legal.find(x=>x.kind==='next');
+   else if(board.phase===2){
+    const attackOptions=legal.filter(x=>x.kind==='attack');
+    const depth=botAdaptiveDepth(board,k,attackOptions);
+    depths[depth.depth]++;
+    action=chooseBotAttack(board,k,legal,memory);
+    choices++;
+   }else action=legal.find(x=>x.kind==='next');
+   if(!action||!legal.some(x=>x.kind===action.kind&&(x.i??null)===(action.i??null))){invalid++;break}
+   const fingerprint=JSON.stringify(board);
+   if(action.kind==='ram'){p.ram++;board.actions--}
+   else if(action.kind==='draw'){p.hand.push(p.deck.shift());board.actions--}
+   else if(action.kind==='deploy'){
+    const n=p.hand.splice(action.i,1)[0];p.units.push({n,hp:card(n).d,used:false,uid:++uid,origin:uid});
+   }else if(action.kind==='attack'){
+    const before=board.p.units.length+board.e.units.length,forecast=predictedTarget(board,k,action.i);
+    const sim=cloneCombat(board),origin=sim[k].units[action.i]?.origin;
+    const result=simulateSequenceAttack(sim,k,origin);
+    if(!result||!forecast||result.kind!==forecast.kind){invalid++;break}
+    recycled+=before-sim.p.units.length-sim.e.units.length;
+    for(const side of ['p','e'])for(const field of ['units','bf','mf'])board[side][field]=sim[side][field];
+    if(sim.done){board.done=true;winner=k}
+    attacks++;
+   }else if(action.kind==='next'){
+    if(board.phase<3)board.phase++;
+    else{
+     for(const side of ['p','e'])board[side].units.forEach(u=>u.hp=card(u.n).d);
+     board.active=other(k);board.phase=0;board.actions=2;board.turn++;
+     board[board.active].units.forEach(u=>u.used=false);
+     if(board.turn>250){board.done=true;winner='draw'}
+    }
+   }
+   if(board.p.units.length>5||board.e.units.length>5||board.p.ram>25||board.e.ram>25){invalid++;break}
+   if(board.done&&winner!=='draw'&&board[other(winner)].bf>0&&board[other(winner)].mf>0){invalid++;break}
+   steps++;trace.push([k,action.kind,action.i??null,board.turn,board.phase,
+     board.p.bf,board.p.mf,board.e.bf,board.e.mf,board.p.units.map(u=>u.uid),board.e.units.map(u=>u.uid)]);
+  }
+  return Object.freeze({done:board.done,winner,steps,attacks,recycled,choices,invalid,depths,
+   trace:JSON.stringify(trace),final:JSON.stringify(board)});
+ }
+ const before=JSON.stringify(botMemory),a=play(),b=play(),c=play(true),d=play(true);
+ check('canonical bot match terminates',a.done);
+ check('canonical bot match has legal actions',a.invalid===0);
+ check('canonical bot match includes attacks',a.attacks>0&&a.choices>0);
+ check('canonical bot match recycles cards',a.recycled>0);
+ check('canonical bot match stays within tick bound',a.steps<4000);
+ check('canonical bot trace repeatable',a.trace===b.trace);
+ check('canonical bot final state repeatable',a.final===b.final);
+ check('canonical bot winning result repeatable',a.winner===b.winner);
+ check('reverse-deck bot match terminates',c.done);
+ check('reverse-deck bot actions legal',c.invalid===0);
+ check('reverse-deck bot trace repeatable',c.trace===d.trace);
+ check('reverse-deck bot final state repeatable',c.final===d.final);
+ check('previous full-match engine regression retained',phase33Closure.passed===phase33Closure.total);
+ check('new tactical stability regression retained',botStabilityChecks.passed===botStabilityChecks.total);
+ check('new tactical performance regression retained',botPerformanceChecks.passed===botPerformanceChecks.total);
+ check('gameplay closure never mutates live memory',JSON.stringify(botMemory)===before);
+ const passed=checks.filter(x=>x.pass).length;
+ return Object.freeze({passed,total:checks.length,checks:Object.freeze(checks),
+  sample:Object.freeze({canonical:{winner:a.winner,steps:a.steps,attacks:a.attacks,recycled:a.recycled,depths:a.depths},
+    reverse:{winner:c.winner,steps:c.steps,attacks:c.attacks,recycled:c.recycled,depths:c.depths}})});
+}
+const phase34Closure=phase34GameplayClosure();
+
 /* Phase 33 turn 2: one legal action per board state.
    Ranking is explicit and stable; only the player activates the proposal. */
 function bestLegalAction(s,k,forecast=null){
@@ -2226,7 +2306,7 @@ function routeAuthoritativeAction(proposal){
  routeEvidence.rejected++;routeEvidence.last='REJECT · ENGINE DECLINED';return false;
 }
 function renderRouteStatus(){
- $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' · RISK '+botRiskChecks.passed+'/'+botRiskChecks.total+' · COMBOS '+botComboChecks.passed+'/'+botComboChecks.total+' · THREE CHAIN '+botThreeChainChecks.passed+'/'+botThreeChainChecks.total+' · DEPTH '+botDepthChecks.passed+'/'+botDepthChecks.total+' · PERFORMANCE '+botPerformanceChecks.passed+'/'+botPerformanceChecks.total+' · STABILITY '+botStabilityChecks.passed+'/'+botStabilityChecks.total+' '+(botStabilityChecks.passed===botStabilityChecks.total?'PASS':'FAIL');
+ $('routeStatus').textContent='ONE AUTHORITY · '+routeEvidence.last+' · '+routeEvidence.accepted+' accepted / '+routeEvidence.rejected+' rejected · REPLAY '+replayVerification.passed+'/'+replayVerification.total+' · INTERRUPT '+interruptedVerification.passed+'/'+interruptedVerification.total+' · FULL MATCH '+phase33Closure.passed+'/'+phase33Closure.total+' · BOT MEMORY '+botMemoryChecks.passed+'/'+botMemoryChecks.total+' · CONFIDENCE '+botConfidenceChecks.passed+'/'+botConfidenceChecks.total+' · RELEARNING '+botDecayChecks.passed+'/'+botDecayChecks.total+' · CONTEXT '+botContextChecks.passed+'/'+botContextChecks.total+' · MATCHUPS '+botMatchupChecks.passed+'/'+botMatchupChecks.total+' · RISK '+botRiskChecks.passed+'/'+botRiskChecks.total+' · COMBOS '+botComboChecks.passed+'/'+botComboChecks.total+' · THREE CHAIN '+botThreeChainChecks.passed+'/'+botThreeChainChecks.total+' · DEPTH '+botDepthChecks.passed+'/'+botDepthChecks.total+' · PERFORMANCE '+botPerformanceChecks.passed+'/'+botPerformanceChecks.total+' · STABILITY '+botStabilityChecks.passed+'/'+botStabilityChecks.total+' · PHASE34 '+phase34Closure.passed+'/'+phase34Closure.total+' '+(phase34Closure.passed===phase34Closure.total?'PASS':'FAIL');
 }
 function renderBestAction(all){
  const panel=$('bestActionPanel'),button=$('bestActionButton'),label=$('bestActionText');
