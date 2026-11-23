@@ -83,16 +83,14 @@ try{
  if(!coresPath||!foundryPath)fail('Generated SVG path geometry missing');
  // Sustained combat must derive from observed events and fade over time.
  // Inject synthetic display-log entries ONLY; no engine actions or state edits.
- const artificial=await page.evaluate(()=>{
-   const log=document.getElementById('events');
-   const marker=log.firstElementChild?.textContent;
-   for(let i=0;i<4;i++){
+ for(let i=0;i<4;i++){
+   await page.evaluate(i=>{
      const el=document.createElement('li');
      el.textContent='VISUAL TEST '+i+' attacked defender for 1 damage';
-     log.prepend(el);
-   }
-   return marker;
- });
+     document.getElementById('events').prepend(el);
+   },i);
+   await page.waitForTimeout(30);
+ }
  await page.waitForFunction(()=>document.getElementById('generativeCores')?.dataset.patternPhase==='sustained',null,{timeout:3000});
  const pressure=await page.evaluate(()=>({
    a:document.getElementById('generativeCores').dataset.combatPressure,
