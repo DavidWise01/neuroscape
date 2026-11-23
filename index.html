@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.71 — Real Combat Neon Routing</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.72 — Neon Impact Discharge</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1257,6 +1257,39 @@ padding:10px 14px}
  #gameBoard .combatPathways .neonAttackCore{animation:none!important;opacity:0!important}
 }
 
+
+/* v2.8.72 — IMPACT DISCHARGE. A short-lived corona at the observed
+   card/health endpoint, appearing when the existing attack photon arrives. */
+#gameBoard .combatPathways .neonImpactCorona{
+ fill:none;stroke:#fff8ec;stroke-width:4;opacity:0;pointer-events:none;
+ filter:drop-shadow(0 0 6px #fff) drop-shadow(0 0 13px #ff9e43);
+ transform-box:fill-box;transform-origin:center;
+ animation:neonCoronaDischarge 510ms ease-out 770ms both;
+}
+#gameBoard .combatPathways .neonImpactCorona.combatBlock{
+ stroke:#d795ff;filter:drop-shadow(0 0 7px #b25afd) drop-shadow(0 0 15px #a64bf0);
+}
+#gameBoard .combatPathways .neonImpactCorona.combatDirect{stroke:#ffab49}
+#gameBoard .combatPathways .neonImpactSpark{
+ stroke:#fff7df;stroke-width:2.8;stroke-linecap:round;
+ opacity:0;pointer-events:none;
+ filter:drop-shadow(0 0 5px #fff7e3);
+ animation:neonSparkDischarge 440ms ease-out 780ms both;
+}
+@keyframes neonCoronaDischarge{
+ 0%{opacity:0;transform:scale(.22);stroke-width:7}
+ 15%{opacity:1}
+ 100%{opacity:0;transform:scale(1.9);stroke-width:1}
+}
+@keyframes neonSparkDischarge{
+ 0%{opacity:0;stroke-width:4}
+ 15%{opacity:1}
+ 100%{opacity:0;stroke-width:1}
+}
+@media(prefers-reduced-motion:reduce){
+ #gameBoard .combatPathways .neonImpactCorona,
+ #gameBoard .combatPathways .neonImpactSpark{animation:none!important;opacity:0!important}
+}
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
    Card playfield outranks forecast, status, log and decorative panels. */
@@ -3018,6 +3051,28 @@ function drawCombatPathways(impact){
   core.setAttribute('class','neonAttackCore');
   core.addEventListener('animationend',()=>core.remove(),{once:true});
   svg.append(core);
+  /* The authoritative combat path has already chosen the endpoint.
+     Discharge animates there after the travelling photon reaches it. */
+  const ns='http://www.w3.org/2000/svg';
+  const corona=document.createElementNS(ns,'circle');
+  corona.setAttribute('cx',end[0].toFixed(2));corona.setAttribute('cy',end[1].toFixed(2));
+  corona.setAttribute('r','22');
+  corona.setAttribute('class','neonImpactCorona '+kind);
+  corona.dataset.attackSeq=String(impact.seq);
+  corona.dataset.attackTarget=impact.to+':'+(impact.target>=0?impact.target:'health');
+  corona.addEventListener('animationend',()=>corona.remove(),{once:true});
+  svg.append(corona);
+  const spark=document.createElementNS(ns,'path');
+  const rays=Array.from({length:6},(_,i)=>{
+   const theta=i*Math.PI/3,ux=Math.cos(theta),uy=Math.sin(theta);
+   return 'M '+(end[0]+ux*9).toFixed(2)+' '+(end[1]+uy*9).toFixed(2)+
+     ' L '+(end[0]+ux*31).toFixed(2)+' '+(end[1]+uy*31).toFixed(2);
+  });
+  spark.setAttribute('d',rays.join(' '));
+  spark.setAttribute('class','neonImpactSpark');
+  spark.dataset.attackSeq=String(impact.seq);
+  spark.addEventListener('animationend',()=>spark.remove(),{once:true});
+  svg.append(spark);
  }
  const flash=(element,token)=>{
   if(!element)return;
