@@ -165,6 +165,47 @@ try{
     !destruction.flashAnimation?.includes('neonDestructionFlash'))
    fail('Destruction shockwave must follow real destroyed slot records: '+JSON.stringify(destruction));
  console.log('DESTRUCTION SHOCKWAVE PASS: six rings, two flashes, two recorded slots, zero false destruction');
+ // v2.8.77: the exact positive-RAM release event drives the bright
+ // recovery photon. Zero release and commits must never masquerade as recovery.
+ const recovery=await page.evaluate(()=>{
+   const svg=document.getElementById('pPathways');
+   drawEnergyPathways({seq:987661,events:[
+     {side:'p',type:'release',amount:2,slots:[{slot:1,amount:2}]}]});
+   const ray=[...svg.querySelectorAll('.neonRecoveryReturn')]
+     .find(x=>x.dataset.flowSeq==='987661');
+   const core=[...svg.querySelectorAll('.neonRecoveryCore')]
+     .find(x=>x.dataset.flowSeq==='987661');
+   const arrival=[...svg.querySelectorAll('.neonRecoveryArrival')]
+     .find(x=>x.dataset.flowSeq==='987661');
+   const side=document.querySelector('#gameBoard .side.you').getBoundingClientRect();
+   const station=document.getElementById('pLanes').children[1].getBoundingClientRect();
+   const meter=document.getElementById('pRamAvailable').getBoundingClientRect();
+   const src=[station.left+station.width/2-side.left,station.top+station.height/2-side.top];
+   const dst=[meter.left+meter.width/2-side.left,meter.top+meter.height/2-side.top];
+   const curve=typeof routeBetween==='function'?routeBetween(src,dst):'';
+   const report={
+     side:ray?.dataset.recoverySide,slot:ray?.dataset.recoverySlot,
+     amount:ray?.dataset.returnedRam,seq:ray?.dataset.flowSeq,
+     matched:ray?.getAttribute('d')===curve&&core?.getAttribute('d')===curve,
+     arrival:arrival?Math.abs(+arrival.getAttribute('cx')-dst[0])<2&&
+       Math.abs(+arrival.getAttribute('cy')-dst[1])<2:false,
+     pointer:ray?getComputedStyle(ray).pointerEvents:null,
+     animation:ray?getComputedStyle(ray).animationName:null,
+     delay:ray?getComputedStyle(ray).animationDelay:null
+   };
+   drawEnergyPathways({seq:987662,events:[{side:'p',type:'release',amount:0,slots:[{slot:1,amount:0}]}]});
+   drawEnergyPathways({seq:987663,events:[{side:'p',type:'commit',amount:2,slot:1}]});
+   report.noFalseReturn=['987662','987663'].every(seq=>!
+     [...svg.querySelectorAll('.neonRecoveryReturn')].some(x=>x.dataset.flowSeq===seq));
+   return report;
+ });
+ if(recovery.side!=='p'||recovery.slot!=='1'||recovery.amount!=='2'||
+   recovery.seq!=='987661'||!recovery.matched||!recovery.arrival||
+   recovery.pointer!=='none'||!recovery.animation?.includes('neonRecoveryTravel')||
+   recovery.delay!=='1.18s'||!recovery.noFalseReturn)
+   fail('RAM recovery photon diverged from positive release ledger: '+JSON.stringify(recovery));
+ console.log('RAM RECOVERY PASS: original square → actual available RAM meter, positive release only');
+
  console.log('SHIELD SHIMMER PASS: two tilted elliptical rims and specular glint at real defender');
  console.log('DEFENDER RIPPLE PASS: three staggered shield rings at real defender; zero on direct hit');
  // v2.8.74: return photon is derived only from recorded positive retaliation.
