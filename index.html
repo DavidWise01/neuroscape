@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.82 — Reservoir Discharge</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.83 — Neon Afterglow</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1547,6 +1547,25 @@ padding:10px 14px}
  100%{left:calc(100% - var(--discharge-width,14%));opacity:0}
 }
 @media(prefers-reduced-motion:reduce){#gameBoard .neonRamDischarge{animation:none!important;opacity:0!important}}
+/* v2.8.83 — passive, evidence-linked afterglow after discharge.
+   Starts at 3.80s = 3.15s discharge delay + 0.65s sweep.
+   Decorative only. Self-expires; no timers, gameplay reads or state writes. */
+#gameBoard .ramGaugeTrack .neonRamAfterglow{
+ position:absolute;inset:-6px 0;pointer-events:none;z-index:4;
+ border-radius:999px;opacity:0;background:linear-gradient(90deg,transparent,#f8d7ff88,transparent);
+ box-shadow:0 0 10px #ad5df4,0 0 19px #a65cff;
+ animation:neonRamAfterglowFade 1050ms ease-out 3800ms both;
+}
+#gameBoard .side.you .neonRamAfterglow{
+ background:linear-gradient(90deg,transparent,#ffd28e88,transparent);
+ box-shadow:0 0 10px #ffb159,0 0 19px #ff8f30;
+}
+@keyframes neonRamAfterglowFade{
+ 0%{opacity:var(--afterglow-strength,1);transform:scaleY(1.55)}
+ 36%{opacity:calc(var(--afterglow-strength,1) * .6);transform:scaleY(1.2)}
+ 100%{opacity:0;transform:scaleY(1)}
+}
+@media(prefers-reduced-motion:reduce){#gameBoard .neonRamAfterglow{animation:none!important;opacity:0!important}}
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
    Card playfield outranks forecast, status, log and decorative panels. */
@@ -3309,6 +3328,20 @@ function drawEnergyPathways(snapshot){
     discharge.style.setProperty('--discharge-width',(10+Math.min(25,total*2))+'%');
     discharge.addEventListener('animationend',()=>discharge.remove(),{once:true});
     fill.append(discharge);
+    /* The afterglow is a separate, self-expiring overlay attached to the
+       existing positive release; never a game-state or meter-width write. */
+    const afterglow=document.createElement('span');
+    afterglow.className='neonRamAfterglow';
+    afterglow.setAttribute('aria-hidden','true');
+    afterglow.dataset.lifecycleId=lifecycle;
+    afterglow.dataset.flowSeq=String(snapshot.seq);
+    afterglow.dataset.recoverySide=key;
+    afterglow.dataset.returnedRam=String(total);
+    afterglow.dataset.transferCount=String(positive.length);
+    afterglow.dataset.transferIds=reservoir.dataset.transferIds;
+    afterglow.style.setProperty('--afterglow-strength',Math.min(1,total/12).toFixed(3));
+    afterglow.addEventListener('animationend',()=>afterglow.remove(),{once:true});
+    fill.append(afterglow);
    }
   }
   for(const seg of segments){
