@@ -363,6 +363,34 @@ try{
       item.pointer!=='none'||!item.parentIsFill)
      fail('Final neon discharge diverges from observed recovery: '+JSON.stringify(discharge));
  }
+ const afterglows=await page.evaluate(()=>{
+   const items=['p','e'].map(side=>{
+     const fill=document.getElementById(side+'RamAvailable');
+     const el=[...fill.querySelectorAll('.neonRamAfterglow')].find(x=>x.dataset.flowSeq==='987680');
+     const css=el?getComputedStyle(el):null;
+     return el?{side,amount:el.dataset.returnedRam,lifecycle:el.dataset.lifecycleId,
+       transfers:el.dataset.transferIds.split(',').sort(),count:el.dataset.transferCount,
+       strength:Number(el.style.getPropertyValue('--afterglow-strength')),
+       delay:css.animationDelay,duration:css.animationDuration,name:css.animationName,
+       pointer:css.pointerEvents,parentIsFill:el.parentElement===fill}:null;
+   });
+   return {items,zero:!!document.querySelector('.neonRamAfterglow[data-flow-seq="987681"]'),
+     widths:['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width)};
+ });
+ if(afterglows.zero||afterglows.widths.join(',')!==simultaneous.after.join(','))
+   fail('Afterglow fabricated zero-RAM return or changed actual RAM fill: '+JSON.stringify(afterglows));
+ for(const [index,side] of ['p','e'].entries()){
+   const item=afterglows.items[index];
+   const ids=side==='p'?['attack:987679:p:0','attack:987679:p:3']:['attack:987679:e:1'];
+   if(!item||item.side!==side||item.amount!==(side==='p'?'5':'4')||
+      item.lifecycle!=='attack:987679'||item.count!==String(ids.length)||
+      item.transfers.join(',')!==ids.join(',')||item.strength<=0||
+      item.delay!=='3.8s'||item.duration!=='1.05s'||
+      !item.name.includes('neonRamAfterglowFade')||
+      item.pointer!=='none'||!item.parentIsFill)
+      fail('Afterglow does not preserve recovery evidence or delay: '+JSON.stringify(afterglows));
+ }
+ console.log('AFTERGLOW PASS: delayed bounded fading overlay, both sides, zero RAM mutation');
  console.log('RESERVOIR DISCHARGE PASS: delayed sweep over available RAM fill, both sides, provenance intact');
  console.log('NEON RESERVOIR PASS: pooled positive releases, both sides, no RAM mutation');
  console.log('SIMULTANEOUS RECOVERY PASS: three positive card transfers, both RAM meters, zero false releases, unchanged fill widths');
