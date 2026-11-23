@@ -167,7 +167,7 @@ try{
  console.log('DESTRUCTION SHOCKWAVE PASS: six rings, two flashes, two recorded slots, zero false destruction');
  // v2.8.77: the exact positive-RAM release event drives the bright
  // recovery photon. Zero release and commits must never masquerade as recovery.
- const recovery=await page.evaluate(()=>{
+ const recoveryPhoton=await page.evaluate(()=>{
    const svg=document.getElementById('pPathways');
    drawEnergyPathways({seq:987661,events:[
      {side:'p',type:'release',amount:2,slots:[{slot:1,amount:2}]}]});
@@ -199,10 +199,10 @@ try{
      [...svg.querySelectorAll('.neonRecoveryReturn')].some(x=>x.dataset.flowSeq===seq));
    return report;
  });
- if(recovery.side!=='p'||recovery.slot!=='1'||recovery.amount!=='2'||
-   recovery.seq!=='987661'||!recovery.matched||!recovery.arrival||
-   recovery.pointer!=='none'||!recovery.animation?.includes('neonRecoveryTravel')||
-   recovery.delay!=='1.18s'||!recovery.noFalseReturn)
+ if(recoveryPhoton.side!=='p'||recoveryPhoton.slot!=='1'||recoveryPhoton.amount!=='2'||
+   recoveryPhoton.seq!=='987661'||!recoveryPhoton.matched||!recoveryPhoton.arrival||
+   recoveryPhoton.pointer!=='none'||!recoveryPhoton.animation?.includes('neonRecoveryTravel')||
+   recoveryPhoton.delay!=='1.18s'||!recoveryPhoton.noFalseReturn)
    fail('RAM recovery photon diverged from positive release ledger: '+JSON.stringify(recovery));
  console.log('RAM RECOVERY PASS: original square → actual available RAM meter, positive release only');
 
