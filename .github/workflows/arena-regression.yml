@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - index.html
+      - tests/baseline-lock.mjs
       - tests/arena-regression.mjs
       - .github/workflows/arena-regression.yml
   workflow_dispatch:
@@ -16,6 +17,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Fetch immutable arena baseline
+        run: git fetch --no-tags origin baseline/v2.8.57-locked-arena:refs/remotes/origin/baseline/v2.8.57-locked-arena
+      - name: Enforce append-only playfield baseline
+        run: node tests/baseline-lock.mjs
       - name: Install browser test runner
         run: npm install --no-save --no-package-lock playwright@1.56.1
       - name: Install Chromium
