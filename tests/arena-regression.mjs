@@ -114,6 +114,32 @@ try{
  if(recovery.current.samples>12||recovery.current.panels!==2)
    fail('Visual recovery exceeded history/panel limits: '+JSON.stringify(recovery));
  console.log('RECOVERY PASS: sustained → cooling → quiet, observation only, no gameplay acceleration');
+ // A new real bot-vs-bot cycle exercises actual legal actions and log updates.
+ await page.getByRole('button',{name:'Bot vs Bot'}).click();
+ const beforeCycle=await page.evaluate(()=>({
+   event:document.getElementById('coresSignal')?.textContent,
+   turn:document.getElementById('turnText')?.textContent
+ }));
+ await page.waitForTimeout(4200);
+ const live=await page.evaluate(()=>({
+   turn:document.getElementById('turnText')?.textContent,
+   log:[...document.querySelectorAll('#events > li')].map(e=>e.textContent),
+   a:document.getElementById('coresSignal')?.textContent,
+   b:document.getElementById('foundrySignal')?.textContent,
+   visual:window.neuroscapeArtRecovery?.snapshot(0),
+   lanes:['pLanes','eLanes'].map(id=>[...document.querySelectorAll('#'+id+' > .slot')].map(e=>{
+     const box=e.getBoundingClientRect();return [box.width,box.height];
+   }))
+ }));
+ if(live.turn===beforeCycle.turn||!live.a||live.a===beforeCycle.event||live.a!==live.b)
+   fail('Real bot actions did not produce synchronized observed-art events: '+JSON.stringify(live));
+ if(!live.log.some(x=>/installed RAM|drew a card|deployed|attacked|damage/i.test(x)))
+   fail('Real bot-vs-bot legal gameplay did not progress: '+JSON.stringify(live.log));
+ if(live.visual?.panels!==2||live.visual?.samples>12||
+    live.lanes.some(l=>l.length!==5||l.some(([w,h])=>w<70||h<70)))
+   fail('Real gameplay disturbed murals or card-space invariant: '+JSON.stringify(live));
+ console.log('LIVE COMBAT PASS: real bot actions, matching mural telemetry, 10 protected card stations');
+
 
  // Restore engine-owned log on next legitimate gameplay render.
  await page.getByRole('button',{name:'Play vs Bot'}).click();
