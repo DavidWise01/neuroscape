@@ -192,6 +192,35 @@ try{
     joined.botRecovery!=='0 RAM'||joined.ram.some(n=>n!==0)||
     joined.actions!==1||joined.slots.some(n=>n!==5))
    fail('Linked combat timeline crossed independent source channels: '+JSON.stringify(joined));
+ // v2.9.07 — both event families must share a single, measured clock.
+ const ruler=await page.evaluate(()=>{
+   const svg=document.querySelector('#combatTimelineEvents .temporalRuler');
+   const attack=svg?.querySelector('.rulerAttack');
+   const recoveries=[...(svg?.querySelectorAll('.rulerRecovery')||[])];
+   const ticks=[...(svg?.querySelectorAll('.rulerTick')||[])].map(el=>el.textContent);
+   return {attackId:svg?.dataset.attackId,damage:svg?.dataset.damage,
+     ram:svg?.dataset.returnedRam,source:attack?.dataset.source,
+     recoveryCount:svg?.dataset.recoveryCount,
+     recoverySources:recoveries.map(node=>node.dataset.source),
+     offsets:svg?.dataset.recoveryOffsets,
+     attackX:Number(attack?.getAttribute('cx')),
+     recoveryX:recoveries.map(node=>Number(node.getAttribute('cx'))),
+     ticks,cardCounts:['p','e'].map(side=>
+       document.querySelectorAll('#'+side+'Lanes>.slot').length),
+     realRam:[state.p.ram,state.e.ram]};
+ });
+ const offsets=(ruler.offsets||'').split(',').map(Number);
+ const expectedX=ms=>20+300*(Math.max(-250,Math.min(5200,ms))+250)/5450;
+ if(ruler.attackId!=='989964'||ruler.damage!=='6'||ruler.ram!=='3'||
+    ruler.source!=='attack:989964:p'||ruler.recoveryCount!=='2'||
+    ruler.recoverySources.length!==2||
+    ruler.recoverySources.some(x=>!x.startsWith('attack:989964:flow:989965:'))||
+    !ruler.ticks.includes('0')||!ruler.ticks.includes('5s')||
+    Math.abs(ruler.attackX-expectedX(0))>.001||
+    ruler.recoveryX.some((x,i)=>Math.abs(x-expectedX(offsets[i]))>.001)||
+    ruler.cardCounts.some(n=>n!==5)||ruler.realRam.some(n=>n!==0))
+   fail('Shared temporal ruler fabricated timing or changed gameplay: '+JSON.stringify(ruler));
+ console.log('SHARED TEMPORAL RULER PASS: attack and both recovery origins aligned to measured relative timestamps');
  await page.waitForTimeout(5450);
  const settledJoin=await page.evaluate(()=>({
    rows:[...document.querySelectorAll('#combatTimelineEvents li')].map(x=>x.textContent),
