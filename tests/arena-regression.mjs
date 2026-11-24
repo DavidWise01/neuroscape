@@ -19,6 +19,27 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.20 — genuine 4D hypercube topology, visual-only integration.
+ const tesseractInitial=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),visual=window.neuroscapeTesseract?.snapshot();
+   const pause=document.getElementById('neonTesseractPause');
+   const canvas=document.getElementById('neonTesseractCanvas');
+   pause?.click();const pressed=pause?.getAttribute('aria-pressed');
+   pause?.click();
+   return {before,after:game(),visual,pressed,canvas:!!canvas,
+     style:canvas?getComputedStyle(canvas).display:''};
+ });
+ if(!tesseractInitial.visual||tesseractInitial.visual.vertices!==16||
+    tesseractInitial.visual.edges!==32||
+    !tesseractInitial.visual.rotation4D||!tesseractInitial.visual.shadow3D||
+    tesseractInitial.visual.gameplayMutation||tesseractInitial.visual.causality!=='not-proven'||
+    tesseractInitial.pressed!=='true'||!tesseractInitial.canvas||
+    tesseractInitial.style==='none'||
+    JSON.stringify(tesseractInitial.before)!==JSON.stringify(tesseractInitial.after))
+   fail('4D tesseract geometry or gameplay non-regression failed: '+JSON.stringify(tesseractInitial));
+
  // v2.9.19 — read-only replay may reject bad lineage, never mutate gameplay.
  const replayInitial=await page.evaluate(async()=>{
    const view=()=>({turn:state.turn,actions:state.actions,
