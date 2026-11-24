@@ -567,6 +567,55 @@ try{
    repeated.push({seq,side,amount,elapsedMs:Math.round(finished.now-result.start),
      remaining:finished.remaining});
  }
+ // v2.8.89 — two same-time positive releases, then a third alternating
+ // arrival before expiration. Read only DOM animation and actual gauge style.
+ const alternating=await page.evaluate(()=>{
+   const widths=['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width);
+   const seqs=[989890,989891,989892];
+   drawEnergyPathways({seq:seqs[0],impactSeq:989889,events:[
+     {side:'p',type:'release',amount:2,slots:[{slot:0,amount:2}]}]});
+   drawEnergyPathways({seq:seqs[1],impactSeq:989890,events:[
+     {side:'e',type:'release',amount:4,slots:[{slot:3,amount:4}]}]});
+   drawEnergyPathways({seq:seqs[2],impactSeq:989891,events:[
+     {side:'p',type:'release',amount:3,slots:[{slot:1,amount:3}]}]});
+   const rows=seqs.map((seq,i)=>{
+     const side=i===1?'e':'p';
+     const selector='[data-flow-seq="'+seq+'"]';
+     const nodes=[...document.querySelectorAll(selector)];
+     const charge=document.querySelector('#'+side+'RamAvailable .neonRamAfterglow'+selector);
+     const track=document.getElementById(side+'RamAvailable').parentElement;
+     const reservoir=[...track.querySelectorAll('.neonRamReservoir')]
+       .find(el=>el.dataset.flowSeq===String(seq));
+     return {seq,side,nodeCount:nodes.length,
+       cycleIds:[...new Set(nodes.map(x=>x.dataset.cycleId).filter(Boolean))],
+       pointerSafe:nodes.every(x=>getComputedStyle(x).pointerEvents==='none'),
+       amount:reservoir?.dataset.returnedRam,
+       hue:charge?getComputedStyle(charge).backgroundImage:'',
+       reservoir:!!reservoir,afterglow:!!charge};
+   });
+   return {widths,rows};
+ });
+ const expectedAlt=[['p','2','989889'],['e','4','989890'],['p','3','989891']];
+ for(let i=0;i<alternating.rows.length;i++){
+   const x=alternating.rows[i],e=expectedAlt[i];
+   const colorGood=x.side==='p'?x.hue.includes('255, 210, 142'):x.hue.includes('248, 215, 255');
+   if(x.side!==e[0]||x.amount!==e[1]||!x.reservoir||!x.afterglow||
+     x.nodeCount<7||!x.pointerSafe||!colorGood||
+     x.cycleIds.join(',')!=='attack:'+e[2]+':flow:'+x.seq+':'+x.side)
+     fail('Alternating player neon paths or ancestry differ: '+JSON.stringify(alternating));
+ }
+ await page.waitForTimeout(5300);
+ const alternatingEnd=await page.evaluate(()=>({
+   remain:[989890,989891,989892].map(seq=>
+     document.querySelectorAll('[data-flow-seq="'+seq+'"]').length),
+   widths:['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width),
+   slots:['p','e'].map(side=>document.querySelectorAll('#'+side+'Lanes>.slot').length)
+ }));
+ if(alternatingEnd.remain.some(Boolean)||
+    alternatingEnd.widths.join(',')!==alternating.widths.join(',')||
+    alternatingEnd.slots.some(n=>n!==5))
+   fail('Alternating side recoveries failed independent cleanup: '+JSON.stringify(alternatingEnd));
+ console.log('ALTERNATING RECOVERY PASS: player orange, bot purple, three overlapping cycles, natural cleanup');
  console.log('REPEATED LIFECYCLE PASS: '+JSON.stringify(repeated));
  console.log('REAL-TIME LIFECYCLE PASS: positive RAM transfer, delayed visual stages, natural cleanup after 5.3s');
  console.log('QUIESCENCE PASS: all recovery effects expired independently, meters and ten squares retained');
