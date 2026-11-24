@@ -301,6 +301,52 @@ try{
  if(expiresReset.rows||expiresReset.attackHistory||expiresReset.recoveryHistory||
     expiresReset.slots.some(n=>n!==5))
    fail('Expired timeline events crossed match reset: '+JSON.stringify(expiresReset));
+ // v2.9.09 — ten independent scheduled combat observations show only
+ // the most recent eight in the neon history strip.
+ for(let i=0;i<10;i++){
+   await page.evaluate(i=>{
+     const seq=990100+i,side=i%2?'e':'p',opposite=side==='p'?'e':'p';
+     lastImpact={seq,from:side,to:opposite,source:0,target:0,
+       kind:'blocked',damage:i+1,retaliation:1};
+     lastRamFlow={seq:991100+i,impactSeq:seq,events:[
+       {side,type:'release',amount:i%3===0?0:i+1,
+        slots:i%3===0?[]:[{slot:i%5,amount:i+1}]},
+       {side:opposite,type:'release',amount:0,slots:[]}
+     ]};
+     schedulePathways();
+   },i);
+   await page.waitForTimeout(35);
+ }
+ const historyStrip=await page.evaluate(()=>({
+   entries:[...document.querySelectorAll('#combatHistoryEvents li')].map(li=>({
+     id:li.dataset.attackId,count:li.dataset.recoveryCount,
+     damage:li.querySelector('span')?.textContent,
+     text:li.textContent
+   })),
+   slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length),
+   ram:[state.p.ram,state.e.ram],actions:state.actions,
+   murals:document.querySelectorAll('#neuroscapeArt,#signalFoundry').length
+ }));
+ const expectedIds=Array.from({length:8},(_,i)=>String(990109-i));
+ if(historyStrip.entries.length!==8||
+    historyStrip.entries.some((entry,i)=>entry.id!==expectedIds[i]||
+      entry.count!=='2'||entry.damage!==(10-i)+' DAMAGE'||
+      !entry.text.includes('RAM')||
+      !entry.text.includes('#'+expectedIds[i]))||
+    historyStrip.slots.some(n=>n!==5)||historyStrip.ram.some(n=>n!==0)||
+    historyStrip.actions!==1||historyStrip.murals!==2)
+   fail('Bounded neon history lost event ownership or changed gameplay: '+
+     JSON.stringify(historyStrip));
+ await page.getByRole('button',{name:'Restart match'}).click();
+ const historyReset=await page.evaluate(()=>({
+   entries:document.querySelectorAll('#combatHistoryEvents li').length,
+   attacks:attackMonitorEntries.length,recoveries:recoveryMonitorEntries.length,
+   slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
+ }));
+ if(historyReset.entries!==0||historyReset.attacks!==0||
+    historyReset.recoveries!==0||historyReset.slots.some(n=>n!==5))
+   fail('Combat history persisted across match reset: '+JSON.stringify(historyReset));
+ console.log('BOUNDED COMBAT HISTORY PASS: latest eight of ten attacks, independent release identity, reset clean');
  console.log('MULTI-EVENT EXPIRY PASS: two independent attack sources, positive-return quiet markers, zero phantom expiry, reset clean');
  console.log('LINKED COMBAT TIMELINE PASS: attack 989964, 6 DMG, +3 RAM, zero bot, exact shared ID, settled/reset');
  console.log('DUAL WAVEFORM PASS: source-bound attack damage independent of RAM refund, decay and reset clean');
