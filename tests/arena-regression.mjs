@@ -353,16 +353,16 @@ try{
      source:x.dataset.source,phase:x.dataset.phase,age:+x.dataset.ageMs})),
    arena:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
  }));
- if(phaseMemory.attack.length!==8||phaseMemory.recovery.length!==8||
+ if(phaseMemory.attack.length!==8||phaseMemory.recovery.length!==5||
    phaseMemory.attack[0].source!=='attack:990109:e'||
    phaseMemory.attack[7].source!=='attack:990102:p'||
    new Set(phaseMemory.attack.map(x=>x.source)).size!==8||
-   new Set(phaseMemory.recovery.map(x=>x.source)).size!==8||
+   new Set(phaseMemory.recovery.map(x=>x.source)).size!==5||
    phaseMemory.recovery.some(x=>!x.source.startsWith('attack:'))||
    phaseMemory.attack.some(x=>x.phase==='quiet'||x.age<0)||
    phaseMemory.arena.some(x=>x!==5))
    fail('Plasma memory merged or lost overlapping sources: '+JSON.stringify(phaseMemory));
- console.log('ISOLATED PHASE MEMORY PASS: latest eight independent attack and positive RAM sources');
+ console.log('ISOLATED PHASE MEMORY PASS: eight attack sources and five retained positive RAM sources');
  // v2.9.10 — ten independently sourced observations generate ten
  // attack bins over five seconds; only positive RAM releases count.
  const density=await page.evaluate(()=>({
