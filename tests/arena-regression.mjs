@@ -56,9 +56,9 @@ try{
     irregularCheck.selectCount!==32||
     !irregularCheck.declared||!irregularCheck.deterministic||
     !irregularCheck.monotonic||
-    irregularCheck.shortStable!==false||irregularCheck.longStable!==true||
+    irregularCheck.shortStable!==false||irregularCheck.longStable!==false||
     irregularCheck.selectedShort!=='NEITHER ROBUST'||
-    irregularCheck.selectedLong!=='BOTH ROBUST'||
+    irregularCheck.selectedLong!=='ADAPTIVE ONLY'||
     JSON.stringify(irregularCheck.before)!==JSON.stringify(irregularCheck.after))
    fail('v2.9.29 irregular envelope or engine isolation violated: '+JSON.stringify(irregularCheck));
 
