@@ -19,6 +19,49 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.30 — equal declared timing budget under 24 adversarial orderings.
+ const adversarialCheck=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),api=window.neuroscapeAdversarialTiming;
+   const snap=api?.snapshot(),sweep=api?.sweep();
+   const schedules=Array.from({length:24},(_,i)=>api?.schedule(i));
+   const fixed=Array.from({length:24},(_,i)=>api?.trial(3,'fixed',i));
+   const adapt=Array.from({length:24},(_,i)=>api?.trial(3,'adaptive',i));
+   const declarations=schedules.every(s=>s&&s.factors.length===4&&
+     Math.abs(s.sum-4)<1e-9)&&
+     [...fixed,...adapt].every(t=>t&&t.events.length===4&&
+       t.events.every(e=>e.impulse===Math.PI)&&
+       t.intervals.every(x=>x.residual>=0&&x.residual<=Math.PI));
+   const repeat=JSON.stringify(api?.trial(3,'adaptive',7))===
+     JSON.stringify(api?.trial(3,'adaptive',7));
+   const monotonic=sweep?.rows.every((r,i,all)=>i===0||
+     (!all[i-1].stableFixed||r.stableFixed)&&
+     (!all[i-1].stableAdaptive||r.stableAdaptive));
+   const select=document.getElementById('adversarialTimingPeriod');
+   if(select)select.value='1';
+   select?.dispatchEvent(new Event('change',{bubbles:true}));
+   const short=api?.snapshot().classification;
+   if(select)select.value='8';
+   select?.dispatchEvent(new Event('change',{bubbles:true}));
+   const long=api?.snapshot().classification;
+   return {before,after:game(),snap,declarations,repeat,monotonic,
+     count:sweep?.rows.length,schedules:schedules.length,
+     short,long,selectCount:select?.options.length,
+     mounted:!!document.getElementById('adversarialTimingCanvas')};
+ });
+ if(!adversarialCheck.mounted||!adversarialCheck.snap||
+    adversarialCheck.snap.periods!==32||adversarialCheck.snap.schedules!==24||
+    adversarialCheck.snap.budgetFactors!==4||
+    adversarialCheck.snap.sourceMutated||adversarialCheck.snap.gameplayMutation||
+    adversarialCheck.count!==32||adversarialCheck.schedules!==24||
+    adversarialCheck.selectCount!==32||
+    !adversarialCheck.declarations||!adversarialCheck.repeat||
+    !adversarialCheck.monotonic||
+    adversarialCheck.short!=='NEITHER ROBUST'||
+    JSON.stringify(adversarialCheck.before)!==JSON.stringify(adversarialCheck.after))
+   fail('v2.9.30 adversarial timing budget or engine isolation violation: '+JSON.stringify(adversarialCheck));
+
  // v2.9.29: four fully declared deterministic schedules; recovery before each next injection.
  const irregularCheck=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
