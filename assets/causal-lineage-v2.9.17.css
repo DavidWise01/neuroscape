@@ -1,0 +1,12 @@
+/* v2.9.17 · isolated observer below 5x2 arena */
+#causalLineageAudit{margin:12px 0;padding:12px;border:1px solid #47d7c7;border-radius:10px;background:linear-gradient(130deg,#11152a,#1a112f);color:#efeaff;font:11px ui-monospace,Consolas,monospace;box-shadow:0 0 20px #32e8d022,inset 0 0 25px #aa54e51a}
+#causalLineageAudit .lineageHeader{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+#causalLineageAudit .lineageHeader strong{color:#abfff3;text-shadow:0 0 9px #61fff2}
+#causalLineageRows{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:7px;list-style:none;padding:0;margin:9px 0}
+#causalLineageRows li{padding:9px;border:1px solid #694a86;border-left:3px solid #d6a0ff;border-radius:5px;background:#1d1932;display:flex;flex-direction:column;gap:5px;overflow-wrap:anywhere}
+#causalLineageRows li[data-classification="ID-LINKED"]{border-left-color:#65ead4}
+#causalLineageRows li[data-classification="UNVERIFIED ROOT"]{border-left-color:#ffb477}
+#causalLineageRows li strong{font-size:11px;color:#dcbbff}
+#causalLineageRows li small{color:#bfb9d5}
+#causalLineageAudit .lineageCaveat{font-size:10px;color:#b6b0d8}
+@media(prefers-reduced-motion:reduce){#causalLineageAudit{box-shadow:none}}
