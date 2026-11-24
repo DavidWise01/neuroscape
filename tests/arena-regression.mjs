@@ -104,6 +104,64 @@ try{
  }));
  if(telemetryReset.rows||telemetryReset.count||telemetryReset.slots.some(n=>n!==5))
    fail('Recovery telemetry leaked into new match: '+JSON.stringify(telemetryReset));
+ // v2.9.05 — damage and refund have separate source-bound channels.
+ // Direct visual-only combat drawing must never assert a real attack.
+ const attackBefore=await page.evaluate(()=>{
+   drawCombatPathways({from:'p',to:'e',source:0,target:0,kind:'blocked',
+     damage:4,seq:989951});
+   return {count:attackMonitorEntries.length,
+     trace:document.querySelector('#attackWaveP .attackWaveTrace')?.getAttribute('points')};
+ });
+ if(attackBefore.count!==0||attackBefore.trace!=='0,44 240,44')
+   fail('Visual-only combat drew an authoritative attack trace: '+JSON.stringify(attackBefore));
+ await page.evaluate(()=>{
+   lastImpact={from:'p',to:'e',source:0,target:0,kind:'blocked',
+     damage:4,retaliation:1,seq:989952};
+   schedulePathways();
+ });
+ await page.waitForTimeout(190);
+ const attackActive=await page.evaluate(()=>({
+   p:document.querySelector('#attackWaveP .attackWaveTrace')?.getAttribute('points'),
+   e:document.querySelector('#attackWaveE .attackWaveTrace')?.getAttribute('points'),
+   pLabel:document.querySelector('#attackWaveP .attackWaveLevel')?.textContent,
+   eLabel:document.querySelector('#attackWaveE .attackWaveLevel')?.textContent,
+   ramP:document.querySelector('#recoveryWaveP .recoveryWaveTrace')?.getAttribute('points'),
+   ramE:document.querySelector('#recoveryWaveE .recoveryWaveTrace')?.getAttribute('points'),
+   damageEvents:attackMonitorEntries.map(x=>({key:x.key,damage:x.damage,side:x.side})),
+   ramEvents:recoveryMonitorEntries.length,
+   playerRam:state.p.ram,botRam:state.e.ram,actions:state.actions,
+   cards:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
+ }));
+ if(attackActive.p==='0,44 240,44'||attackActive.e!=='0,44 240,44'||
+    attackActive.pLabel!=='4 DMG'||attackActive.eLabel!=='0 DMG'||
+    attackActive.ramP!=='0,44 240,44'||attackActive.ramE!=='0,44 240,44'||
+    attackActive.damageEvents.length!==1||
+    attackActive.damageEvents[0].key!=='attack:989952:p'||
+    attackActive.ramEvents!==0||attackActive.playerRam!==0||
+    attackActive.botRam!==0||attackActive.actions!==1||
+    attackActive.cards.some(n=>n!==5))
+   fail('Attack and recovery channels crossed or changed game state: '+JSON.stringify(attackActive));
+ await page.waitForTimeout(1720);
+ const attackQuiet=await page.evaluate(()=>({
+   p:document.querySelector('#attackWaveP .attackWaveTrace')?.getAttribute('points'),
+   e:document.querySelector('#attackWaveE .attackWaveTrace')?.getAttribute('points'),
+   pLabel:document.querySelector('#attackWaveP .attackWaveLevel')?.textContent,
+   timer:recoveryMonitorTimer!==null
+ }));
+ if(attackQuiet.p!=='0,44 240,44'||attackQuiet.e!=='0,44 240,44'||
+    attackQuiet.pLabel!=='0 DMG'||attackQuiet.timer)
+   fail('Attack waveform did not decay to quiet: '+JSON.stringify(attackQuiet));
+ await page.getByRole('button',{name:'Restart match'}).click();
+ const attackReset=await page.evaluate(()=>({
+   damageEntries:attackMonitorEntries.length,ramEntries:recoveryMonitorEntries.length,
+   p:document.querySelector('#attackWaveP .attackWaveTrace')?.getAttribute('points'),
+   playerSlots:document.querySelectorAll('#pLanes>.slot').length,
+   botSlots:document.querySelectorAll('#eLanes>.slot').length
+ }));
+ if(attackReset.damageEntries||attackReset.ramEntries||
+    attackReset.p!=='0,44 240,44'||attackReset.playerSlots!==5||attackReset.botSlots!==5)
+   fail('Attack channel leaked across match reset: '+JSON.stringify(attackReset));
+ console.log('DUAL WAVEFORM PASS: source-bound attack damage independent of RAM refund, decay and reset clean');
  console.log('RECOVERY WAVEFORM PASS: player active orange trace, zero-cost bot quiet, both settle to zero');
  console.log('LIVE RECOVERY TELEMETRY PASS: engine-sourced source/amount/expiration, zero-return and reset isolation');
  // v2.8.98: interrupt a visible recovery on restart, then again on
