@@ -95,7 +95,7 @@ let persistenceMatch=null,persistenceLast=null;
 let persistence=Object.freeze({total:0,max:0,nonzero:0,quiet:true,input:0,halfLifeSeconds:PERSIST_HALF_LIFE,capacity:32,match:'none'});
 function advancePersistence(activity,dt){
  const banner=document.getElementById('recoveryTelemetryStatus')?.textContent||'';
- const parsed=/MATCH\\s+(\\d+)/.exec(banner);
+ const parsed=/MATCH\s+(\d+)/.exec(banner);
  const marker=parsed?.[1]||'none';
  if(persistenceMatch!==null&&marker!==persistenceMatch)edgeMemory.fill(0);
  persistenceMatch=marker;
