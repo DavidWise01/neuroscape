@@ -842,8 +842,36 @@ try{
    };
    read();
    const timer=setInterval(read,160);
-   window.__liveMatchAuditFinish=()=>{clearInterval(timer);read();return {
-     samples,positiveFlows:[...observed.values()],
+   const destructions=[],seenAttacks=new Set();
+   const capture=()=>{
+     const impact=typeof lastImpact!=='undefined'?lastImpact:null;
+     const flow=typeof lastRamFlow!=='undefined'?lastRamFlow:null;
+     if(!impact?.destroyed?.length||seenAttacks.has(impact.seq))return;
+     seenAttacks.add(impact.seq);
+     const destroyed=impact.destroyed.map(x=>({
+       side:x.side,slot:x.slot,ram:x.ram,name:x.name
+     }));
+     const releases=flow?.impactSeq===impact.seq?
+       flow.events.filter(x=>x.type==='release').map(x=>({
+         side:x.side,amount:x.amount,slots:x.slots?.map(slot=>({...slot}))||[]
+       })):[];
+     const entry={seq:impact.seq,flowSeq:flow?.seq??null,
+       destruction:destroyed,releases,visuals:[]};
+     destructions.push(entry);
+     requestAnimationFrame(()=>requestAnimationFrame(()=>{
+       entry.visuals=[...document.querySelectorAll(
+         '.neonRecoveryReturn[data-lifecycle-id="attack:'+entry.seq+'"],'+
+         '.neonRamReservoir[data-lifecycle-id="attack:'+entry.seq+'"]'
+       )].map(el=>({cls:el.getAttribute('class'),side:el.dataset.recoverySide,
+         amount:el.dataset.returnedRam,slot:el.dataset.recoverySlot||null,
+         cycle:el.dataset.cycleId,flowSeq:el.dataset.flowSeq}));
+     }));
+   };
+   const events=document.getElementById('events');
+   const observer=new MutationObserver(capture);
+   if(events)observer.observe(events,{childList:true});
+   window.__liveMatchAuditFinish=()=>{clearInterval(timer);observer.disconnect();read();return {
+     samples,positiveFlows:[...observed.values()],destructions,
      endTurn:document.getElementById('turnText')?.textContent,
      widths:['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width),
      lanes:['p','e'].map(side=>document.querySelectorAll('#'+side+'Lanes>.slot').length),
@@ -863,6 +891,35 @@ try{
  if(!matchAudit.samples.some(sample=>
     sample.values[0].turn!==matchAudit.samples[0].values[0].turn))
    fail('Live match did not advance while auditing recovery: '+JSON.stringify(matchAudit));
+ // v2.8.91 — only real engine destruction/release records can qualify.
+ // An observation interval without destruction remains explicitly inconclusive.
+ for(const result of matchAudit.destructions){
+   const expected=new Map();
+   for(const d of result.destruction){
+     if(d.ram>0)expected.set(d.side,(expected.get(d.side)||0)+d.ram);
+   }
+   if(result.releases.length!==expected.size)
+     fail('Real destruction missing its authoritative release: '+JSON.stringify(result));
+   for(const release of result.releases){
+     const expectedSlots=result.destruction.filter(x=>x.side===release.side&&x.ram>0)
+       .map(x=>x.slot+':'+x.ram).sort();
+     const actualSlots=release.slots.map(x=>x.slot+':'+x.amount).sort();
+     if(release.amount!==expected.get(release.side)||
+        expectedSlots.join(',')!==actualSlots.join(','))
+       fail('Live RAM recovery diverged from destroyed card costs: '+JSON.stringify(result));
+     const ray=result.visuals.filter(x=>x.cls?.includes('neonRecoveryReturn')&&x.side===release.side);
+     const reservoir=result.visuals.find(x=>x.cls?.includes('neonRamReservoir')&&x.side===release.side);
+     if(ray.length!==release.slots.length||!reservoir||
+        +reservoir.amount!==release.amount||
+        ray.some(x=>!release.slots.some(slot=>
+          String(slot.slot)===x.slot&&String(slot.amount)===x.amount)))
+       fail('Live recovery neon has missing or fabricated transfer: '+JSON.stringify(result));
+   }
+ }
+ console.log('LIVE DESTRUCTION RECONCILIATION: '+JSON.stringify({
+   count:matchAudit.destructions.length,
+   status:matchAudit.destructions.length?'OBSERVED_AND_RECONCILED':'NOT_OBSERVED_IN_WINDOW'
+ }));
  console.log('LIVE MATCH AUDIT: '+JSON.stringify({
    samples:matchAudit.samples.length,positiveReleases:matchAudit.positiveFlows.length,
    endTurn:matchAudit.endTurn,
