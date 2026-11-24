@@ -337,15 +337,44 @@ try{
     historyStrip.actions!==1||historyStrip.murals!==2)
    fail('Bounded neon history lost event ownership or changed gameplay: '+
      JSON.stringify(historyStrip));
+ // v2.9.10 — ten independently sourced observations generate ten
+ // attack bins over five seconds; only positive RAM releases count.
+ const density=await page.evaluate(()=>({
+   attackBins:[...document.querySelectorAll('#combatDensityAttack i')].map(x=>+x.dataset.count),
+   recoveryBins:[...document.querySelectorAll('#combatDensityRecovery i')].map(x=>+x.dataset.count),
+   summary:document.getElementById('combatDensitySummary')?.textContent,
+   actualAttacks:attackMonitorEntries.filter(x=>performance.now()-x.born<5000).length,
+   actualReturns:recoveryMonitorEntries.filter(x=>x.amount>0&&performance.now()-x.born<5000).length,
+   ram:[state.p.ram,state.e.ram],
+   slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
+ }));
+ const attackTotal=density.attackBins.reduce((a,b)=>a+b,0);
+ const returnTotal=density.recoveryBins.reduce((a,b)=>a+b,0);
+ if(density.attackBins.length!==10||density.recoveryBins.length!==10||
+    attackTotal!==10||returnTotal!==6||
+    attackTotal!==density.actualAttacks||returnTotal!==density.actualReturns||
+    density.summary!=='10 ATTACKS · 6 RETURNS'||
+    density.ram.some(n=>n!==0)||density.slots.some(n=>n!==5))
+   fail('Activity density invented RAM or lost event timestamps: '+JSON.stringify(density));
  await page.getByRole('button',{name:'Restart match'}).click();
  const historyReset=await page.evaluate(()=>({
    entries:document.querySelectorAll('#combatHistoryEvents li').length,
    attacks:attackMonitorEntries.length,recoveries:recoveryMonitorEntries.length,
    slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
  }));
+ const densityReset=await page.evaluate(()=>({
+   attack:[...document.querySelectorAll('#combatDensityAttack i')].map(x=>+x.dataset.count),
+   recovery:[...document.querySelectorAll('#combatDensityRecovery i')].map(x=>+x.dataset.count),
+   summary:document.getElementById('combatDensitySummary')?.textContent,
+   shields:document.querySelectorAll('#combatPathways .neonDefenderRipple').length
+ }));
+ if(densityReset.attack.some(Boolean)||densityReset.recovery.some(Boolean)||
+    densityReset.summary!=='0 ATTACKS · 0 RETURNS'||densityReset.shields)
+   fail('Activity density or combat ripples leaked through restart: '+JSON.stringify(densityReset));
  if(historyReset.entries!==0||historyReset.attacks!==0||
     historyReset.recoveries!==0||historyReset.slots.some(n=>n!==5))
    fail('Combat history persisted across match reset: '+JSON.stringify(historyReset));
+ console.log('ACTIVITY DENSITY PASS: 10 attack events, six positive recovery sources, five-second window, clean reset');
  console.log('BOUNDED COMBAT HISTORY PASS: latest eight of ten attacks, independent release identity, reset clean');
  console.log('MULTI-EVENT EXPIRY PASS: two independent attack sources, positive-return quiet markers, zero phantom expiry, reset clean');
  console.log('LINKED COMBAT TIMELINE PASS: attack 989964, 6 DMG, +3 RAM, zero bot, exact shared ID, settled/reset');
