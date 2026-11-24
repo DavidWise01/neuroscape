@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.10 — Neon Event Density</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.11 — Reactive Neon Activity Envelope</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1650,6 +1650,17 @@ padding:10px 14px}
 .combatDensityHead{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;
  font:10px ui-monospace,Consolas,monospace;color:#ffe1c2;letter-spacing:.06em}
 .combatDensityHead span{color:#cbb6dc}
+.combatEnvelope{display:grid;gap:6px;margin-top:10px;padding:8px;background:#130e21;border:1px solid #624676;border-radius:6px}
+.combatEnvelopeLine{display:grid;grid-template-columns:90px minmax(0,1fr) 38px;align-items:center;gap:8px}
+.combatEnvelopeLine span,.combatEnvelopeLine b{font:9px ui-monospace,Consolas,monospace;color:#ffc79e}
+.combatEnvelopeLine.recovery span,.combatEnvelopeLine.recovery b{color:#d7b4ff}
+.combatEnvelopeTrack{height:10px;border-radius:99px;background:#372638;overflow:hidden;border:1px solid #69435e}
+.combatEnvelopeTrack i{display:block;height:100%;width:0;pointer-events:none;border-radius:inherit;
+ background:linear-gradient(90deg,#b54723,#ff9c47,#ffe2a5);
+ box-shadow:0 0 9px #ff7a39;transition:width 220ms linear}
+.recovery .combatEnvelopeTrack i{background:linear-gradient(90deg,#6833a8,#b775f9,#f3d8ff);
+ box-shadow:0 0 9px #ba80ff}
+@media(prefers-reduced-motion:reduce){.combatEnvelopeTrack i{transition:none}}
 .combatDensityGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}
 .combatDensityGrid>div>span{font:9px ui-monospace,Consolas,monospace;color:#ba9ec8}
 .combatDensityBars{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));align-items:end;
@@ -1688,7 +1699,7 @@ background:linear-gradient(110deg,#302138,#1d182b);font:10px/1.45 ui-monospace,C
 .recoveryTelemetryLane.bot .recoveryWaveLevel{fill:#e3c7ff}
 @media(max-width:650px){.recoveryTelemetryGrid{grid-template-columns:1fr}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.9.10 · BONE WHITE ARENA / LIVE EVENT DENSITY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.9.11 · BONE WHITE ARENA / REACTIVE PLASMA ENVELOPE</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText">STARTING ARCADE · FIVE SQUARES PER PLAYER</strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" data-arena-invariant="5x2-visible-square-card-slots" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes" aria-label="Five bot card squares"><div class="slot" data-slot="1"></div><div class="slot" data-slot="2"></div><div class="slot" data-slot="3"></div><div class="slot" data-slot="4"></div><div class="slot" data-slot="5"></div></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1711,6 +1722,10 @@ background:linear-gradient(110deg,#302138,#1d182b);font:10px/1.45 ui-monospace,C
   </div>
   <div class="combatDensity" id="combatDensity" aria-label="Live combat observation activity density">
     <div class="combatDensityHead"><strong>⚡ ACTIVITY DENSITY · LAST 5 SECONDS</strong><span id="combatDensitySummary">0 ATTACKS · 0 RETURNS</span></div>
+    <div class="combatEnvelope" id="combatEnvelope" aria-label="Read-only attack and recovery energy envelope">
+      <div class="combatEnvelopeLine"><span>ATTACK PLASMA</span><div class="combatEnvelopeTrack"><i id="attackEnvelopeFill"></i></div><b id="attackEnvelopeLevel">0%</b></div>
+      <div class="combatEnvelopeLine recovery"><span>RAM PLASMA</span><div class="combatEnvelopeTrack"><i id="recoveryEnvelopeFill"></i></div><b id="recoveryEnvelopeLevel">0%</b></div>
+    </div>
     <div class="combatDensityGrid">
       <div><span>ATTACK EVENTS</span><div class="combatDensityBars" id="combatDensityAttack"></div></div>
       <div><span>POSITIVE RAM RETURNS</span><div class="combatDensityBars recovery" id="combatDensityRecovery"></div></div>
@@ -2793,6 +2808,13 @@ function combatDensityCounts(now){
  }
  return {attacks,recoveries};
 }
+/* Each 500ms bucket contributes to a bounded observation-only envelope.
+   Current bucket weighs 1; oldest weighs 0.1. There is no invented RAM. */
+function combatEnvelopeLevels(data){
+ const weight=counts=>Math.min(100,Math.round(counts.reduce(
+  (sum,n,i)=>sum+n*(i+1)/10,0)*20));
+ return {attack:weight(data.attacks),recovery:weight(data.recoveries)};
+}
 function paintCombatDensity(now){
  const data=combatDensityCounts(now);
  for(const [id,counts] of [['combatDensityAttack',data.attacks],
@@ -2805,6 +2827,14 @@ function paintCombatDensity(now){
    bar.dataset.count=String(value);bar.setAttribute('aria-hidden','true');
    return bar;
   }));
+ }
+ const levels=combatEnvelopeLevels(data);
+ for(const [fill,label,value] of [
+  ['attackEnvelopeFill','attackEnvelopeLevel',levels.attack],
+  ['recoveryEnvelopeFill','recoveryEnvelopeLevel',levels.recovery]]){
+  const node=$(fill),text=$(label);
+  if(node){node.style.width=value+'%';node.dataset.level=String(value)}
+  if(text)text.textContent=value+'%';
  }
  const summary=$('combatDensitySummary');
  if(summary)summary.textContent=data.attacks.reduce((a,b)=>a+b,0)+' ATTACKS · '+
@@ -2953,7 +2983,8 @@ function paintRecoveryTelemetry(){
    'MATCH '+temporalEvidence.match+' · '+all+' SOURCE EVENTS · '+live+' ACTIVE · '+(all-live)+' SETTLED/PENDING':
    'OBSERVING · NO RECOVERY EVENTS IN THIS MATCH';
  if(!recoveryMonitorEntries.some(x=>x.status==='PENDING'||x.status==='RETURNING'||x.status==='AFTERGLOW')&&
-    !attackMonitorEntries.some(x=>now-x.born<ATTACK_MONITOR_END_MS)){
+    !attackMonitorEntries.some(x=>now-x.born<5000)&&
+    !recoveryMonitorEntries.some(x=>x.amount>0&&now-x.born<5000)){
   if(recoveryMonitorTimer!==null){clearInterval(recoveryMonitorTimer);recoveryMonitorTimer=null}
  }
 }
