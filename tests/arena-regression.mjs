@@ -317,6 +317,13 @@ try{
    },i);
    await page.waitForTimeout(35);
  }
+ // Wait for the actual scheduled frame, rather than assuming a 35ms
+ // wall-clock delay on a loaded CI browser was enough.
+ await page.waitForFunction(()=>
+   attackMonitorEntries.some(x=>x.key==='attack:990109:e')&&
+   recoveryMonitorEntries.some(x=>x.source.startsWith('attack:990109:flow:991109:'))&&
+   document.querySelector('#combatHistoryEvents li')?.dataset.attackId==='990109',
+   null,{timeout:8000,polling:50});
  const historyStrip=await page.evaluate(()=>({
    entries:[...document.querySelectorAll('#combatHistoryEvents li')].map(li=>({
      id:li.dataset.attackId,count:li.dataset.recoveryCount,
@@ -337,6 +344,25 @@ try{
     historyStrip.actions!==1||historyStrip.murals!==2)
    fail('Bounded neon history lost event ownership or changed gameplay: '+
      JSON.stringify(historyStrip));
+ // v2.9.14 — overlapping source records keep distinct age/phase and
+ // read-only memory does not collapse newer and older attacks together.
+ const phaseMemory=await page.evaluate(()=>({
+   attack:[...document.querySelectorAll('#plasmaMemoryAttack li')].map(x=>({
+     source:x.dataset.source,phase:x.dataset.phase,age:+x.dataset.ageMs})),
+   recovery:[...document.querySelectorAll('#plasmaMemoryRecovery li')].map(x=>({
+     source:x.dataset.source,phase:x.dataset.phase,age:+x.dataset.ageMs})),
+   arena:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
+ }));
+ if(phaseMemory.attack.length!==8||phaseMemory.recovery.length!==8||
+   phaseMemory.attack[0].source!=='attack:990109:e'||
+   phaseMemory.attack[7].source!=='attack:990102:p'||
+   new Set(phaseMemory.attack.map(x=>x.source)).size!==8||
+   new Set(phaseMemory.recovery.map(x=>x.source)).size!==8||
+   phaseMemory.recovery.some(x=>!x.source.startsWith('attack:'))||
+   phaseMemory.attack.some(x=>x.phase==='quiet'||x.age<0)||
+   phaseMemory.arena.some(x=>x!==5))
+   fail('Plasma memory merged or lost overlapping sources: '+JSON.stringify(phaseMemory));
+ console.log('ISOLATED PHASE MEMORY PASS: latest eight independent attack and positive RAM sources');
  // v2.9.10 — ten independently sourced observations generate ten
  // attack bins over five seconds; only positive RAM releases count.
  const density=await page.evaluate(()=>({
@@ -465,6 +491,16 @@ try{
  if(densityReset.attack.some(Boolean)||densityReset.recovery.some(Boolean)||
     densityReset.summary!=='0 ATTACKS · 0 RETURNS'||densityReset.shields)
    fail('Activity density or combat ripples leaked through restart: '+JSON.stringify(densityReset));
+ const memoryReset=await page.evaluate(()=>({
+   attacks:document.querySelectorAll('#plasmaMemoryAttack li').length,
+   recoveries:document.querySelectorAll('#plasmaMemoryRecovery li').length,
+   headCounts:['attackLightning','recoveryLightning'].map(id=>
+     document.querySelectorAll('#'+id+' .plasmaTravelHead').length)
+ }));
+ if(memoryReset.attacks||memoryReset.recoveries||
+    memoryReset.headCounts.some(n=>n!==1))
+   fail('Plasma memory failed to reset or photon markup is duplicated: '+
+     JSON.stringify(memoryReset));
  if(historyReset.entries!==0||historyReset.attacks!==0||
     historyReset.recoveries!==0||historyReset.slots.some(n=>n!==5))
    fail('Combat history persisted across match reset: '+JSON.stringify(historyReset));
