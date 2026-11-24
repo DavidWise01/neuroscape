@@ -242,6 +242,6 @@ window.addEventListener('pagehide',()=>cancelAnimationFrame(raf),{once:true});
 draw(0);raf=requestAnimationFrame(frame);
 window.neuroscapeTesseract=Object.freeze({snapshot:()=>Object.freeze({
  vertices:vertices.length,edges:edges.length,rotation4D:true,shadow3D:true,
- frames:state.frames,visualEnergy,persistence,resonance,plasmaEdgeLimit:PLASMA_EDGE_LIMIT,plasmaEdges:Number(section.dataset.plasmaEdges)||0,shadowPlasmaEdges:Number(section.dataset.shadowPlasmaEdges)||0,plasmaActive:section.dataset.plasmaActive==='true',causality:'not-proven',gameplayMutation:false
+ frames:state.frames,visualEnergy,persistence,resonance,edgeSamples:Object.freeze(edges.map((edge,i)=>Object.freeze({edge:i,axis:edge[2],amplitude:edgeMemory[i],phase:(state.angle*1.618*(edge[2]===3?.62:.88)+i*.0618)*2*Math.PI}))),plasmaEdgeLimit:PLASMA_EDGE_LIMIT,plasmaEdges:Number(section.dataset.plasmaEdges)||0,shadowPlasmaEdges:Number(section.dataset.shadowPlasmaEdges)||0,plasmaActive:section.dataset.plasmaActive==='true',causality:'not-proven',gameplayMutation:false
 })});
 })();
