@@ -19,6 +19,42 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.31: signed margins computed from the inherited 24 adversarial trials.
+ const marginAudit=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),api=window.neuroscapeAdversarialMargin;
+   const snap=api?.snapshot(),all=api?.results();
+   const short=api?.audit(.5),long=api?.audit(8.25);
+   const selectors=document.getElementById('adversarialMarginPeriod');
+   if(selectors)selectors.value='8';
+   selectors?.dispatchEvent(new Event('change',{bubbles:true}));
+   const changed=api?.snapshot();
+   const consistent=all?.every(row=>{
+     const source=window.neuroscapeAdversarialTiming;
+     for(const policy of ['fixed','adaptive']){
+       const worst=Math.max(...Array.from({length:24},(_,i)=>
+         Math.max(...source.trial(row.period,policy,i).intervals.map(x=>x.residual))));
+       if(Math.abs(row[policy].margin-(.1-worst))>1e-9)return false;
+     }
+     return true;
+   });
+   return {before,after:game(),snap,short,long,changed,
+     count:all?.length,selectCount:selectors?.options.length,
+     consistent,mounted:!!document.getElementById('adversarialMarginCanvas')};
+ });
+ if(!marginAudit.mounted||!marginAudit.snap||
+    marginAudit.snap.periods!==32||marginAudit.snap.schedules!==24||
+    marginAudit.snap.threshold!==.1||
+    marginAudit.snap.sourceMutated||marginAudit.snap.gameplayMutation||
+    marginAudit.count!==32||marginAudit.selectCount!==32||
+    !marginAudit.consistent||marginAudit.short?.scheduleCount!==24||
+    marginAudit.long?.scheduleCount!==24||
+    !(marginAudit.short.fixed.margin<0&&marginAudit.short.adaptive.margin<0)||
+    marginAudit.changed?.period!==8||
+    JSON.stringify(marginAudit.before)!==JSON.stringify(marginAudit.after))
+   fail('v2.9.31 signed adversarial margins / game isolation violated: '+JSON.stringify(marginAudit));
+
  // v2.9.30 — equal declared timing budget under 24 adversarial orderings.
  const adversarialCheck=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
