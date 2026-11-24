@@ -31,11 +31,11 @@ try{
    const initial={
      slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length),
      ram:[state.p.ram,state.e.ram],actions:state.actions,
-     count:document.querySelectorAll('#recoveryTelemetry li').length
+     count:document.querySelectorAll('#recoveryTelemetryP ol li, #recoveryTelemetryE ol li').length
    };
    drawEnergyPathways({seq:989902,impactSeq:989901,
      events:[{side:'p',type:'release',amount:2,slots:[{slot:1,amount:2}]}]});
-   const visualOnlyCount=document.querySelectorAll('#recoveryTelemetry li').length;
+   const visualOnlyCount=document.querySelectorAll('#recoveryTelemetryP ol li, #recoveryTelemetryE ol li').length;
    lastRamFlow={seq:989903,impactSeq:989900,events:[
      {side:'p',type:'release',amount:3,slots:[{slot:2,amount:3}]},
      {side:'e',type:'release',amount:0,slots:[]}
@@ -47,7 +47,7 @@ try{
  const telemetryActive=await page.evaluate(()=>({
    player:document.getElementById('recoveryTelemetryP')?.textContent||'',
    bot:document.getElementById('recoveryTelemetryE')?.textContent||'',
-   rows:document.querySelectorAll('#recoveryTelemetry li').length,
+   rows:document.querySelectorAll('#recoveryTelemetryP ol li, #recoveryTelemetryE ol li').length,
    ledger:recoveryMonitorEntries.map(x=>({source:x.source,amount:x.amount,
      side:x.side,status:x.status})),
    ram:[state.p.ram,state.e.ram],actions:state.actions,
@@ -84,7 +84,7 @@ try{
    statuses:recoveryMonitorEntries.map(x=>({side:x.side,status:x.status})),
    timer:recoveryMonitorTimer!==null,
    activeNodes:document.querySelectorAll('[data-cycle-id="attack:989900:flow:989903:p"]').length,
-   rows:document.querySelectorAll('#recoveryTelemetry li').length
+   rows:document.querySelectorAll('#recoveryTelemetryP ol li, #recoveryTelemetryE ol li').length
  }));
  const waveQuiet=await page.evaluate(()=>['recoveryWaveP','recoveryWaveE'].map(id=>({
    trace:document.getElementById(id)?.querySelector('.recoveryWaveTrace')?.getAttribute('points'),
@@ -98,7 +98,7 @@ try{
    fail('Recovery monitor failed natural expiration: '+JSON.stringify(telemetryExpired));
  await page.getByRole('button',{name:'Restart match'}).click();
  const telemetryReset=await page.evaluate(()=>({
-   rows:document.querySelectorAll('#recoveryTelemetry li').length,
+   rows:document.querySelectorAll('#recoveryTelemetryP ol li, #recoveryTelemetryE ol li').length,
    count:recoveryMonitorEntries.length,
    slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
  }));
