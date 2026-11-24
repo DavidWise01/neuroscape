@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.15 — Independent Pulse Memory Oscilloscope</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.16 — Independent Phase Correlation</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1725,8 +1725,8 @@ background:linear-gradient(110deg,#302138,#1d182b);font:10px/1.45 ui-monospace,C
 .recoveryWaveLevel{fill:#ffe1b9;font:9px ui-monospace,Consolas,monospace}
 .recoveryTelemetryLane.bot .recoveryWaveLevel{fill:#e3c7ff}
 @media(max-width:650px){.recoveryTelemetryGrid{grid-template-columns:1fr}}
-</style><link rel="stylesheet" href="./assets/pulse-oscilloscope-v2.9.15.css"></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.9.15 · BONE WHITE ARENA / SHARED PULSE GRID</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+</style><link rel="stylesheet" href="./assets/pulse-oscilloscope-v2.9.15.css"><link rel="stylesheet" href="./assets/phase-correlation-v2.9.16.css"></head><body>
+<header><div><h1>NEUROSCAPE</h1><p>v2.9.16 · BONE WHITE ARENA / INDEPENDENT PHASE CORRELATION</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText">STARTING ARCADE · FIVE SQUARES PER PLAYER</strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" data-arena-invariant="5x2-visible-square-card-slots" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes" aria-label="Five bot card squares"><div class="slot" data-slot="1"></div><div class="slot" data-slot="2"></div><div class="slot" data-slot="3"></div><div class="slot" data-slot="4"></div><div class="slot" data-slot="5"></div></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1787,6 +1787,13 @@ background:linear-gradient(110deg,#302138,#1d182b);font:10px/1.45 ui-monospace,C
  <div class="scopeHead"><strong>⚡ v2.9.15 · NEON PULSE-MEMORY OSCILLOSCOPE</strong><span id="pulseScopeSummary">0 INDEPENDENT SOURCES · QUIET · 5s SHARED GRID</span></div>
  <canvas id="pulseScopeCanvas" width="1000" height="220" role="img" aria-label="Observed independent attack and recovery source trajectories on shared five-second time grid"></canvas>
  <div id="pulseScopeLegend" aria-label="Independent source phase labels"></div>
+</section>
+<section id="phaseCorrelation" aria-label="Independent phase-correlation monitor" data-causality="not-inferred">
+ <div class="correlationHead"><strong>⚡ v2.9.16 · INDEPENDENT PHASE CORRELATION</strong><span id="phaseCorrelationStatus">NO COMPARABLE LIVE PULSES</span></div>
+ <canvas id="phaseCorrelationCanvas" width="1000" height="190" role="img" aria-label="Observed orange attack, purple recovery, and teal intersection waveforms on five-second time grid"></canvas>
+ <div class="correlationLegend"><span>● ATTACK</span><span>● RECOVERY</span><span>● OBSERVED TEMPORAL OVERLAP</span></div>
+ <ol id="phaseCorrelationPairs" aria-label="Distinct attack and recovery source pairs within 750 milliseconds"></ol>
+ <small>Correlation is descriptive, not proof of causality · separate provenance roots · read-only · no synthetic events</small>
 </section>
 <section id="neuroscapeArt" aria-label="Neuroscape original illustrated cyberpunk arena artwork">
   <div class="artHead"><span>✦ NEUROSCAPE · THE TWO CORES ✦</span><span>ORIGINAL NEON ART · ARENA REMAINS LOCKED</span><button type="button" id="regenerateCores" aria-label="Regenerate Two Cores artwork">↻ REGENERATE</button></div>
@@ -4579,4 +4586,4 @@ restart('human');
    new MutationObserver(observe).observe(feed,{childList:true,characterData:true,attributes:true,attributeFilter:['class']});
  observe();
 })();
-</script><script defer src="./assets/pulse-oscilloscope-v2.9.15.js"></script></body></html>
+</script><script defer src="./assets/pulse-oscilloscope-v2.9.15.js"></script><script defer src="./assets/phase-correlation-v2.9.16.js"></script></body></html>
