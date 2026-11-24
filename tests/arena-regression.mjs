@@ -623,6 +623,68 @@ try{
  console.log('OVERLAP PASS: two independent recovery cycles, old cleanup cannot erase new cycle');
  console.log('AFTERGLOW PASS: delayed bounded fading overlay, both sides, zero RAM mutation');
  console.log('RESERVOIR DISCHARGE PASS: delayed sweep over available RAM fill, both sides, provenance intact');
+ // v2.8.94 — one attack can destroy several cards. Independently
+ // conserve each destroyed slot BEFORE pooling the positive RAM totals.
+ // A zero-RAM destruction contributes neither a photon nor its own pool.
+ const multiCard=await page.evaluate(()=>{
+   const before=['p','e'].map(k=>document.getElementById(k+'RamAvailable').style.width);
+   const seq=989940,impact=989939;
+   const destroyed=[
+     {side:'p',slot:0,ram:2},{side:'p',slot:2,ram:3},
+     {side:'p',slot:4,ram:0},{side:'e',slot:1,ram:4},
+     {side:'e',slot:3,ram:1}
+   ];
+   const releases=['p','e'].map(side=>{
+     const slots=destroyed.filter(d=>d.side===side&&d.ram>0)
+       .map(d=>({slot:d.slot,amount:d.ram}));
+     return {side,type:'release',amount:slots.reduce((n,x)=>n+x.amount,0),slots};
+   });
+   drawEnergyPathways({seq,impactSeq:impact,events:releases});
+   const report=['p','e'].map(side=>{
+     const from=destroyed.filter(x=>x.side===side&&x.ram>0);
+     const amount=from.reduce((n,x)=>n+x.ram,0);
+     const match=selector=>[...document.querySelectorAll(selector)]
+       .filter(x=>x.dataset.flowSeq===String(seq));
+     const rays=match('#'+side+'Pathways .neonRecoveryReturn');
+     const arrivals=match('#'+side+'Pathways .neonRecoveryArrival');
+     const charges=match('#'+side+'RamAvailable ~ .neonRamCharge');
+     const reservoir=match('#'+side+'RamAvailable ~ .neonRamReservoir');
+     const discharge=match('#'+side+'RamAvailable > .neonRamDischarge');
+     const afterglow=match('#'+side+'RamAvailable > .neonRamAfterglow');
+     const transferIds=from.map(x=>'attack:'+impact+':'+side+':'+x.slot).sort();
+     const details=x=>({
+       transfer:x.dataset.transferId,slot:x.dataset.recoverySlot,ram:x.dataset.returnedRam,
+       lifecycle:x.dataset.lifecycleId,cycle:x.dataset.cycleId
+     });
+     const cycle='attack:'+impact+':flow:'+seq+':'+side;
+     return {side,amount,expected:from.map(x=>x.slot+':'+x.ram).sort(),transferIds,cycle,
+       rays:rays.map(details),arrivals:arrivals.map(details),charges:charges.map(details),
+       pools:[...reservoir,...discharge,...afterglow].map(x=>({
+         cls:x.className,amount:x.dataset.returnedRam,
+         count:x.dataset.transferCount,transfers:x.dataset.transferIds.split(',').sort(),
+         cycle:x.dataset.cycleId
+       }))};
+   });
+   return {report,before,after:['p','e'].map(k=>document.getElementById(k+'RamAvailable').style.width),
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)};
+ });
+ if(multiCard.before.join(',')!==multiCard.after.join(',')||
+    multiCard.slots.some(x=>x!==5))
+   fail('Multi-card visual conservation changed game meters or playfield: '+JSON.stringify(multiCard));
+ for(const item of multiCard.report){
+   for(const group of ['rays','arrivals','charges']){
+     const actual=item[group].map(x=>x.slot+':'+x.ram).sort();
+     if(actual.join(',')!==item.expected.join(',')||
+       item[group].some(x=>x.cycle!==item.cycle||
+         x.lifecycle!=='attack:989939'||!item.transferIds.includes(x.transfer)))
+       fail('Multi-card recovery transfer duplicated or missing: '+JSON.stringify({item,group}));
+   }
+   if(item.pools.length!==3||item.pools.some(x=>
+      +x.amount!==item.amount||+x.count!==item.expected.length||
+      x.transfers.join(',')!==item.transferIds.join(',')||x.cycle!==item.cycle))
+     fail('Multi-card recovery reservoir does not conserve sum: '+JSON.stringify(item));
+ }
+ console.log('MULTI-CARD CONSERVATION PASS: five destroyed slots, four positive packets, two pooled reservoirs, zero phantom RAM');
  console.log('NEON RESERVOIR PASS: pooled positive releases, both sides, no RAM mutation');
  console.log('SIMULTANEOUS RECOVERY PASS: three positive card transfers, both RAM meters, zero false releases, unchanged fill widths');
  console.log('METER CHARGE PASS: amount-scaled intensity and original lifecycle lineage');
@@ -970,6 +1032,23 @@ try{
    fail('Conservation totals differ across source, ledger and neon: '+JSON.stringify(totals));
  console.log('LIVE RAM CONSERVATION: '+JSON.stringify({
    ...totals,status:totals.positive?'POSITIVE_RETURNS_RECONCILED':'NO_POSITIVE_RETURN_OBSERVED'
+ }));
+ // Multi-card live observation is conditional: a bounded match may not
+ // naturally destroy two units in the same attack. Never claim that it did.
+ const liveMulti=matchAudit.destructions.filter(x=>x.destruction.length>=2);
+ for(const entry of liveMulti){
+   for(const release of entry.releases){
+     const expected=entry.destruction.filter(x=>x.side===release.side&&x.ram>0)
+       .map(x=>x.slot+':'+x.ram).sort();
+     const actual=release.slots.map(x=>x.slot+':'+x.amount).sort();
+     if(expected.join(',')!==actual.join(',')||
+       release.amount!==release.slots.reduce((n,x)=>n+x.amount,0))
+       fail('Live multi-card attack lost independent slot accounting: '+JSON.stringify(entry));
+   }
+ }
+ console.log('LIVE MULTI-CARD STATUS: '+JSON.stringify({
+   observed:liveMulti.length,
+   status:liveMulti.length?'RECONCILED':'NOT_OBSERVED_IN_BOUNDED_MATCH'
  }));
  // v2.8.92 — close the real evidence chain at final expiration.
  // Stop producing new actions; inspect only recovered visual cycles captured
