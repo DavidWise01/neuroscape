@@ -19,6 +19,24 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.23 — independently bounded edge reservoirs cannot create input.
+ const memoryInitial=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),p=window.neuroscapePlasmaPersistence?.snapshot();
+   return {before,after:game(),p,bars:document.querySelectorAll('#plasmaPersistenceBars > i').length};
+ });
+ if(!memoryInitial.p||memoryInitial.bars!==32||
+    memoryInitial.p.capacity!==32||
+    memoryInitial.p.quiet!==true||
+    memoryInitial.p.input!==0||
+    memoryInitial.p.nonzero!==0||
+    memoryInitial.p.total!==0||
+    memoryInitial.p.visualOnly!==true||
+    memoryInitial.p.gameplayMutation!==false||
+    JSON.stringify(memoryInitial.before)!==JSON.stringify(memoryInitial.after))
+   fail('Edge-memory fabricated input or touched gameplay: '+JSON.stringify(memoryInitial));
+
  // v2.9.22: normalized visual energy must conserve its source budget.
  const visualConservation=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
