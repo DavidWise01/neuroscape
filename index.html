@@ -2672,7 +2672,7 @@ function noteEngineRecoveryTelemetry(flow){
  if(recoveryMonitorEntries.length>RECOVERY_MONITOR_LIMIT*2)
   recoveryMonitorEntries=recoveryMonitorEntries.slice(-RECOVERY_MONITOR_LIMIT*2);
  paintRecoveryTelemetry();
- if(recoveryMonitorEntries.some(x=>x.status==='PENDING')&&recoveryMonitorTimer===null)
+ if(recoveryMonitorEntries.some(x=>x.status==='PENDING'||x.status==='RETURNING'||x.status==='AFTERGLOW')&&recoveryMonitorTimer===null)
   recoveryMonitorTimer=setInterval(paintRecoveryTelemetry,180);
 }
 function resetRecoveryTelemetry(){
