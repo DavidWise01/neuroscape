@@ -824,6 +824,34 @@ try{
  if(live.visual?.panels!==2||live.visual?.samples>12||
     live.lanes.some(l=>l.length!==5||l.some(([w,h])=>w<70||h<70)))
    fail('Real gameplay disturbed murals or card-space invariant: '+JSON.stringify(live));
+ // v2.8.90 — inspect actual legal bot combat without calling visual
+ // renderers or injecting a synthetic release. Observe the engine's rendered
+ // flow markers and verify any naturally emitted recovery's provenance.
+ await page.evaluate(()=>{
+   const samples=[],observed=new Map();
+   const start=performance.now();
+   const read=()=>{
+     const values=['p','e'].map(side=>({
+       side,turn:document.getElementById('turnText')?.textContent||'',
+       flow:document.getElementById(side+'Flow')?.textContent||'',
+       ram:document.getElementById(side+'Ram')?.textContent||'',
+       cycleCount:[...new Set([...document.querySelectorAll('#'+side+'Pathways [data-cycle-id], #'+side+'RamAvailable [data-cycle-id], #'+side+'RamAvailable ~ [data-cycle-id]')].map(x=>x.dataset.cycleId))].length
+     }));
+     if(samples.length<80)samples.push({at:performance.now()-start,values});
+     for(const value of values)if(/RETURNED \d+ RAM/.test(value.flow))observed.set(value.side+':'+value.flow,value);
+   };
+   read();
+   const timer=setInterval(read,160);
+   window.__liveMatchAuditFinish=()=>{clearInterval(timer);read();return {
+     samples,positiveFlows:[...observed.values()],
+     endTurn:document.getElementById('turnText')?.textContent,
+     widths:['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width),
+     lanes:['p','e'].map(side=>document.querySelectorAll('#'+side+'Lanes>.slot').length),
+     errors:document.querySelectorAll('.neonRamAfterglow:not([data-cycle-id])').length
+   }}};
+ });
+ // finish functions cannot cross Playwright serialization; use a page-side
+ // collector stored only on the test page, not in the shipped arcade.
  console.log('LIVE COMBAT PASS: real bot actions, matching mural telemetry, 10 protected card stations');
 
 
