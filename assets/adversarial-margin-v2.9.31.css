@@ -1,0 +1,13 @@
+/* Neuroscape v2.9.31 · read-only signed margin spectrum */
+#adversarialMarginLab{margin:13px 0;padding:13px;border:1px solid #7ff6df;border-radius:11px;background:linear-gradient(130deg,#11172b,#29163e);color:#edfaff;font:11px ui-monospace,Consolas,monospace;box-shadow:0 0 21px #83ffe12d,inset 0 0 18px #ae6efe1e}
+#adversarialMarginLab .marginHead{display:flex;justify-content:space-between;flex-wrap:wrap;gap:9px;align-items:center}
+#adversarialMarginLab .marginHead strong{color:#a7fff2;text-shadow:0 0 11px #73ffde}
+#adversarialMarginCanvas{width:100%;height:215px;display:block;margin:10px 0;background:#0e1227;border:1px solid #6767a5;border-radius:7px}
+#adversarialMarginLab .marginControls{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#adversarialMarginLab select{border:1px solid #7bf2de;border-radius:5px;background:#1c374d;color:#e0fff9;padding:7px}
+#adversarialMarginLab .marginLegend{display:flex;gap:17px;flex-wrap:wrap;margin:9px 0}
+#adversarialMarginLab .marginLegend span:nth-child(1){color:#ffb16c}
+#adversarialMarginLab .marginLegend span:nth-child(2){color:#72ffde}
+#adversarialMarginLab .marginLegend span:nth-child(3){color:#d7aeff}
+#adversarialMarginLab .marginFoot{color:#bdc5dd;font-size:10px}
+@media(prefers-reduced-motion:reduce){#adversarialMarginLab{box-shadow:none}}
