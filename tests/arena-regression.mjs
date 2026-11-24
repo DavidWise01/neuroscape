@@ -19,6 +19,25 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.22: normalized visual energy must conserve its source budget.
+ const visualConservation=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),ledger=window.neuroscapeVisualConservation?.snapshot();
+   const after=game();
+   return {before,after,ledger,mounted:!!document.getElementById('plasmaConservation')};
+ });
+ if(!visualConservation.mounted||!visualConservation.ledger||
+    visualConservation.ledger.authority!=='visual-only'||
+    visualConservation.ledger.writesToGameplay!==false||
+    !visualConservation.ledger.balanced||
+    Math.abs(visualConservation.ledger.input-
+      visualConservation.ledger.edge-visualConservation.ledger.shadow-
+      visualConservation.ledger.quiet)>1e-10||
+    visualConservation.ledger.input!==0||
+    JSON.stringify(visualConservation.before)!==JSON.stringify(visualConservation.after))
+   fail('Visual plasma energy ledger broke isolation or conservation: '+JSON.stringify(visualConservation));
+
  // v2.9.21 — no plasma without observed source activity; 32-edge bound.
  const plasmaStart=await page.evaluate(()=>{
    const before={ram:[state.p.ram,state.e.ram],turn:state.turn,actions:state.actions,
