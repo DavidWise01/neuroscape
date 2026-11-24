@@ -24,6 +24,45 @@ try{
   if(list.some(x=>x.width<70||x.height<70||x.visible!=='visible'||x.display==='none'))fail(side+' card squares have collapsed');
  }
  if(initial.hand<5)fail('Player hand not rendered');
+ // v2.8.98: interrupt a visible recovery on restart, then again on
+ // mode change. The old match cannot reintroduce effects on queued frames.
+ const boundary=await page.evaluate(()=>{
+   const cls='.neonRamReservoir,.neonRamDischarge,.neonRamAfterglow,'+
+     '.neonRecoveryReturn,.neonRecoveryCore,.neonRecoveryArrival,.neonRamCharge';
+   const play=seq=>drawEnergyPathways({seq,impactSeq:seq-1,events:[
+     {side:'p',type:'release',amount:2,slots:[{slot:1,amount:2}]},
+     {side:'e',type:'release',amount:3,slots:[{slot:2,amount:3}]}]});
+   const measure=()=>({
+     transient:document.querySelectorAll('#gameBoard '+cls).length,
+     player:document.querySelectorAll('#pLanes>.slot').length,
+     bot:document.querySelectorAll('#eLanes>.slot').length,
+     widths:['p','e'].map(k=>document.getElementById(k+'RamAvailable').style.width),
+     mode:document.getElementById('modeHuman').classList.contains('active')?'human':'auto',
+     gameTurn:document.getElementById('turnText').textContent,
+     murals:document.querySelectorAll('#neuroscapeArt,#signalFoundry').length
+   });
+   play(989980);
+   const old=measure();
+   restart('human');const reset=measure();
+   play(989981);const active=measure();
+   restart('auto');const switched=measure();
+   return {old,reset,active,switched};
+ });
+ if(boundary.old.transient<12||boundary.active.transient<12||
+    boundary.reset.transient!==0||boundary.switched.transient!==0||
+    boundary.reset.mode!=='human'||boundary.switched.mode!=='auto'||
+    [boundary.reset,boundary.switched].some(v=>v.player!==5||v.bot!==5||
+      v.murals!==2||v.widths.some(w=>w!=='0%')))
+   fail('Restart/mode boundary leaked old recovery energy: '+JSON.stringify(boundary));
+ await page.waitForTimeout(90);
+ const afterBoundary=await page.evaluate(()=>({
+   old:document.querySelectorAll('[data-flow-seq="989980"],[data-flow-seq="989981"]').length,
+   cardCounts:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
+ }));
+ if(afterBoundary.old||afterBoundary.cardCounts.some(n=>n!==5))
+   fail('Delayed old-match frame crossed restart boundary: '+JSON.stringify(afterBoundary));
+ await page.getByRole('button',{name:'Play vs Bot'}).click();
+ console.log('MATCH BOUNDARY PASS: active recovery cleared across restart and mode change; queued frames isolated');
  // v2.8.71: the neon attack overlay must use the same measured endpoints
  // and curve as the existing attack route; no synthetic combat state edits.
  const routed=await page.evaluate(()=>{
