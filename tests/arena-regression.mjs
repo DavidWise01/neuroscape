@@ -19,6 +19,23 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.16 — purely observational correlation; no gameplay state mutation.
+ const phaseScope=await page.evaluate(()=>{
+   const before={ram:[state.p.ram,state.e.ram],actions:state.actions,turn:state.turn,
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)};
+   const scope=window.neuroscapePhaseCorrelation?.snapshot();
+   return {before,after:{ram:[state.p.ram,state.e.ram],actions:state.actions,turn:state.turn,
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)},
+     scope,canvas:!!document.getElementById('phaseCorrelationCanvas'),
+     status:document.getElementById('phaseCorrelationStatus')?.textContent,
+     causality:document.getElementById('phaseCorrelation')?.dataset.causality};
+ });
+ if(!phaseScope.canvas||!phaseScope.scope||phaseScope.scope.causality!=='not-inferred'||
+   phaseScope.causality!=='not-inferred'||phaseScope.scope.percentage!==null||
+   phaseScope.scope.attackSources!==0||phaseScope.scope.recoverySources!==0||
+   JSON.stringify(phaseScope.before)!==JSON.stringify(phaseScope.after))
+   fail('Independent correlation mutated gameplay or synthesized empty evidence: '+JSON.stringify(phaseScope));
+
  if(!initial.turn?.startsWith('TURN '))fail('Engine failed first render');
  for(const [side,list] of [['player',initial.player],['bot',initial.bot]]){
   if(list.length!==5)fail(side+' does not have five slots');
