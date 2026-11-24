@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.06 — Synchronized Combat Timeline</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.07 — Shared Temporal Ruler</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1636,6 +1636,14 @@ padding:10px 14px}
  padding:7px;background:#2b2037;border-left:3px solid #b782e6;
  font:10px ui-monospace,Consolas,monospace}
 .combatTimeline li b{color:#f3c8a3;overflow-wrap:anywhere}
+.combatTimeline .temporalRuler{grid-column:1/-1;width:100%;height:70px;display:block;overflow:visible;
+ background:#120f20;border:1px solid #684b83;border-radius:4px}
+.temporalRuler .rulerAxis{stroke:#7f688d;stroke-width:.7;stroke-dasharray:3 4}
+.temporalRuler .rulerTick{fill:#b9a9c8;font:8px ui-monospace,Consolas,monospace}
+.temporalRuler .rulerAttack{stroke:#ff9852;fill:#ff9852}
+.temporalRuler .rulerRecovery{stroke:#c58dff;fill:#c58dff}
+.temporalRuler .rulerLabel{font:9px ui-monospace,Consolas,monospace;fill:#f3d5eb}
+.combatTimeline .rulerNote{grid-column:1/-1;font:9px ui-monospace,Consolas,monospace;color:#a99dbb}
 .combatTimeline .timelineDamage{color:#ffab71}
 .combatTimeline .timelineRecovery{color:#d4adff}
 @media(max-width:600px){.combatTimeline li{grid-template-columns:1fr;gap:3px}}
@@ -1653,7 +1661,7 @@ padding:10px 14px}
 .recoveryTelemetryLane.bot .recoveryWaveLevel{fill:#e3c7ff}
 @media(max-width:650px){.recoveryTelemetryGrid{grid-template-columns:1fr}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.9.06 · BONE WHITE ARENA / LINKED ATTACK + RECOVERY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.9.07 · BONE WHITE ARENA / SHARED COMBAT CLOCK</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText">STARTING ARCADE · FIVE SQUARES PER PLAYER</strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" data-arena-invariant="5x2-visible-square-card-slots" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes" aria-label="Five bot card squares"><div class="slot" data-slot="1"></div><div class="slot" data-slot="2"></div><div class="slot" data-slot="3"></div><div class="slot" data-slot="4"></div><div class="slot" data-slot="5"></div></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -2753,7 +2761,48 @@ function paintCombatTimeline(){
    recovery.textContent='+'+amount+' RAM · Δ'+offset+'ms · '+related.map(item=>
      item.side.toUpperCase()+':'+item.status).join(' / ');
   }
-  row.append(name,damage,recovery);return row;
+  row.append(name,damage,recovery);
+  // Both lanes share one clock: -250ms..+5200ms relative to the
+  // recorded attack observation. Values are never plotted as time.
+  const ns='http://www.w3.org/2000/svg',axis=document.createElementNS(ns,'svg');
+  axis.setAttribute('class','temporalRuler');axis.setAttribute('viewBox','0 0 340 70');
+  axis.setAttribute('role','img');axis.setAttribute('aria-label','Shared observed time ruler for attack '+seq);
+  axis.dataset.attackId=String(seq);
+  const min=-250,max=5200,px=ms=>20+300*(ms-min)/(max-min);
+  const line=(x1,y1,x2,y2,cls)=>{
+   const p=document.createElementNS(ns,'line');p.setAttribute('x1',x1);
+   p.setAttribute('y1',y1);p.setAttribute('x2',x2);p.setAttribute('y2',y2);
+   p.setAttribute('class',cls);axis.append(p);return p;
+  };
+  const label=(x,y,value,cls='rulerTick')=>{
+   const p=document.createElementNS(ns,'text');p.setAttribute('x',x);
+   p.setAttribute('y',y);p.setAttribute('class',cls);p.textContent=value;axis.append(p);return p;
+  };
+  for(const ms of [0,1000,2000,3000,4000,5000]){
+   line(px(ms),6,px(ms),65,'rulerAxis');
+   label(Math.min(302,px(ms)+2),11,ms===0?'0':ms/1000+'s');
+  }
+  line(20,27,320,27,'rulerAxis');line(20,51,320,51,'rulerAxis');
+  label(22,23,'ATTACK','rulerLabel');label(22,47,'RAM','rulerLabel');
+  const dot=(x,y,cls,source)=>{
+   const c=document.createElementNS(ns,'circle');
+   c.setAttribute('cx',x);c.setAttribute('cy',y);c.setAttribute('r',4);
+   c.setAttribute('class',cls);c.dataset.source=source;axis.append(c);
+  };
+  dot(px(0),27,'rulerAttack',attack.key);
+  for(const item of related){
+   const delta=Math.round(item.born-attack.born);
+   const pos=px(Math.max(min,Math.min(max,delta)));
+   dot(pos,51,'rulerRecovery',item.source);
+  }
+  axis.dataset.recoveryCount=String(related.length);
+  axis.dataset.damage=String(attack.damage);
+  axis.dataset.returnedRam=String(amount);
+  axis.dataset.recoveryOffsets=related.map(item=>Math.round(item.born-attack.born)).join(',');
+  row.append(axis);
+  const note=document.createElement('span');note.className='rulerNote';
+  note.textContent='CLOCK: relative observation timestamps · damage and RAM use separate channels';
+  row.append(note);return row;
  }));
 }
 function paintRecoveryTelemetry(){
