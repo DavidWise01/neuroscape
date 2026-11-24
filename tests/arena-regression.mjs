@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import { writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 const browser = await chromium.launch({headless:true,args:['--no-sandbox']});
@@ -1442,6 +1443,44 @@ try{
  console.log('GEOMETRY PASS: symmetric at zero; rightward for player and leftward for bot on both murals');
  console.log('MOMENTUM PASS: both murals follow only displayed health, balanced/player/bot, without changing game state');
 
+ // v2.9.00 — formal, reviewable acceptance gate. Freeze the observed
+ // pass/fail evidence before reporting success; never infer that a live
+ // destruction case occurred if the bounded bot match did not produce it.
+ const baselineGates=[
+   {id:'ARENA_LOCK',pass:initial.player.length===5&&initial.bot.length===5&&
+      still&&resetStorm.counts.every(x=>x.slots.every(n=>n===5))},
+   {id:'RAM_CONSERVATION',pass:totals.destroyed===totals.released&&
+      totals.released===totals.visualized&&multiCard.report.length===2},
+   {id:'ZERO_RETURN',pass:mixedRetaliation.results.length===2&&
+      isolated.records.filter(x=>x.case.amount===0).length===2},
+   {id:'RECIPROCAL_OWNERSHIP',pass:retaliationConservation.observed.length===2&&
+      retaliationConservation.observed.every(x=>x.reservoirCount===1)},
+   {id:'VISUAL_EXPIRATION',pass:alternatingEnd.remain.every(x=>x===0)&&
+      isolatedExpired.remaining.every(x=>x===0)&&completed.remaining===0},
+   {id:'MATCH_BOUNDARY',pass:resetStorm.counts.length===10&&
+      settledReset.mode==='human'&&settledReset.lingering===0},
+   {id:'GENERATIVE_MURALS',pass:initial.player.length===5&&
+      await page.locator('#neuroscapeArt,#signalFoundry').count()===2},
+   {id:'BROWSER_ERRORS',pass:errors.length===0}
+ ];
+ const baselineReport={
+   version:'2.9.00',name:'Neuroscape recovery acceptance baseline',
+   policy:'Any failed gate blocks acceptance; live unobserved conditions stay unverified',
+   gates:baselineGates,passed:baselineGates.every(x=>x.pass),
+   liveEvidence:{
+     attacks:totals.attacks,positiveReturns:totals.positive,
+     reciprocalAttacks:reciprocal.length,
+     realMultiCardAttacks:liveMulti.length,
+     zeroCostReciprocalAttacks:liveMixed.length,
+     coverage:totals.positive?'POSITIVE_RECOVERY_OBSERVED':'NO_POSITIVE_RECOVERY_OBSERVED'
+   },
+   fixedConstraints:{arenaSlotsPerSide:5,catalogCards:256,visualCycleLimit:12},
+   browserErrorCount:errors.length
+ };
+ writeFileSync('recovery-baseline.json',JSON.stringify(baselineReport,null,2)+'\\n');
+ if(!baselineReport.passed)
+   fail('v2.9.00 RECOVERY ACCEPTANCE GATE FAILED: '+JSON.stringify(baselineReport));
+ console.log('RECOVERY ACCEPTANCE GATE PASS: '+JSON.stringify(baselineReport));
  if(errors.length)fail('Browser error after artwork regeneration');
  console.log('ART GENERATION PASS: exactly two active procedural scenes, both regenerate, card space unchanged');
  console.log('ARENA PASS: five large squares per side, hand, controls, RAM install/restart and bot start',JSON.stringify(initial));
