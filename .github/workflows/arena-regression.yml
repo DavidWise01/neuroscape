@@ -27,6 +27,13 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Verify visible 5x2 arena and real game startup
         run: node tests/arena-regression.mjs
+      - name: Upload recovery acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: recovery-baseline-v2.9.00
+          path: recovery-baseline.json
+          if-no-files-found: ignore
       - name: Upload arena screenshot
         if: always()
         uses: actions/upload-artifact@v4
