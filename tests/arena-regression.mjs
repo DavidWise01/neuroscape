@@ -786,6 +786,69 @@ try{
  if(mixedRetaliation.before.join(',')!==mixedRetaliation.after.join(',')||
     mixedRetaliation.lanes.some(n=>n!==5))
    fail('Zero-cost retaliation modified RAM meter or card space: '+JSON.stringify(mixedRetaliation));
+ // v2.8.97 — zero-cost return must stay dark even when an earlier
+ // positive release on the SAME side is still actively glowing.
+ const isolated=await page.evaluate(()=>{
+   const initial=['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width);
+   const cases=[
+     {seq:989970,impact:989969,side:'p',amount:3,slot:1},
+     {seq:989971,impact:989970,side:'p',amount:0,slot:2},
+     {seq:989972,impact:989971,side:'e',amount:2,slot:4},
+     {seq:989973,impact:989972,side:'e',amount:0,slot:0},
+     {seq:989974,impact:989973,side:'p',amount:1,slot:3}
+   ];
+   const records=[];
+   const types=['neonRecoveryReturn','neonRecoveryCore','neonRecoveryArrival',
+      'neonRamCharge','neonRamReservoir','neonRamDischarge','neonRamAfterglow'];
+   const read=c=>{
+     const cycle='attack:'+c.impact+':flow:'+c.seq+':'+c.side;
+     const nodes=[...document.querySelectorAll('[data-cycle-id="'+cycle+'"]')];
+     const classes=Object.fromEntries(types.map(type=>[type,
+       nodes.filter(n=>n.classList.contains(type)).length]));
+     const reservoir=nodes.find(n=>n.classList.contains('neonRamReservoir'));
+     return {cycle,classes,total:reservoir?.dataset.returnedRam||null,
+       transferIds:reservoir?.dataset.transferIds||null,
+       pointerSafe:nodes.every(n=>getComputedStyle(n).pointerEvents==='none')};
+   };
+   for(const c of cases){
+     drawEnergyPathways({seq:c.seq,impactSeq:c.impact,events:[
+       {side:c.side,type:'release',amount:c.amount,
+        slots:c.amount>0?[{slot:c.slot,amount:c.amount}]:[]}
+     ]});
+     records.push({case:c,observed:read(c)});
+   }
+   const oldStillPresent=[cases[0],cases[2],cases[4]].map(c=>
+     document.querySelectorAll('[data-cycle-id="attack:'+c.impact+
+       ':flow:'+c.seq+':'+c.side+'"]').length);
+   return {cases,records,oldStillPresent,initial,
+     final:['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width),
+     lanes:['p','e'].map(side=>document.querySelectorAll('#'+side+'Lanes>.slot').length)};
+ });
+ for(const row of isolated.records){
+   const {seq,impact,side,amount,slot}=row.case;
+   const {classes,total,transferIds,pointerSafe}=row.observed;
+   if(!pointerSafe||
+      (amount===0&&Object.values(classes).some(n=>n!==0))||
+      (amount>0&&(Object.values(classes).some(n=>n!==1)||
+        total!==String(amount)||transferIds!=='attack:'+impact+':'+side+':'+slot)))
+     fail('Cross-cycle recovery borrowed RAM from earlier attack: '+JSON.stringify(row));
+ }
+ if(isolated.oldStillPresent.some(n=>n<7)||
+    isolated.initial.join(',')!==isolated.final.join(',')||
+    isolated.lanes.some(n=>n!==5))
+   fail('Cross-cycle isolation modified earlier recovery or card geometry: '+JSON.stringify(isolated));
+ await page.waitForTimeout(5300);
+ const isolatedExpired=await page.evaluate(()=>({
+   remaining:[989970,989971,989972,989973,989974].map(seq=>
+     document.querySelectorAll('[data-flow-seq="'+seq+'"]').length),
+   lanes:['p','e'].map(side=>document.querySelectorAll('#'+side+'Lanes>.slot').length),
+   widths:['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width)
+ }));
+ if(isolatedExpired.remaining.some(Boolean)||
+    isolatedExpired.lanes.some(n=>n!==5)||
+    isolatedExpired.widths.join(',')!==isolated.initial.join(','))
+   fail('Cross-cycle return did not expire independently: '+JSON.stringify(isolatedExpired));
+ console.log('CROSS-CYCLE ISOLATION PASS: five alternating events, two zero returns, three independent positive recoveries, no ghosts');
  console.log('ZERO-COST RETALIATION PASS: reciprocal +2/0 and 0/+4, no invented photons');
  console.log('RETALIATION CONSERVATION PASS: attacker +2, defender +4, independent neon cycles and no meter mutation');
  console.log('MULTI-CARD CONSERVATION PASS: five destroyed slots, four positive packets, two pooled reservoirs, zero phantom RAM');
