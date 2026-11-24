@@ -1,0 +1,7 @@
+/* v2.9.24 · visual-only 4D phase-resonance spectrum */
+#plasmaResonancePanel{margin:12px 0;padding:12px;border:1px solid #86f9d9;border-radius:10px;background:linear-gradient(120deg,#0e172e,#251237);color:#ecf8ff;font:11px ui-monospace,Consolas,monospace;box-shadow:0 0 20px #65f3d033,inset 0 0 20px #9254ff20}
+#plasmaResonancePanel .resonanceHead{display:flex;justify-content:space-between;align-items:center;gap:9px;flex-wrap:wrap}
+#plasmaResonancePanel .resonanceHead strong{color:#a1fff0;text-shadow:0 0 8px #56e9fa,0 0 15px #ae68ff}
+#plasmaResonanceRings{display:block;max-width:100%;width:480px;height:auto;margin:4px auto}
+#plasmaResonancePanel .resonanceFoot{color:#bac6da;font-size:10px}
+@media(prefers-reduced-motion:reduce){#plasmaResonancePanel{box-shadow:none}}
