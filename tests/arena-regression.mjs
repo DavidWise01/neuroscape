@@ -351,11 +351,39 @@ try{
  const attackTotal=density.attackBins.reduce((a,b)=>a+b,0);
  const returnTotal=density.recoveryBins.reduce((a,b)=>a+b,0);
  if(density.attackBins.length!==10||density.recoveryBins.length!==10||
-    attackTotal!==10||returnTotal!==6||
+    attackTotal!==10||returnTotal!==5||
     attackTotal!==density.actualAttacks||returnTotal!==density.actualReturns||
-    density.summary!=='10 ATTACKS · 6 RETURNS'||
+    density.summary!=='10 ATTACKS · 5 RETURNS'||
     density.ram.some(n=>n!==0)||density.slots.some(n=>n!==5))
    fail('Activity density invented RAM or lost event timestamps: '+JSON.stringify(density));
+ // v2.9.11 — glowing envelopes reflect only the retained source events.
+ // They must decay to zero after five seconds even when no new combat occurs.
+ const plasmaActive=await page.evaluate(()=>({
+   levels:[document.getElementById('attackEnvelopeLevel')?.textContent,
+     document.getElementById('recoveryEnvelopeLevel')?.textContent],
+   widths:[document.getElementById('attackEnvelopeFill')?.style.width,
+     document.getElementById('recoveryEnvelopeFill')?.style.width],
+   cardCounts:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length),
+   ram:[state.p.ram,state.e.ram]
+ }));
+ if(plasmaActive.levels.some(x=>!(parseInt(x,10)>0))||
+    plasmaActive.widths.some(x=>!(parseInt(x,10)>0))||
+    plasmaActive.cardCounts.some(n=>n!==5)||plasmaActive.ram.some(n=>n!==0))
+   fail('Reactive activity envelope did not reflect recorded events: '+JSON.stringify(plasmaActive));
+ await page.waitForTimeout(5400);
+ const plasmaQuiet=await page.evaluate(()=>({
+   levels:[document.getElementById('attackEnvelopeLevel')?.textContent,
+     document.getElementById('recoveryEnvelopeLevel')?.textContent],
+   widths:[document.getElementById('attackEnvelopeFill')?.style.width,
+     document.getElementById('recoveryEnvelopeFill')?.style.width],
+   count:[...document.querySelectorAll('#combatDensityAttack i,#combatDensityRecovery i')].reduce(
+     (sum,x)=>sum+Number(x.dataset.count),0),
+   timer:recoveryMonitorTimer!==null,
+   slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
+ }));
+ if(plasmaQuiet.levels.some(x=>x!=='0%')||plasmaQuiet.widths.some(x=>x!=='0%')||
+    plasmaQuiet.count!==0||plasmaQuiet.timer||plasmaQuiet.slots.some(n=>n!==5))
+   fail('Neon activity envelope failed to decay naturally: '+JSON.stringify(plasmaQuiet));
  await page.getByRole('button',{name:'Restart match'}).click();
  const historyReset=await page.evaluate(()=>({
    entries:document.querySelectorAll('#combatHistoryEvents li').length,
@@ -374,7 +402,7 @@ try{
  if(historyReset.entries!==0||historyReset.attacks!==0||
     historyReset.recoveries!==0||historyReset.slots.some(n=>n!==5))
    fail('Combat history persisted across match reset: '+JSON.stringify(historyReset));
- console.log('ACTIVITY DENSITY PASS: 10 attack events, six positive recovery sources, five-second window, clean reset');
+ console.log('ACTIVITY DENSITY PASS: 10 attack events, five retained positive recovery sources, five-second window, clean reset');
  console.log('BOUNDED COMBAT HISTORY PASS: latest eight of ten attacks, independent release identity, reset clean');
  console.log('MULTI-EVENT EXPIRY PASS: two independent attack sources, positive-return quiet markers, zero phantom expiry, reset clean');
  console.log('LINKED COMBAT TIMELINE PASS: attack 989964, 6 DMG, +3 RAM, zero bot, exact shared ID, settled/reset');
