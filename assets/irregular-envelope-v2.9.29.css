@@ -1,0 +1,13 @@
+/* v2.9.29 · isolated irregular timing envelope */
+#irregularEnvelopeLab{margin:13px 0;padding:13px;border:1px solid #66fae8;border-radius:11px;background:linear-gradient(135deg,#0e1a2d,#27123a);color:#effbff;font:11px ui-monospace,Consolas,monospace;box-shadow:0 0 22px #6bfde32d,inset 0 0 22px #ac68ff1b}
+#irregularEnvelopeLab .irregularHead{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+#irregularEnvelopeLab .irregularHead strong{color:#a3fff0;text-shadow:0 0 10px #6bfbed}
+#irregularEnvelopeCanvas{display:block;width:100%;height:210px;margin-top:10px;background:#0a1327;border:1px solid #616bb0;border-radius:7px}
+#irregularEnvelopeLab .irregularControls{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+#irregularEnvelopePeriod{padding:7px;border:1px solid #74eedd;border-radius:5px;background:#18364b;color:#dcfff6}
+#irregularEnvelopeLab .irregularLegend{display:flex;gap:17px;flex-wrap:wrap;margin:9px 0}
+#irregularEnvelopeLab .irregularLegend span:first-child{color:#ffb16f}
+#irregularEnvelopeLab .irregularLegend span:nth-child(2){color:#73ffe7}
+#irregularEnvelopeLab .irregularLegend span:nth-child(3){color:#d5b5ff}
+#irregularEnvelopeLab .irregularFoot{color:#c0c7df;font-size:10px}
+@media(prefers-reduced-motion:reduce){#irregularEnvelopeLab{box-shadow:none}}
