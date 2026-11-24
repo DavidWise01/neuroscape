@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.86 — Complete Visual Quiescence</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.87 — Real-Time Lifecycle Verification</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1577,6 +1577,12 @@ padding:10px 14px}
 #gameBoard .energyPathways .neonRecoveryReturn,
 #gameBoard .energyPathways .neonRecoveryCore,
 #gameBoard .energyPathways .neonRecoveryArrival{pointer-events:none!important}
+/* v2.8.87 — strictly presentation-only real-time animated cycle test.
+   No transform or animation state controls gameplay or fills. */
+#gameBoard .neonRecoveryReturn,#gameBoard .neonRecoveryCore,
+#gameBoard .neonRecoveryArrival,#gameBoard .neonRamReservoir,
+#gameBoard .neonRamCharge,#gameBoard .neonRamDischarge,
+#gameBoard .neonRamAfterglow{pointer-events:none!important}
 /* PERMANENT PLAYFIELD INVARIANT: NEVER SHRINK OR REMOVE CARD SPACE.
    Five square card stations per side, including empty and pre-init state.
    Card playfield outranks forecast, status, log and decorative panels. */
@@ -3299,6 +3305,9 @@ function routeBetween(a,b){
    12 cycles. This is a DOM safety bound, not evidence-ledger deletion or
    game-state pruning. Every cycle is identified independently. */
 const MAX_VISIBLE_RECOVERY_CYCLES=12;
+/* SVG pointer-events has SVG-specific hit-testing values; enforce presentation
+   safety directly on each recovery node regardless of author styles. */
+function makeRecoveryPointerSafe(node){node.style.setProperty('pointer-events','none','important');return node}
 function pruneRecoveryVisualCycles(sideKey){
  const side=document.querySelector('#gameBoard .side.'+(sideKey==='p'?'you':'opponent'));
  if(!side)return;
@@ -3326,6 +3335,7 @@ function drawEnergyPathways(snapshot){
    const total=positive.reduce((sum,seg)=>sum+seg.amount,0);
    if(total>0){
     const reservoir=document.createElement('span');
+    makeRecoveryPointerSafe(reservoir);
     const lifecycle=Number.isInteger(snapshot.impactSeq)?'attack:'+snapshot.impactSeq:'release:'+snapshot.seq;
     reservoir.className='neonRamReservoir';
     reservoir.setAttribute('aria-hidden','true');
@@ -3344,6 +3354,7 @@ function drawEnergyPathways(snapshot){
        It cannot mutate the RAM total, card slots, or turn sequencing. */
     const fill=$(key+'RamAvailable');
     const discharge=document.createElement('span');
+    makeRecoveryPointerSafe(discharge);
     discharge.className='neonRamDischarge';
     discharge.setAttribute('aria-hidden','true');
     discharge.dataset.lifecycleId=lifecycle;
@@ -3360,6 +3371,7 @@ function drawEnergyPathways(snapshot){
     /* The afterglow is a separate, self-expiring overlay attached to the
        existing positive release; never a game-state or meter-width write. */
     const afterglow=document.createElement('span');
+    makeRecoveryPointerSafe(afterglow);
     afterglow.className='neonRamAfterglow';
     afterglow.setAttribute('aria-hidden','true');
     afterglow.dataset.lifecycleId=lifecycle;
@@ -3387,6 +3399,7 @@ function drawEnergyPathways(snapshot){
     const ns='http://www.w3.org/2000/svg',curve=routeBetween(origin,dest);
     for(const cls of ['neonRecoveryReturn','neonRecoveryCore']){
      const bolt=document.createElementNS(ns,'path');
+    makeRecoveryPointerSafe(bolt);
      bolt.setAttribute('d',curve);
      bolt.setAttribute('pathLength','100');
      bolt.setAttribute('class',cls);
@@ -3401,6 +3414,7 @@ function drawEnergyPathways(snapshot){
      svg.append(bolt);
     }
     const arrival=document.createElementNS(ns,'circle');
+    makeRecoveryPointerSafe(arrival);
     arrival.setAttribute('cx',dest[0].toFixed(2));
     arrival.setAttribute('cy',dest[1].toFixed(2));
     arrival.setAttribute('r','13');
@@ -3419,6 +3433,7 @@ function drawEnergyPathways(snapshot){
     const track=$(key+'RamAvailable').parentElement;
     if(track){
      const charge=document.createElement('span');
+    makeRecoveryPointerSafe(charge);
      charge.className='neonRamCharge';
      const intensity=Math.min(1,Math.max(0,seg.amount)/8);
      charge.style.setProperty('--charge-strength',intensity.toFixed(3));
