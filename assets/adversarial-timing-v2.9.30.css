@@ -1,0 +1,13 @@
+/* v2.9.30 · bounded neon timing-adversary monitor */
+#adversarialTimingLab{margin:13px 0;padding:13px;border:1px solid #7affdf;border-radius:11px;background:linear-gradient(132deg,#101627,#27143c);color:#effdff;font:11px ui-monospace,Consolas,monospace;box-shadow:0 0 22px #8cf9e527,inset 0 0 19px #b56efa1d}
+#adversarialTimingLab .adversarialHead{display:flex;justify-content:space-between;flex-wrap:wrap;gap:11px;align-items:center}
+#adversarialTimingLab .adversarialHead strong{color:#a5ffee;text-shadow:0 0 11px #70ffdc}
+#adversarialTimingCanvas{display:block;width:100%;height:210px;margin-top:10px;background:#0a1429;border:1px solid #6960aa;border-radius:8px}
+#adversarialTimingLab .adversarialLegend{display:flex;gap:15px;flex-wrap:wrap;margin:9px 0}
+#adversarialTimingLab .adversarialLegend span:nth-child(1){color:#ffae71}
+#adversarialTimingLab .adversarialLegend span:nth-child(2){color:#77ffdd}
+#adversarialTimingLab .adversarialLegend span:nth-child(3){color:#d4abff}
+#adversarialTimingLab .adversarialControls{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0}
+#adversarialTimingLab select{border:1px solid #70ecdb;background:#19354c;color:#defff8;border-radius:6px;padding:7px}
+#adversarialTimingLab .adversarialFoot{font-size:10px;color:#bac8de}
+@media(prefers-reduced-motion:reduce){#adversarialTimingLab{box-shadow:none}}
