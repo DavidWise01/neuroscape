@@ -898,23 +898,63 @@ try{
    for(const d of result.destruction){
      if(d.ram>0)expected.set(d.side,(expected.get(d.side)||0)+d.ram);
    }
-   if(result.releases.length!==expected.size)
-     fail('Real destruction missing its authoritative release: '+JSON.stringify(result));
+   /* Destruction of a zero-cost card remains a legitimate zero-RAM
+      release in the engine. It must NOT create any energy photon. */
+   const expectedReleaseSides=new Set(result.destruction.map(x=>x.side));
+   if(result.releases.length!==expectedReleaseSides.size)
+     fail('Real destruction missing its authoritative release record: '+JSON.stringify(result));
    for(const release of result.releases){
      const expectedSlots=result.destruction.filter(x=>x.side===release.side&&x.ram>0)
        .map(x=>x.slot+':'+x.ram).sort();
      const actualSlots=release.slots.map(x=>x.slot+':'+x.amount).sort();
-     if(release.amount!==expected.get(release.side)||
+     if(release.amount!==(expected.get(release.side)||0)||
         expectedSlots.join(',')!==actualSlots.join(','))
        fail('Live RAM recovery diverged from destroyed card costs: '+JSON.stringify(result));
      const ray=result.visuals.filter(x=>x.cls?.includes('neonRecoveryReturn')&&x.side===release.side);
      const reservoir=result.visuals.find(x=>x.cls?.includes('neonRamReservoir')&&x.side===release.side);
+     if(release.amount===0){
+       if(ray.length||reservoir)
+         fail('Zero-cost destruction invented energy recovery: '+JSON.stringify(result));
+       continue;
+     }
      if(ray.length!==release.slots.length||!reservoir||
         +reservoir.amount!==release.amount||
         ray.some(x=>!release.slots.some(slot=>
           String(slot.slot)===x.slot&&String(slot.amount)===x.amount)))
        fail('Live recovery neon has missing or fabricated transfer: '+JSON.stringify(result));
    }
+ }
+ // v2.8.92 — close the real evidence chain at final expiration.
+ // Stop producing new actions; inspect only recovered visual cycles captured
+ // by the immutable attack/flow tuple. An older animation must self-expire.
+ const documented=matchAudit.destructions.flatMap(d=>d.releases.filter(r=>r.amount>0)
+   .map(r=>({attack:d.seq,flow:d.flowSeq,side:r.side,amount:r.amount,
+     slots:r.slots.map(x=>x.slot+':'+x.amount).sort()})));
+ // A bounded observation that sees no positive release is not considered
+ // proof of completed recovery.
+ if(documented.length){
+   const beforeExpire=await page.evaluate(cycles=>cycles.map(c=>({
+     attack:c.attack,flow:c.flow,side:c.side,
+     still:[...document.querySelectorAll('[data-cycle-id="attack:'+c.attack+
+       ':flow:'+c.flow+':'+c.side+'"]')].length
+   })),documented);
+   await page.waitForTimeout(5400);
+   const afterExpire=await page.evaluate(cycles=>({
+     remaining:cycles.map(c=>({
+       attack:c.attack,flow:c.flow,side:c.side,
+       nodes:document.querySelectorAll('[data-cycle-id="attack:'+c.attack+
+         ':flow:'+c.flow+':'+c.side+'"]').length
+     })),
+     slots:['p','e'].map(side=>document.querySelectorAll('#'+side+'Lanes>.slot').length)
+   }),documented);
+   if(afterExpire.remaining.some(x=>x.nodes!==0)||
+      afterExpire.slots.some(n=>n!==5))
+     fail('Real recovery lineage retained orphaned visual nodes: '+JSON.stringify({documented,beforeExpire,afterExpire}));
+   console.log('LIVE RECOVERY EXPIRATION PASS: '+JSON.stringify({
+     recoveredCycles:documented.length,retainedNodes:0,waitMs:5400
+   }));
+ }else{
+   console.log('LIVE RECOVERY EXPIRATION NOT OBSERVED: bounded match had no positive recovery');
  }
  console.log('LIVE DESTRUCTION RECONCILIATION: '+JSON.stringify({
    count:matchAudit.destructions.length,
