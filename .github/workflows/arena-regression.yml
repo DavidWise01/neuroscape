@@ -6,6 +6,7 @@ on:
       - index.html
       - tests/baseline-lock.mjs
       - tests/arena-regression.mjs
+      - docs/RECOVERY-BASELINE-v2.9.00.md
       - .github/workflows/arena-regression.yml
   workflow_dispatch:
 jobs:
