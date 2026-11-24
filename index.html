@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.08 — Multi-Event Expiration Timeline</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.09 — Bounded Combat History</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1645,6 +1645,18 @@ padding:10px 14px}
 .temporalRuler .rulerAttackExpiry{stroke:#ff9852;fill:none;stroke-width:2}
 .temporalRuler .rulerRecoveryExpiry{stroke:#c58dff;fill:none;stroke-width:2}
 .temporalRuler .rulerLabel{font:9px ui-monospace,Consolas,monospace;fill:#f3d5eb}
+.combatHistory{margin-top:10px;border:1px solid #9861ba;border-radius:7px;padding:9px;background:#120f21}
+.combatHistory>strong{font:10px ui-monospace,Consolas,monospace;color:#ffdcba;letter-spacing:.07em}
+.combatHistory ol{margin:8px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.combatHistory li{min-width:0;padding:7px 8px;border:1px solid #80559b;border-left:3px solid #ff995c;border-radius:6px;
+background:linear-gradient(110deg,#302138,#1d182b);font:10px/1.45 ui-monospace,Consolas,monospace;overflow-wrap:anywhere}
+.combatHistory li.bot{border-left-color:#bd82ff}
+.combatHistory li span{display:block;color:#cbb8d8}
+.combatHistory li b{color:#ffe1c1}
+.combatHistory li .combatHistoryRecovery{color:#ca9aff}
+.combatHistory li .combatHistoryExpiry{color:#ffa96e}
+@media(max-width:760px){.combatHistory ol{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.combatHistory ol{grid-template-columns:1fr}}
 .combatTimeline .rulerNote{grid-column:1/-1;font:9px ui-monospace,Consolas,monospace;color:#a99dbb}
 .combatTimeline .timelineDamage{color:#ffab71}
 .combatTimeline .timelineRecovery{color:#d4adff}
@@ -1663,7 +1675,7 @@ padding:10px 14px}
 .recoveryTelemetryLane.bot .recoveryWaveLevel{fill:#e3c7ff}
 @media(max-width:650px){.recoveryTelemetryGrid{grid-template-columns:1fr}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.9.08 · BONE WHITE ARENA / EVENT EXPIRATION CLOCK</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.9.09 · BONE WHITE ARENA / BOUNDED HISTORY STRIP</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText">STARTING ARCADE · FIVE SQUARES PER PLAYER</strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" data-arena-invariant="5x2-visible-square-card-slots" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes" aria-label="Five bot card squares"><div class="slot" data-slot="1"></div><div class="slot" data-slot="2"></div><div class="slot" data-slot="3"></div><div class="slot" data-slot="4"></div><div class="slot" data-slot="5"></div></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1683,6 +1695,10 @@ padding:10px 14px}
   <div class="combatTimeline" id="combatTimeline" aria-label="Attack and RAM recovery linked timeline">
     <strong>◈ CAUSE / RESPONSE · SHARED ATTACK ID</strong>
     <ol id="combatTimelineEvents"></ol>
+  </div>
+  <div class="combatHistory" id="combatHistory" aria-label="Eight latest source-linked combat event summaries">
+    <strong>⚡ COMBAT HISTORY · LATEST 8 · READ ONLY</strong>
+    <ol id="combatHistoryEvents"></ol>
   </div>
   <div class="recoveryTelemetryFooter" id="recoveryTelemetryStatus" aria-live="polite">OBSERVING · NO RECOVERY EVENTS IN THIS MATCH</div>
 </section>
@@ -2741,6 +2757,30 @@ function paintAttackWaves(now){
 }
 /* v2.9.06 — join observed channels ONLY on their exact attack ID.
    This panel is presentation, not another authoritative combat ledger. */
+/* v2.9.09 — bounded view into independently recorded monitor entries.
+   The history strip owns no engine state, never fabricates absence as zero. */
+function paintCombatHistory(now){
+ const list=$('combatHistoryEvents');if(!list)return;
+ list.replaceChildren(...attackMonitorEntries.slice(-RECOVERY_MONITOR_LIMIT).reverse().map(attack=>{
+  const seq=Number(attack.key.split(':')[1]);
+  const recovered=recoveryMonitorEntries.filter(x=>x.source.startsWith('attack:'+seq+':flow:'));
+  const amount=recovered.reduce((sum,x)=>sum+x.amount,0);
+  const expired=now-attack.born>=ATTACK_MONITOR_END_MS;
+  const done=recovered.filter(x=>x.amount>0&&x.status==='QUIET'&&Number.isFinite(x.quietAt)).length;
+  const li=document.createElement('li');li.className=attack.side==='e'?'bot':'player';
+  li.dataset.attackId=String(seq);
+  li.dataset.recoveryCount=String(recovered.length);
+  li.dataset.expiredPositive=String(done);
+  const title=document.createElement('b');title.textContent='#'+seq+' · '+attack.side.toUpperCase();
+  const damage=document.createElement('span');damage.textContent=attack.damage+' DAMAGE';
+  const ram=document.createElement('span');ram.className='combatHistoryRecovery';
+  ram.textContent=recovered.length?'+'+amount+' RAM · '+recovered.length+' RELEASE SOURCES':'RECOVERY NOT OBSERVED';
+  const expiry=document.createElement('span');expiry.className='combatHistoryExpiry';
+  expiry.textContent='ATTACK '+(expired?'EXPIRED':'ACTIVE')+
+    ' · RAM '+(recovered.length?done+'/'+recovered.filter(x=>x.amount>0).length+' QUIET':'UNOBSERVED');
+  li.append(title,damage,ram,expiry);return li;
+ }));
+}
 function paintCombatTimeline(){
  const now=performance.now();
  const list=$('combatTimelineEvents');if(!list)return;
@@ -2853,6 +2893,7 @@ function paintRecoveryTelemetry(){
  paintRecoveryWaves(now);
  paintAttackWaves(now);
  paintCombatTimeline();
+ paintCombatHistory(now);
  const live=recoveryMonitorEntries.filter(x=>x.status==='RETURNING'||x.status==='AFTERGLOW').length;
  const all=recoveryMonitorEntries.length;
  const footer=$('recoveryTelemetryStatus');
