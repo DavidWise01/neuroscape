@@ -464,7 +464,9 @@ try{
      newestGlowIntact:!!newestGlow?.isConnected,
      widthBefore:before,widthAfter:fill.style.width,
      cardSlots:document.querySelectorAll('#pLanes > .slot').length,
-     latestCycle:ids.includes(newest),invalidPointer:nodes.some(x=>getComputedStyle(x).pointerEvents!=='none')};
+     latestCycle:ids.includes(newest),invalidPointer:nodes.some(x=>getComputedStyle(x).pointerEvents!=='none'),
+     pointerOffenders:nodes.filter(x=>getComputedStyle(x).pointerEvents!=='none')
+       .slice(0,6).map(x=>({tag:x.tagName,cls:x.getAttribute('class'),pointer:getComputedStyle(x).pointerEvents}))};
  });
  if(rapid.cycleCount>rapid.limit||rapid.cycleCount!==12||rapid.latestNodes<5||
     rapid.firstOlder!==0||!rapid.oldGlowGone||!rapid.newestGlowIntact||
@@ -492,6 +494,47 @@ try{
  if(quiescent.blocked||quiescent.remaining||!quiescent.ramUnchanged||
     quiescent.playerSlots!==5||quiescent.botSlots!==5)
    fail('Recovery visuals failed full quiescence: '+JSON.stringify(quiescent));
+ // v2.8.87: real elapsed Chromium animation playback, not simulated
+ // animationend. The new recovery must persist initially, then self-expire.
+ const timed=await page.evaluate(()=>{
+   const before=['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width);
+   const start=performance.now();
+   drawEnergyPathways({seq:989870,impactSeq:989869,events:[
+     {side:'p',type:'release',amount:3,slots:[{slot:2,amount:3}]}]});
+   const ids=['neonRecoveryReturn','neonRecoveryCore','neonRecoveryArrival',
+     'neonRamReservoir','neonRamCharge','neonRamDischarge','neonRamAfterglow'];
+   const nodes=ids.map(cls=>document.querySelector('.'+cls+'[data-flow-seq="989870"]'));
+   const metadata=nodes.map((x,i)=>({cls:ids[i],exists:!!x,
+     delay:x?getComputedStyle(x).animationDelay:null,
+     duration:x?getComputedStyle(x).animationDuration:null,
+     pointer:x?getComputedStyle(x).pointerEvents:null,
+     id:x?.dataset.lifecycleId,cycle:x?.dataset.cycleId}));
+   return {start,metadata,before};
+ });
+ if(timed.metadata.some(x=>!x.exists||x.pointer!=='none'||x.id!=='attack:989869'||
+      x.cycle!=='attack:989869:flow:989870:p'))
+    fail('Real-time cycle failed to instantiate safely: '+JSON.stringify(timed));
+ await page.waitForTimeout(1100);
+ const mid=await page.evaluate(()=>({
+   elapsed:performance.now(),
+   active:document.querySelectorAll('[data-flow-seq="989870"]').length,
+   afterglow:!!document.querySelector('.neonRamAfterglow[data-flow-seq="989870"]')
+ }));
+ if(!mid.active||!mid.afterglow)
+   fail('Real-time recovery disappeared before its delayed afterglow: '+JSON.stringify(mid));
+ await page.waitForTimeout(4200);
+ const completed=await page.evaluate(()=>({
+   now:performance.now(),
+   remaining:document.querySelectorAll('[data-flow-seq="989870"]').length,
+   widths:['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width),
+   slots:['p','e'].map(side=>document.querySelectorAll('#'+side+'Lanes>.slot').length)
+ }));
+ // The normal returnRoute path lacks the flow metadata; verify here only
+ // the provenance-linked recovery visual sequence and its completion.
+ if(completed.remaining||completed.widths.join(',')!==timed.before.join(',')||
+    completed.slots.some(x=>x!==5)||completed.now-timed.start<4800)
+   fail('Real elapsed animation did not reach quiescence: '+JSON.stringify({timed,mid,completed}));
+ console.log('REAL-TIME LIFECYCLE PASS: positive RAM transfer, delayed visual stages, natural cleanup after 5.3s');
  console.log('QUIESCENCE PASS: all recovery effects expired independently, meters and ten squares retained');
  console.log('RAPID CLEANUP PASS: 30 releases bounded to 12 visual cycles, newest kept, RAM unchanged');
  console.log('OVERLAP PASS: two independent recovery cycles, old cleanup cannot erase new cycle');
