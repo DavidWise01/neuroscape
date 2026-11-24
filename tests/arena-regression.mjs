@@ -464,8 +464,8 @@ try{
      newestGlowIntact:!!newestGlow?.isConnected,
      widthBefore:before,widthAfter:fill.style.width,
      cardSlots:document.querySelectorAll('#pLanes > .slot').length,
-     latestCycle:ids.includes(newest),invalidPointer:nodes.some(x=>getComputedStyle(x).pointerEvents!=='none'),
-     pointerOffenders:nodes.filter(x=>getComputedStyle(x).pointerEvents!=='none')
+     latestCycle:ids.includes(newest),invalidPointer:nodes.some(x=>x.isConnected&&getComputedStyle(x).pointerEvents!=='none'),
+     pointerOffenders:nodes.filter(x=>x.isConnected&&getComputedStyle(x).pointerEvents!=='none')
        .slice(0,6).map(x=>({tag:x.tagName,cls:x.getAttribute('class'),pointer:getComputedStyle(x).pointerEvents}))};
  });
  if(rapid.cycleCount>rapid.limit||rapid.cycleCount!==12||rapid.latestNodes<5||
@@ -534,6 +534,40 @@ try{
  if(completed.remaining||completed.widths.join(',')!==timed.before.join(',')||
     completed.slots.some(x=>x!==5)||completed.now-timed.start<4800)
    fail('Real elapsed animation did not reach quiescence: '+JSON.stringify({timed,mid,completed}));
+ // v2.8.88 — two more real elapsed animation cycles, including a
+ // repeat on the same meter. No forced animationend events, only Chromium
+ // playback, event-scoped DOM cleanup, and a stable card/RAM snapshot.
+ const repeated=[];
+ for(const [seq,impact,side,slot,amount] of [
+   [989880,989879,'p',0,2],[989881,989880,'e',3,4]
+ ]){
+   const result=await page.evaluate(({seq,impact,side,slot,amount})=>{
+     const start=performance.now();
+     const widths=['p','e'].map(k=>document.getElementById(k+'RamAvailable').style.width);
+     drawEnergyPathways({seq,impactSeq:impact,events:[
+       {side,type:'release',amount,slots:[{slot,amount}]}]});
+     const nodes=[...document.querySelectorAll('[data-flow-seq="'+seq+'"]')];
+     return {start,widths,count:nodes.length,
+       cycles:[...new Set(nodes.map(x=>x.dataset.cycleId).filter(Boolean))],
+       pointerSafe:nodes.every(x=>getComputedStyle(x).pointerEvents==='none')};
+   },{seq,impact,side,slot,amount});
+   if(result.count<7||!result.pointerSafe||
+      result.cycles.join(',')!=='attack:'+impact+':flow:'+seq+':'+side)
+     fail('Repeated recovery did not start safely: '+JSON.stringify({seq,result}));
+   await page.waitForTimeout(5100);
+   const finished=await page.evaluate(seq=>({
+     now:performance.now(),
+     remaining:document.querySelectorAll('[data-flow-seq="'+seq+'"]').length,
+     widths:['p','e'].map(k=>document.getElementById(k+'RamAvailable').style.width),
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
+   }),seq);
+   if(finished.remaining||finished.widths.join(',')!==result.widths.join(',')||
+      finished.slots.some(x=>x!==5)||finished.now-result.start<4800)
+     fail('Repeated real-time recovery left stale visuals: '+JSON.stringify({seq,result,finished}));
+   repeated.push({seq,side,amount,elapsedMs:Math.round(finished.now-result.start),
+     remaining:finished.remaining});
+ }
+ console.log('REPEATED LIFECYCLE PASS: '+JSON.stringify(repeated));
  console.log('REAL-TIME LIFECYCLE PASS: positive RAM transfer, delayed visual stages, natural cleanup after 5.3s');
  console.log('QUIESCENCE PASS: all recovery effects expired independently, meters and ten squares retained');
  console.log('RAPID CLEANUP PASS: 30 releases bounded to 12 visual cycles, newest kept, RAM unchanged');
