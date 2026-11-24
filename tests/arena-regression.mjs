@@ -149,7 +149,7 @@ try{
    timer:recoveryMonitorTimer!==null
  }));
  if(attackQuiet.p!=='0,44 240,44'||attackQuiet.e!=='0,44 240,44'||
-    attackQuiet.pLabel!=='0 DMG'||attackQuiet.timer)
+    attackQuiet.pLabel!=='0 DMG'||!attackQuiet.timer)
    fail('Attack waveform did not decay to quiet: '+JSON.stringify(attackQuiet));
  await page.getByRole('button',{name:'Restart match'}).click();
  const attackReset=await page.evaluate(()=>({
@@ -370,6 +370,22 @@ try{
     plasmaActive.widths.some(x=>!(parseInt(x,10)>0))||
     plasmaActive.cardCounts.some(n=>n!==5)||plasmaActive.ram.some(n=>n!==0))
    fail('Reactive activity envelope did not reflect recorded events: '+JSON.stringify(plasmaActive));
+ // v2.9.12 — both lightning channels are visual-only and source-driven.
+ const lightningActive=await page.evaluate(()=>({
+   nodes:['attackLightning','recoveryLightning'].map(id=>{
+     const svg=document.getElementById(id),bolt=svg?.querySelector('.plasmaBolt');
+     return {active:svg?.dataset.active,level:Number(bolt?.dataset.level),
+       path:bolt?.getAttribute('points'),height:svg?.getBoundingClientRect().height};
+   }),
+   cards:['p','e'].map(side=>document.querySelectorAll('#'+side+'Lanes>.slot').length),
+   ram:[state.p.ram,state.e.ram],
+   murals:document.querySelectorAll('#neuroscapeArt,#signalFoundry').length
+ }));
+ if(lightningActive.nodes.some(x=>x.active!=='true'||x.level<=0||
+      !x.path||x.path.split(' ').length!==17||x.height<=0)||
+    lightningActive.cards.some(n=>n!==5)||lightningActive.ram.some(n=>n!==0)||
+    lightningActive.murals!==2)
+   fail('Plasma lightning absent or changed arena: '+JSON.stringify(lightningActive));
  await page.waitForTimeout(5400);
  const plasmaQuiet=await page.evaluate(()=>({
    levels:[document.getElementById('attackEnvelopeLevel')?.textContent,
@@ -381,6 +397,13 @@ try{
    timer:recoveryMonitorTimer!==null,
    slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
  }));
+ const lightningQuiet=await page.evaluate(()=>['attackLightning','recoveryLightning'].map(id=>{
+   const svg=document.getElementById(id),bolt=svg?.querySelector('.plasmaBolt');
+   return {active:svg?.dataset.active,level:bolt?.dataset.level,
+      path:bolt?.getAttribute('points')};
+ }));
+ if(lightningQuiet.some(x=>x.active!=='false'||x.level!=='0'||x.path!==''))
+   fail('Lightning remained after five-second source silence: '+JSON.stringify(lightningQuiet));
  if(plasmaQuiet.levels.some(x=>x!=='0%')||plasmaQuiet.widths.some(x=>x!=='0%')||
     plasmaQuiet.count!==0||plasmaQuiet.timer||plasmaQuiet.slots.some(n=>n!==5))
    fail('Neon activity envelope failed to decay naturally: '+JSON.stringify(plasmaQuiet));
@@ -402,6 +425,7 @@ try{
  if(historyReset.entries!==0||historyReset.attacks!==0||
     historyReset.recoveries!==0||historyReset.slots.some(n=>n!==5))
    fail('Combat history persisted across match reset: '+JSON.stringify(historyReset));
+ console.log('PLASMA LIGHTNING PASS: independent source-driven bolts, natural extinguish and protected arena');
  console.log('ACTIVITY DENSITY PASS: 10 attack events, five retained positive recovery sources, five-second window, clean reset');
  console.log('BOUNDED COMBAT HISTORY PASS: latest eight of ten attacks, independent release identity, reset clean');
  console.log('MULTI-EVENT EXPIRY PASS: two independent attack sources, positive-return quiet markers, zero phantom expiry, reset clean');
