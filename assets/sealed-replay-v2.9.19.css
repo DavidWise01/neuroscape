@@ -1,0 +1,11 @@
+/* v2.9.19 · outside immutable 5x2 arena */
+#sealedReplayAudit{margin:12px 0;padding:12px;border:1px solid #6aefca;border-radius:10px;background:linear-gradient(140deg,#101a27,#23142c);color:#ebfaff;font:11px ui-monospace,Consolas,monospace;box-shadow:0 0 20px #3af3cc22}
+#sealedReplayAudit .replayHead{display:flex;justify-content:space-between;gap:9px;flex-wrap:wrap}
+#sealedReplayAudit .replayHead strong{color:#9effdc;text-shadow:0 0 8px #3af3cc}
+#sealedReplayAudit .replayControls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+#sealedReplayAudit button,#sealedReplayAudit label{border:1px solid #7bdac5;background:#193e47;border-radius:5px;padding:7px;color:#ddfff6;cursor:pointer}
+#sealedReplayFile{max-width:180px}
+#sealedReplayRows{padding:0;list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:6px}
+#sealedReplayRows li{display:grid;gap:3px;padding:8px;border-left:3px solid #73efd4;background:#1b2940;overflow-wrap:anywhere}
+#sealedReplayRows small,#sealedReplayAudit .replayCaveat{color:#bdc6dc}
+@media(prefers-reduced-motion:reduce){#sealedReplayAudit{box-shadow:none}}
