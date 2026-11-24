@@ -161,6 +161,56 @@ try{
  if(attackReset.damageEntries||attackReset.ramEntries||
     attackReset.p!=='0,44 240,44'||attackReset.playerSlots!==5||attackReset.botSlots!==5)
    fail('Attack channel leaked across match reset: '+JSON.stringify(attackReset));
+ // v2.9.06 — same observed attack has independent damage and RAM sides.
+ // A joined display must not alter either authoritative meter or board.
+ await page.evaluate(()=>{
+   lastImpact={from:'p',to:'e',source:0,target:1,kind:'blocked',
+     damage:6,retaliation:2,seq:989964};
+   lastRamFlow={seq:989965,impactSeq:989964,events:[
+     {side:'p',type:'release',amount:3,slots:[{slot:0,amount:3}]},
+     {side:'e',type:'release',amount:0,slots:[]}
+   ]};
+   schedulePathways();
+ });
+ await page.waitForTimeout(220);
+ const joined=await page.evaluate(()=>({
+   rows:[...document.querySelectorAll('#combatTimelineEvents li')].map(x=>x.textContent),
+   damage:attackMonitorEntries.map(x=>({key:x.key,amount:x.damage})),
+   recovery:recoveryMonitorEntries.map(x=>({source:x.source,amount:x.amount})),
+   playerAttack:document.querySelector('#attackWaveP .attackWaveLevel')?.textContent,
+   playerRecovery:document.querySelector('#recoveryWaveP .recoveryWaveLevel')?.textContent,
+   botRecovery:document.querySelector('#recoveryWaveE .recoveryWaveLevel')?.textContent,
+   ram:[state.p.ram,state.e.ram],actions:state.actions,
+   slots:['p','e'].map(side=>document.querySelectorAll('#'+side+'Lanes>.slot').length)
+ }));
+ if(joined.rows.length!==1||!joined.rows[0].includes('ATTACK 989964')||
+    !joined.rows[0].includes('6 DMG')||!joined.rows[0].includes('+3 RAM')||
+    !joined.rows[0].includes('E:ZERO · NO ENERGY')||
+    !/Δ\\d+ms/.test(joined.rows[0])||
+    joined.damage.length!==1||joined.recovery.length!==2||
+    joined.playerAttack!=='6 DMG'||joined.playerRecovery!=='3 RAM ACTIVE'||
+    joined.botRecovery!=='0 RAM'||joined.ram.some(n=>n!==0)||
+    joined.actions!==1||joined.slots.some(n=>n!==5))
+   fail('Linked combat timeline crossed independent source channels: '+JSON.stringify(joined));
+ await page.waitForTimeout(5450);
+ const settledJoin=await page.evaluate(()=>({
+   rows:[...document.querySelectorAll('#combatTimelineEvents li')].map(x=>x.textContent),
+   attack:document.querySelector('#attackWaveP .attackWaveLevel')?.textContent,
+   recovery:document.querySelector('#recoveryWaveP .recoveryWaveLevel')?.textContent
+ }));
+ if(settledJoin.rows.length!==1||!settledJoin.rows[0].includes('P:QUIET')||
+    settledJoin.attack!=='0 DMG'||settledJoin.recovery!=='0 RAM')
+   fail('Linked combat timeline did not settle independently: '+JSON.stringify(settledJoin));
+ await page.getByRole('button',{name:'Restart match'}).click();
+ const joinedReset=await page.evaluate(()=>({
+   rows:document.querySelectorAll('#combatTimelineEvents li').length,
+   attacks:attackMonitorEntries.length,recoveries:recoveryMonitorEntries.length,
+   cards:['p','e'].map(side=>document.querySelectorAll('#'+side+'Lanes>.slot').length)
+ }));
+ if(joinedReset.rows||joinedReset.attacks||joinedReset.recoveries||
+    joinedReset.cards.some(n=>n!==5))
+   fail('Linked combat timeline leaked across match boundary: '+JSON.stringify(joinedReset));
+ console.log('LINKED COMBAT TIMELINE PASS: attack 989964, 6 DMG, +3 RAM, zero bot, exact shared ID, settled/reset');
  console.log('DUAL WAVEFORM PASS: source-bound attack damage independent of RAM refund, decay and reset clean');
  console.log('RECOVERY WAVEFORM PASS: player active orange trace, zero-cost bot quiet, both settle to zero');
  console.log('LIVE RECOVERY TELEMETRY PASS: engine-sourced source/amount/expiration, zero-return and reset isolation');
