@@ -64,6 +64,21 @@ try{
    telemetryActive.slots.some(n=>n!==5))
    fail('Recovery monitor changed gameplay or claimed fixture as live: '+
      JSON.stringify({telemetry,telemetryActive}));
+ // v2.9.04 — waveform must derive only from current-match source data.
+ const waveLive=await page.evaluate(()=>({
+   svg:['recoveryWaveP','recoveryWaveE'].map(id=>{
+     const el=document.getElementById(id);
+     return {id,trace:el?.querySelector('.recoveryWaveTrace')?.getAttribute('points'),
+       text:el?.querySelector('.recoveryWaveLevel')?.textContent};
+   }),
+   widths:['p','e'].map(k=>document.getElementById(k+'RamAvailable').style.width)
+ }));
+ const [playerWave,botWave]=waveLive.svg;
+ if(!playerWave?.trace||playerWave.trace==='0,44 240,44'||
+    !playerWave.text.includes('3 RAM ACTIVE')||
+    botWave?.trace!=='0,44 240,44'||botWave.text!=='0 RAM'||
+    waveLive.widths.some(x=>x!=='0%'))
+   fail('Recovery waveform is fabricated or mutated real RAM: '+JSON.stringify(waveLive));
  await page.waitForTimeout(5450);
  const telemetryExpired=await page.evaluate(()=>({
    statuses:recoveryMonitorEntries.map(x=>({side:x.side,status:x.status})),
@@ -71,6 +86,12 @@ try{
    activeNodes:document.querySelectorAll('[data-cycle-id="attack:989900:flow:989903:p"]').length,
    rows:document.querySelectorAll('#recoveryTelemetry li').length
  }));
+ const waveQuiet=await page.evaluate(()=>['recoveryWaveP','recoveryWaveE'].map(id=>({
+   trace:document.getElementById(id)?.querySelector('.recoveryWaveTrace')?.getAttribute('points'),
+   text:document.getElementById(id)?.querySelector('.recoveryWaveLevel')?.textContent
+ })));
+ if(waveQuiet.some(x=>x.trace!=='0,44 240,44'||x.text!=='0 RAM'))
+   fail('Recovery oscilloscope did not settle to zero: '+JSON.stringify(waveQuiet));
  if(telemetryExpired.activeNodes!==0||telemetryExpired.timer||
    telemetryExpired.rows!==2||
    telemetryExpired.statuses.some(x=>x.side==='p'?x.status!=='QUIET':x.status!=='ZERO · NO ENERGY'))
@@ -83,6 +104,7 @@ try{
  }));
  if(telemetryReset.rows||telemetryReset.count||telemetryReset.slots.some(n=>n!==5))
    fail('Recovery telemetry leaked into new match: '+JSON.stringify(telemetryReset));
+ console.log('RECOVERY WAVEFORM PASS: player active orange trace, zero-cost bot quiet, both settle to zero');
  console.log('LIVE RECOVERY TELEMETRY PASS: engine-sourced source/amount/expiration, zero-return and reset isolation');
  // v2.8.98: interrupt a visible recovery on restart, then again on
  // mode change. The old match cannot reintroduce effects on queued frames.
