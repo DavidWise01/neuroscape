@@ -740,6 +740,53 @@ try{
     retaliationConservation.widths.join(',')!==retaliationConservation.after.join(',')||
     retaliationConservation.lanes.some(x=>x!==5))
    fail('Reciprocal knockout disrupted RAM ownership or cards: '+JSON.stringify(retaliationConservation));
+ // v2.8.96 — a reciprocal knockout can contain one zero-cost card.
+ // Both directions are tested; zero-side releases must emit no recovered
+ // photon, reservoir, charge, discharge or afterglow.
+ const mixedRetaliation=await page.evaluate(()=>{
+   const before=['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width);
+   const scenarios=[
+     {seq:989960,impact:989959,positive:'p',zero:'e',slot:0,amount:2},
+     {seq:989961,impact:989960,positive:'e',zero:'p',slot:3,amount:4}
+   ];
+   const results=scenarios.map(test=>{
+     const release=side=>side===test.positive?
+       {side,type:'release',amount:test.amount,slots:[{slot:test.slot,amount:test.amount}]}:
+       {side,type:'release',amount:0,slots:[]};
+     drawEnergyPathways({seq:test.seq,impactSeq:test.impact,
+       events:[release('p'),release('e')]});
+     const sides=['p','e'].map(side=>{
+       const cycle='attack:'+test.impact+':flow:'+test.seq+':'+side;
+       const nodes=[...document.querySelectorAll('[data-cycle-id="'+cycle+'"]')];
+       const types=['neonRecoveryReturn','neonRecoveryCore','neonRecoveryArrival',
+         'neonRamCharge','neonRamReservoir','neonRamDischarge','neonRamAfterglow'];
+       const counts=Object.fromEntries(types.map(cls=>[cls,
+         nodes.filter(node=>node.classList.contains(cls)).length]));
+       const reservoir=nodes.find(node=>node.classList.contains('neonRamReservoir'));
+       return {side,cycle,counts,total:reservoir?.dataset.returnedRam||null,
+         transfers:reservoir?.dataset.transferIds||null,
+         pointerSafe:nodes.every(node=>getComputedStyle(node).pointerEvents==='none')};
+     });
+     return {...test,sides};
+   });
+   return {results,before,
+     after:['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width),
+     lanes:['p','e'].map(side=>document.querySelectorAll('#'+side+'Lanes>.slot').length)};
+ });
+ for(const scenario of mixedRetaliation.results){
+   const pos=scenario.sides.find(row=>row.side===scenario.positive);
+   const zero=scenario.sides.find(row=>row.side===scenario.zero);
+   if(!pos||!zero||!pos.pointerSafe||!zero.pointerSafe||
+      pos.total!==String(scenario.amount)||
+      pos.transfers!=='attack:'+scenario.impact+':'+scenario.positive+':'+scenario.slot||
+      Object.values(pos.counts).some(n=>n!==1)||
+      Object.values(zero.counts).some(n=>n!==0))
+     fail('Zero-cost reciprocal retaliation generated phantom energy: '+JSON.stringify(mixedRetaliation));
+ }
+ if(mixedRetaliation.before.join(',')!==mixedRetaliation.after.join(',')||
+    mixedRetaliation.lanes.some(n=>n!==5))
+   fail('Zero-cost retaliation modified RAM meter or card space: '+JSON.stringify(mixedRetaliation));
+ console.log('ZERO-COST RETALIATION PASS: reciprocal +2/0 and 0/+4, no invented photons');
  console.log('RETALIATION CONSERVATION PASS: attacker +2, defender +4, independent neon cycles and no meter mutation');
  console.log('MULTI-CARD CONSERVATION PASS: five destroyed slots, four positive packets, two pooled reservoirs, zero phantom RAM');
  console.log('NEON RESERVOIR PASS: pooled positive releases, both sides, no RAM mutation');
@@ -1124,6 +1171,25 @@ try{
  console.log('LIVE RECIPROCAL DESTRUCTION: '+JSON.stringify({
    attacks:reciprocal.length,
    status:reciprocal.length?'OBSERVED_AND_RECONCILED':'NOT_OBSERVED_IN_BOUNDED_MATCH'
+ }));
+ // Report live zero-cost reciprocal attacks separately from synthetic
+ // scenarios. If not encountered, do not claim live zero-cost coverage.
+ const liveMixed=reciprocal.filter(entry=>
+   entry.destruction.some(x=>x.ram===0)&&entry.destruction.some(x=>x.ram>0));
+ for(const entry of liveMixed){
+   for(const side of ['p','e']){
+     const expected=entry.destruction.filter(x=>x.side===side).reduce((n,x)=>n+x.ram,0);
+     const release=entry.releases.find(x=>x.side===side);
+     const reservoirs=entry.visuals.filter(x=>x.side===side&&
+       x.cls?.includes('neonRamReservoir'));
+     if(!release||release.amount!==expected||
+        (expected===0&&reservoirs.length!==0)||
+        (expected>0&&(reservoirs.length!==1||+reservoirs[0].amount!==expected)))
+       fail('Live zero-cost retaliation violated independent recovery: '+JSON.stringify(entry));
+   }
+ }
+ console.log('LIVE ZERO-COST RECIPROCAL: '+JSON.stringify({
+   attacks:liveMixed.length,status:liveMixed.length?'OBSERVED':'NOT_OBSERVED_IN_BOUNDED_MATCH'
  }));
  // v2.8.92 — close the real evidence chain at final expiration.
  // Stop producing new actions; inspect only recovered visual cycles captured
