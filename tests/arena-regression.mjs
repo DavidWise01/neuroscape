@@ -25,6 +25,65 @@ try{
   if(list.some(x=>x.width<70||x.height<70||x.visible!=='visible'||x.display==='none'))fail(side+' card squares have collapsed');
  }
  if(initial.hand<5)fail('Player hand not rendered');
+ // v2.9.03 — only the engine's scheduled render may create telemetry.
+ // Direct test renderer calls are visual-only, not historical evidence.
+ const telemetry=await page.evaluate(()=>{
+   const initial={
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length),
+     ram:[state.p.ram,state.e.ram],actions:state.actions,
+     count:document.querySelectorAll('#recoveryTelemetry li').length
+   };
+   drawEnergyPathways({seq:989902,impactSeq:989901,
+     events:[{side:'p',type:'release',amount:2,slots:[{slot:1,amount:2}]}]});
+   const visualOnlyCount=document.querySelectorAll('#recoveryTelemetry li').length;
+   lastRamFlow={seq:989903,impactSeq:989900,events:[
+     {side:'p',type:'release',amount:3,slots:[{slot:2,amount:3}]},
+     {side:'e',type:'release',amount:0,slots:[]}
+   ]};
+   schedulePathways();
+   return {initial,visualOnlyCount};
+ });
+ await page.waitForTimeout(135);
+ const telemetryActive=await page.evaluate(()=>({
+   player:document.getElementById('recoveryTelemetryP')?.textContent||'',
+   bot:document.getElementById('recoveryTelemetryE')?.textContent||'',
+   rows:document.querySelectorAll('#recoveryTelemetry li').length,
+   ledger:recoveryMonitorEntries.map(x=>({source:x.source,amount:x.amount,
+     side:x.side,status:x.status})),
+   ram:[state.p.ram,state.e.ram],actions:state.actions,
+   slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
+ }));
+ if(telemetry.initial.count!==0||telemetry.visualOnlyCount!==0||
+   telemetryActive.rows!==2||
+   !telemetryActive.player.includes('attack:989900:flow:989903:p')||
+   !telemetryActive.bot.includes('ZERO · NO ENERGY')||
+   telemetryActive.ledger.some(x=>x.source.includes('989901'))||
+   !telemetryActive.ledger.some(x=>x.side==='p'&&x.amount===3)||
+   !telemetryActive.ledger.some(x=>x.side==='e'&&x.amount===0)||
+   telemetryActive.ram.some(n=>n!==0)||telemetryActive.actions!==1||
+   telemetryActive.slots.some(n=>n!==5))
+   fail('Recovery monitor changed gameplay or claimed fixture as live: '+
+     JSON.stringify({telemetry,telemetryActive}));
+ await page.waitForTimeout(5450);
+ const telemetryExpired=await page.evaluate(()=>({
+   statuses:recoveryMonitorEntries.map(x=>({side:x.side,status:x.status})),
+   timer:recoveryMonitorTimer!==null,
+   activeNodes:document.querySelectorAll('[data-cycle-id="attack:989900:flow:989903:p"]').length,
+   rows:document.querySelectorAll('#recoveryTelemetry li').length
+ }));
+ if(telemetryExpired.activeNodes!==0||telemetryExpired.timer||
+   telemetryExpired.rows!==2||
+   telemetryExpired.statuses.some(x=>x.side==='p'?x.status!=='QUIET':x.status!=='ZERO · NO ENERGY'))
+   fail('Recovery monitor failed natural expiration: '+JSON.stringify(telemetryExpired));
+ await page.getByRole('button',{name:'Restart match'}).click();
+ const telemetryReset=await page.evaluate(()=>({
+   rows:document.querySelectorAll('#recoveryTelemetry li').length,
+   count:recoveryMonitorEntries.length,
+   slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
+ }));
+ if(telemetryReset.rows||telemetryReset.count||telemetryReset.slots.some(n=>n!==5))
+   fail('Recovery telemetry leaked into new match: '+JSON.stringify(telemetryReset));
+ console.log('LIVE RECOVERY TELEMETRY PASS: engine-sourced source/amount/expiration, zero-return and reset isolation');
  // v2.8.98: interrupt a visible recovery on restart, then again on
  // mode change. The old match cannot reintroduce effects on queued frames.
  const boundary=await page.evaluate(()=>{
