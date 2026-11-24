@@ -19,6 +19,29 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.19 — read-only replay may reject bad lineage, never mutate gameplay.
+ const replayInitial=await page.evaluate(async()=>{
+   const view=()=>({turn:state.turn,actions:state.actions,
+     ram:[state.p.ram,state.e.ram],slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=view(),monitor=window.neuroscapeSealedReplay?.snapshot();
+   let rejected=false,reason='';
+   try{
+     await window.neuroscapeSealedReplay.verify({
+       schema:'neuroscape-temporal-provenance-1',match:'1',sealedCount:1,
+       evicted:0,durable:false,causality:'not-proven',records:[{
+         sequence:1,match:'2',kind:'attack',source:'attack:100:p',
+         sealReason:'QUIET OBSERVED',phases:[]}]
+     });
+   }catch(e){rejected=true;reason=e.message}
+   return {before,after:view(),monitor,rejected,reason,
+     panel:!!document.getElementById('sealedReplayAudit')};
+ });
+ if(!replayInitial.panel||!replayInitial.monitor||
+    replayInitial.monitor.loaded||replayInitial.monitor.replayedToEngine||
+    !replayInitial.rejected||!replayInitial.reason.includes('CROSS-MATCH')||
+    JSON.stringify(replayInitial.before)!==JSON.stringify(replayInitial.after))
+   fail('Replay integrity or gameplay isolation violated: '+JSON.stringify(replayInitial));
+
  // v2.9.18 — empty observation cannot generate any sealed historical record.
  const provenanceInitial=await page.evaluate(()=>{
    const before={turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
