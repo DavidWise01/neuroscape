@@ -19,6 +19,21 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.21 — no plasma without observed source activity; 32-edge bound.
+ const plasmaStart=await page.evaluate(()=>{
+   const before={ram:[state.p.ram,state.e.ram],turn:state.turn,actions:state.actions,
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)};
+   const t=window.neuroscapeTesseract?.snapshot();
+   const after={ram:[state.p.ram,state.e.ram],turn:state.turn,actions:state.actions,
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)};
+   return {before,after,t};
+ });
+ if(!plasmaStart.t||plasmaStart.t.plasmaEdgeLimit!==32||
+    plasmaStart.t.plasmaEdges!==0||plasmaStart.t.shadowPlasmaEdges!==0||
+    plasmaStart.t.plasmaActive!==false||plasmaStart.t.gameplayMutation||
+    JSON.stringify(plasmaStart.before)!==JSON.stringify(plasmaStart.after))
+   fail('Plasma failed quiet baseline or altered game state: '+JSON.stringify(plasmaStart));
+
  // v2.9.20 — genuine 4D hypercube topology, visual-only integration.
  const tesseractInitial=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
