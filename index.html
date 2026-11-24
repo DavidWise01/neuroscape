@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.02 — Sealed Recovery Baseline</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.03 — Neon Recovery Telemetry</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1604,6 +1604,28 @@ padding:10px 14px}
  #gameBoard .lanes{min-height:75px!important;gap:3px!important}
  #gameBoard .lanes>.slot{min-height:52px!important}
 }
+/* v2.9.03 — external, non-interactive RAM recovery instrument panel. */
+.recoveryTelemetry{margin:12px 0;padding:13px;border:1px solid #9364c6;border-radius:10px;
+ background:linear-gradient(110deg,#21152d,#171325 55%,#27172e);box-shadow:inset 0 0 24px #572a7140,0 0 17px #8e3dcd22}
+.recoveryTelemetryHead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;
+ letter-spacing:.08em;color:#ffe8cb;font-size:12px;margin-bottom:9px}
+.recoveryTelemetryHead span{color:#c5a4da;font-size:10px}
+.recoveryTelemetryGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.recoveryTelemetryLane{min-width:0;border:1px solid #74508d;border-radius:7px;padding:9px;background:#120e1bc9}
+.recoveryTelemetryLane.player{border-color:#c77e48;box-shadow:inset 0 0 12px #ff8f2718}
+.recoveryTelemetryLane.bot{border-color:#9360c2;box-shadow:inset 0 0 12px #aa4aff18}
+.recoveryTelemetryLane>strong{font-size:11px;letter-spacing:.12em;color:#ffe0b4}
+.recoveryTelemetryLane.bot>strong{color:#e2c5ff}
+.recoveryTelemetryLane ol{list-style:none;padding:0;margin:7px 0 0;display:grid;gap:5px;min-height:24px}
+.recoveryTelemetryLane li{font:11px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;
+ border-left:2px solid #a672c5;padding:4px 6px;background:#2c2137}
+.recoveryTelemetryLane.player li{border-left-color:#ff9a42}
+.recoveryTelemetryLane .recoveryQuiet{opacity:.62}
+.recoveryTelemetryLane li b{color:#f7e3cb}
+.recoveryTelemetryLane li .recoveryState{font-weight:800;color:#d2a6ff}
+.recoveryTelemetryLane.player li .recoveryState{color:#ffb77e}
+.recoveryTelemetryFooter{margin-top:8px;color:#e3c4ed;font:10px ui-monospace,SFMono-Regular,Consolas,monospace}
+@media(max-width:650px){.recoveryTelemetryGrid{grid-template-columns:1fr}}
 </style></head><body>
 <header><div><h1>NEUROSCAPE</h1><p>v2.8.67 · BONE WHITE / LIVE COMBAT RECOVERY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText">STARTING ARCADE · FIVE SQUARES PER PLAYER</strong><div class="phases" id="phaseStrip"></div></div>
@@ -1616,6 +1638,14 @@ padding:10px 14px}
 <section class="hand-area"><div class="hand-heading"><strong id="handLabel">YOUR HAND</strong><span id="handStatus"></span></div><div id="hand" class="hand"></div></section>
 <div class="foot"><section class="info"><h2>HOW TO PLAY</h2><p id="message"></p></section><section class="info"><h2>EVENT LOG</h2><ol class="log" id="events"></ol></section></div>
 
+<section id="recoveryTelemetry" class="recoveryTelemetry" aria-label="Live neon recovery telemetry">
+  <div class="recoveryTelemetryHead"><strong>⚡ NEON RECOVERY · LIVE SOURCE MONITOR</strong><span>READ ONLY · ZERO RAM MUTATION · 8 EVENTS</span></div>
+  <div class="recoveryTelemetryGrid">
+    <div class="recoveryTelemetryLane player" id="recoveryTelemetryP" aria-label="Player recovery monitor"><strong>PLAYER / ORANGE</strong><ol></ol></div>
+    <div class="recoveryTelemetryLane bot" id="recoveryTelemetryE" aria-label="Bot recovery monitor"><strong>BOT / PURPLE</strong><ol></ol></div>
+  </div>
+  <div class="recoveryTelemetryFooter" id="recoveryTelemetryStatus" aria-live="polite">OBSERVING · NO RECOVERY EVENTS IN THIS MATCH</div>
+</section>
 <section id="neuroscapeArt" aria-label="Neuroscape original illustrated cyberpunk arena artwork">
   <div class="artHead"><span>✦ NEUROSCAPE · THE TWO CORES ✦</span><span>ORIGINAL NEON ART · ARENA REMAINS LOCKED</span><button type="button" id="regenerateCores" aria-label="Regenerate Two Cores artwork">↻ REGENERATE</button></div>
   <svg viewBox="0 0 1200 310" role="img" aria-labelledby="artTitle artDesc" xmlns="http://www.w3.org/2000/svg">
@@ -2591,6 +2621,64 @@ function log(msg){state.events.unshift(msg);if(state.events.length>30)state.even
 /* v2.8.98 — delete ONLY transient presentation effects at a match boundary.
    Cards, both generative murals, game log archives and engine-owned evidence
    are deliberately untouched. */
+/* v2.9.03 — observe ONLY scheduled engine flow snapshots. Direct renderer
+   calls used by visual fixtures cannot create purported real evidence. */
+const RECOVERY_MONITOR_LIMIT=8,RECOVERY_MONITOR_END_MS=5200;
+let recoveryMonitorEntries=[],recoveryMonitorTimer=null;
+function paintRecoveryTelemetry(){
+ const now=performance.now();
+ for(const item of recoveryMonitorEntries){
+  if(item.amount<=0){item.status='ZERO · NO ENERGY';continue}
+  const nodes=[...document.querySelectorAll('[data-cycle-id="'+item.cycle+'"]')];
+  if(nodes.some(n=>n.classList.contains('neonRamAfterglow')))item.status='AFTERGLOW';
+  else if(nodes.length)item.status='RETURNING';
+  else if(now-item.born>=RECOVERY_MONITOR_END_MS)item.status='QUIET';
+  else item.status='PENDING';
+ }
+ for(const side of ['p','e']){
+  const list=$(side==='p'?'recoveryTelemetryP':'recoveryTelemetryE')?.querySelector('ol');
+  if(!list)continue;
+  const entries=recoveryMonitorEntries.filter(x=>x.side===side).slice(-RECOVERY_MONITOR_LIMIT).reverse();
+  list.replaceChildren(...entries.map(item=>{
+   const li=document.createElement('li'),name=document.createElement('b'),state=document.createElement('span');
+   name.textContent=item.source+' · +'+item.amount+' RAM · ';
+   state.className='recoveryState';state.textContent=item.status;
+   li.className=item.status==='QUIET'?'recoveryQuiet':'';
+   li.append(name,state);
+   return li;
+  }));
+ }
+ const live=recoveryMonitorEntries.filter(x=>x.status==='RETURNING'||x.status==='AFTERGLOW').length;
+ const all=recoveryMonitorEntries.length;
+ const footer=$('recoveryTelemetryStatus');
+ if(footer)footer.textContent=all?
+   'MATCH '+temporalEvidence.match+' · '+all+' SOURCE EVENTS · '+live+' ACTIVE · '+(all-live)+' SETTLED/PENDING':
+   'OBSERVING · NO RECOVERY EVENTS IN THIS MATCH';
+ if(!recoveryMonitorEntries.some(x=>x.status==='PENDING'||x.status==='RETURNING'||x.status==='AFTERGLOW')){
+  if(recoveryMonitorTimer!==null){clearInterval(recoveryMonitorTimer);recoveryMonitorTimer=null}
+ }
+}
+function noteEngineRecoveryTelemetry(flow){
+ if(!flow?.events)return;
+ const now=performance.now();
+ for(const event of flow.events){
+  if(event.type!=='release')continue;
+  const cycle=(Number.isInteger(flow.impactSeq)?'attack:'+flow.impactSeq:'release:'+flow.seq)+
+   ':flow:'+flow.seq+':'+event.side;
+  if(recoveryMonitorEntries.some(x=>x.cycle===cycle))continue;
+  recoveryMonitorEntries.push({side:event.side,source:cycle,cycle,amount:event.amount,
+   born:now,status:event.amount>0?'PENDING':'ZERO · NO ENERGY'});
+ }
+ if(recoveryMonitorEntries.length>RECOVERY_MONITOR_LIMIT*2)
+  recoveryMonitorEntries=recoveryMonitorEntries.slice(-RECOVERY_MONITOR_LIMIT*2);
+ paintRecoveryTelemetry();
+ if(recoveryMonitorEntries.some(x=>x.status==='PENDING')&&recoveryMonitorTimer===null)
+  recoveryMonitorTimer=setInterval(paintRecoveryTelemetry,180);
+}
+function resetRecoveryTelemetry(){
+ if(recoveryMonitorTimer!==null){clearInterval(recoveryMonitorTimer);recoveryMonitorTimer=null}
+ recoveryMonitorEntries=[];paintRecoveryTelemetry();
+}
 function clearMatchRecoveryVisuals(){
  const transient='.energyRoute,.neonRecoveryReturn,.neonRecoveryCore,'+
    '.neonRecoveryArrival,.neonRamCharge,.neonRamReservoir,'+
@@ -2606,7 +2694,7 @@ function clearMatchRecoveryVisuals(){
    delete element.dataset.neonAttackSeq;
  }
 }
-function restart(kind=mode){if(state&&!state.done)settleLongitudinal('interrupted');temporalEvidence.match++;if(botTimer!==null)clearTimeout(botTimer);botTimer=null;clearMatchRecoveryVisuals();lastImpact=null;targetPreview=null;lastRamFlow=null;mode=kind;resetBotMemory();state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
+function restart(kind=mode){if(state&&!state.done)settleLongitudinal('interrupted');temporalEvidence.match++;if(botTimer!==null)clearTimeout(botTimer);botTimer=null;clearMatchRecoveryVisuals();resetRecoveryTelemetry();lastImpact=null;targetPreview=null;lastRamFlow=null;mode=kind;resetBotMemory();state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
 function legalActions(s,k){if(s.done||s.active!==k)return[];let p=s[k],a=[];
 if(s.phase===0){if(s.actions>0){if(p.ram<25)a.push({kind:'ram'});if(p.deck.length)a.push({kind:'draw'})}a.push({kind:'next'});}
 else if(s.phase===1){if(p.units.length<5)p.hand.forEach((n,i)=>{if(cost(card(n))<=free(p))a.push({kind:'deploy',i})});a.push({kind:'next'});}
@@ -3655,7 +3743,7 @@ function schedulePathways(){
   const matchToken=temporalEvidence.match,capturedState=state;
   requestAnimationFrame(()=>{
    if(temporalEvidence.match!==matchToken||state!==capturedState)return;
-   if(drawRam)drawEnergyPathways(ram);
+   if(drawRam){drawEnergyPathways(ram);noteEngineRecoveryTelemetry(ram);}
    if(drawImpact)drawCombatPathways(impact);
   });
  }
