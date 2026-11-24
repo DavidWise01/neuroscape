@@ -19,6 +19,36 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.26 — copies recover deterministically; no source or engine mutation.
+ const adaptiveBaseline=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),api=window.neuroscapeAdaptiveResonance,initial=api?.snapshot();
+   const fixture=Object.freeze([
+     Object.freeze({edge:0,axis:0,amplitude:1,phase:0}),
+     Object.freeze({edge:31,axis:3,amplitude:1,phase:0})
+   ]);
+   const result=api?.simulate(fixture);
+   const begin=document.getElementById('adaptiveResonanceRun');
+   const reset=document.getElementById('adaptiveResonanceReset');
+   begin?.click();const started=api?.snapshot();
+   reset?.click();const stopped=api?.snapshot();
+   return {before,after:game(),initial,result,started,stopped,
+     fixtureUnchanged:fixture.every(e=>e.amplitude===1&&e.phase===0),
+     panel:!!document.getElementById('adaptiveResonanceCanvas')};
+ });
+ if(!adaptiveBaseline.panel||!adaptiveBaseline.initial||
+    adaptiveBaseline.initial.running||adaptiveBaseline.initial.gameplayMutation||
+    adaptiveBaseline.initial.baseline!==null||
+    !adaptiveBaseline.result||adaptiveBaseline.result.rows.length!==71||
+    adaptiveBaseline.result.mutation||adaptiveBaseline.result.inputCount!==2||
+    !(adaptiveBaseline.result.adaptiveReached<adaptiveBaseline.result.fixedReached)||
+    !adaptiveBaseline.started.running||adaptiveBaseline.started.count!==32||
+    adaptiveBaseline.stopped.running||adaptiveBaseline.stopped.count!==0||
+    !adaptiveBaseline.fixtureUnchanged||
+    JSON.stringify(adaptiveBaseline.before)!==JSON.stringify(adaptiveBaseline.after))
+   fail('Adaptive phase recovery comparison violated source isolation: '+JSON.stringify(adaptiveBaseline));
+
  // v2.9.25: synthetic phase comparison is isolated from engine and sources.
  const driftCheck=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
