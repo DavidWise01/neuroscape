@@ -62,6 +62,55 @@ try{
  if(afterBoundary.old||afterBoundary.cardCounts.some(n=>n!==5))
    fail('Delayed old-match frame crossed restart boundary: '+JSON.stringify(afterBoundary));
  await page.getByRole('button',{name:'Play vs Bot'}).click();
+ // v2.8.99 — repeatedly schedule bot actions and visual draws, then
+ // cancel them by switching modes. Only the final human match may act.
+ const resetStorm=await page.evaluate(()=>{
+   const counts=[],modes=['auto','human','auto','auto','human','auto','human','auto','human','human'];
+   const transient='.neonRamReservoir,.neonRamDischarge,.neonRamAfterglow,'+
+      '.neonRecoveryReturn,.neonRecoveryCore,.neonRecoveryArrival,.neonRamCharge';
+   const read=()=>({
+     turn:state.turn,phase:state.phase,ram:[state.p.ram,state.e.ram],
+     active:state.active,actions:state.actions,mode,
+     visual:document.querySelectorAll('#gameBoard '+transient).length,
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length),
+     murals:document.querySelectorAll('#neuroscapeArt,#signalFoundry').length,
+     epoch:temporalEvidence.match
+   });
+   const startingEpoch=temporalEvidence.match;
+   for(let i=0;i<modes.length;i++){
+     drawEnergyPathways({seq:989990+i,impactSeq:989989+i,events:[
+       {side:'p',type:'release',amount:2,slots:[{slot:i%5,amount:2}]},
+       {side:'e',type:'release',amount:1,slots:[{slot:(i+2)%5,amount:1}]}]});
+     // Exercise a pending browser animation frame originating in this match.
+     lastRamFlow={seq:999000+i,impactSeq:998000+i,events:[
+       {side:'p',type:'release',amount:1,slots:[{slot:0,amount:1}]}]};
+     schedulePathways();
+     restart(modes[i]);
+     counts.push(read());
+   }
+   return {startingEpoch,counts,final:read()};
+ });
+ if(resetStorm.counts.length!==10||resetStorm.final.epoch!==resetStorm.startingEpoch+10||
+    resetStorm.counts.some((row,i)=>row.mode!==(i===0||i===2||i===3||i===5||i===7?'auto':'human')||
+      row.visual!==0||row.turn!==1||row.phase!==0||row.actions!==1||
+      row.ram.some(n=>n!==0)||row.slots.some(n=>n!==5)||row.murals!==2||
+      row.epoch!==resetStorm.startingEpoch+i+1))
+   fail('Repeated restarts leaked neon, RAM or game actions: '+JSON.stringify(resetStorm));
+ await page.waitForTimeout(650);
+ const settledReset=await page.evaluate(()=>({
+   mode,turn:state.turn,phase:state.phase,actions:state.actions,
+   ram:[state.p.ram,state.e.ram],epoch:temporalEvidence.match,
+   lingering:document.querySelectorAll('[data-flow-seq^="98999"],[data-flow-seq^="99900"]').length,
+   slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length),
+   murals:document.querySelectorAll('#neuroscapeArt,#signalFoundry').length
+ }));
+ if(settledReset.epoch!==resetStorm.final.epoch||
+    settledReset.mode!=='human'||settledReset.turn!==1||
+    settledReset.phase!==0||settledReset.actions!==1||
+    settledReset.ram.some(n=>n!==0)||settledReset.lingering!==0||
+    settledReset.slots.some(n=>n!==5)||settledReset.murals!==2)
+   fail('Queued old-match bot action or visual frame crossed reset storm: '+JSON.stringify(settledReset));
+ console.log('REPEATED RESET PASS: ten alternating mode/restart boundaries, old bot timers and animation frames excluded');
  console.log('MATCH BOUNDARY PASS: active recovery cleared across restart and mode change; queued frames isolated');
  // v2.8.71: the neon attack overlay must use the same measured endpoints
  // and curve as the existing attack route; no synthetic combat state edits.
