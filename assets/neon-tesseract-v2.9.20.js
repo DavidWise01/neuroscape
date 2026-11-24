@@ -56,6 +56,34 @@ function line(a,b,color,width,glow,opacity=1){
  * No engine authority. When no attack or recovery evidence is observed, quiet.
  */
 const PLASMA_EDGE_LIMIT=32;
+/* Dimensionless visual-energy allocation. A normalized source budget is
+ * allocated across the 32 actual edges. Edge, shadow, and quiet (dissipated)
+ * allocations sum to that budget within floating-point tolerance.
+ * This is a rendering-accounting identity, NOT physical energy or game RAM.
+ */
+let visualEnergy=Object.freeze({input:0,edge:0,shadow:0,quiet:0,residual:0,activeEdges:0,shadowEdges:0});
+function visualEnergyFrame(activity,t){
+ const input=clamp((activity.attack+activity.returnCount)/6,0,1);
+ let edge=0,shadow=0,quiet=0,activeEdges=0,shadowEdges=0;
+ if(input>0){
+  const allotment=input/edges.length;
+  for(let e=0;e<edges.length;e++){
+   const axis=edges[e][2];
+   const flow=.48+.20*(.5+.5*Math.sin(t*.88+e*.0618));
+   const shadowShare=axis===3?.20:.08;
+   const edgeShare=flow;
+   const quietShare=1-edgeShare-shadowShare;
+   edge+=allotment*edgeShare;
+   shadow+=allotment*shadowShare;
+   quiet+=allotment*quietShare;
+   activeEdges++;
+   if(axis===3)shadowEdges++;
+  }
+ }
+ const residual=input-edge-shadow-quiet;
+ return Object.freeze({input,edge,shadow,quiet,residual,activeEdges,shadowEdges});
+}
+
 function plasmaPass(view,shadow,activity,t){
  const envelope=clamp((activity.attack+activity.returnCount)/6,0,1);
  let bright=0,shadowBright=0;
@@ -109,7 +137,10 @@ function draw(ts){
   line(view[a],view[b],colors[k],7+power*4,17+power*15,alpha*.25);
   line(view[a],view[b],colors[k],1.8+power*1.1,8+power*7,alpha);
  }
+ visualEnergy=visualEnergyFrame(o,state.angle*1.618);
  const plasma=plasmaPass(view,shadow,o,state.angle*1.618);
+ section.dataset.visualEnergyInput=String(visualEnergy.input);
+ section.dataset.visualEnergyResidual=String(visualEnergy.residual);
  for(let i=0;i<view.length;i++){
   const p=view[i],radius=2.1+power*1.2;
   ctx.fillStyle=i%2?'#fff2ff':'#cffffb';ctx.shadowColor=colors[i%4];ctx.shadowBlur=14;
@@ -148,6 +179,6 @@ window.addEventListener('pagehide',()=>cancelAnimationFrame(raf),{once:true});
 draw(0);raf=requestAnimationFrame(frame);
 window.neuroscapeTesseract=Object.freeze({snapshot:()=>Object.freeze({
  vertices:vertices.length,edges:edges.length,rotation4D:true,shadow3D:true,
- frames:state.frames,plasmaEdgeLimit:PLASMA_EDGE_LIMIT,plasmaEdges:Number(section.dataset.plasmaEdges)||0,shadowPlasmaEdges:Number(section.dataset.shadowPlasmaEdges)||0,plasmaActive:section.dataset.plasmaActive==='true',causality:'not-proven',gameplayMutation:false
+ frames:state.frames,visualEnergy,plasmaEdgeLimit:PLASMA_EDGE_LIMIT,plasmaEdges:Number(section.dataset.plasmaEdges)||0,shadowPlasmaEdges:Number(section.dataset.shadowPlasmaEdges)||0,plasmaActive:section.dataset.plasmaActive==='true',causality:'not-proven',gameplayMutation:false
 })});
 })();
