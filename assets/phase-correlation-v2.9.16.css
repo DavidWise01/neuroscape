@@ -1,0 +1,15 @@
+/* v2.9.16 scope is outside frozen playfield. */
+#phaseCorrelation{margin:12px 0;padding:12px;border:1px solid #5ce4d5;border-radius:10px;
+ background:linear-gradient(120deg,#12102a,#121b29);color:#eee3ff;
+ font:11px ui-monospace,Consolas,monospace;box-shadow:0 0 18px #48ffdb27,inset 0 0 22px #6f3be71d}
+#phaseCorrelation .correlationHead{display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap}
+#phaseCorrelation .correlationHead strong{color:#9ffff2;text-shadow:0 0 9px #44e9df}
+#phaseCorrelationCanvas{display:block;width:100%;height:165px;margin-top:9px;border:1px solid #6572a6;border-radius:6px}
+#phaseCorrelation .correlationLegend{display:flex;gap:16px;flex-wrap:wrap;margin-top:7px}
+#phaseCorrelation .correlationLegend span:nth-child(1){color:#ffb165}
+#phaseCorrelation .correlationLegend span:nth-child(2){color:#c58bff}
+#phaseCorrelation .correlationLegend span:nth-child(3){color:#77f3e8}
+#phaseCorrelationPairs{max-height:110px;overflow:auto;list-style:none;padding:0;margin:8px 0 0;display:flex;gap:5px;flex-wrap:wrap}
+#phaseCorrelationPairs li{background:#252039;border-left:2px solid #77f3e8;border-radius:4px;padding:4px 6px;overflow-wrap:anywhere}
+#phaseCorrelation small{display:block;margin-top:7px;color:#aab4d9}
+@media(prefers-reduced-motion:reduce){#phaseCorrelation{box-shadow:none}}
