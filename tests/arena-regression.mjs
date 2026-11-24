@@ -19,6 +19,37 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.25: synthetic phase comparison is isolated from engine and sources.
+ const driftCheck=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),api=window.neuroscapePhaseDrift;
+   const empty=api?.snapshot();
+   const fixtures=Object.freeze([
+     Object.freeze({edge:0,axis:0,amplitude:1,phase:0}),
+     Object.freeze({edge:31,axis:3,amplitude:1,phase:0})
+   ]);
+   const baseline=api?.compare(fixtures,0);
+   const drifted=api?.compare(fixtures,Math.PI/2);
+   const run=document.getElementById('phaseDriftRun');
+   const reset=document.getElementById('phaseDriftReset');
+   run?.click();
+   const pressed=run?.getAttribute('aria-pressed');
+   reset?.click();
+   return {before,after:game(),empty,baseline,drifted,pressed,
+     resetStage:api?.snapshot().stage,
+     fixtureIntact:fixtures.every(e=>e.amplitude===1&&e.phase===0)};
+ });
+ if(!driftCheck.empty||driftCheck.empty.baseline!==null||
+    driftCheck.empty.projected!==null||driftCheck.empty.activeEdges!==0||
+    driftCheck.empty.sourceMutated||driftCheck.empty.gameplayMutation||
+    !driftCheck.baseline||Math.abs(driftCheck.baseline.baseline-1)>1e-10||
+    Math.abs(driftCheck.baseline.projected-1)>1e-10||
+    !driftCheck.drifted||!(driftCheck.drifted.projected<driftCheck.drifted.baseline)||
+    driftCheck.pressed!=='true'||driftCheck.resetStage!=='IDLE'||
+    !driftCheck.fixtureIntact||JSON.stringify(driftCheck.before)!==JSON.stringify(driftCheck.after))
+   fail('Phase drift projection violated quiet, independence or game invariant: '+JSON.stringify(driftCheck));
+
  // v2.9.24: coherence undefined at zero energy; all four axis groups present.
  const resonanceBaseline=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
