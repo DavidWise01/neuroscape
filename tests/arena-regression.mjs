@@ -1477,7 +1477,7 @@ try{
    fixedConstraints:{arenaSlotsPerSide:5,catalogCards:256,visualCycleLimit:12},
    browserErrorCount:errors.length
  };
- writeFileSync('recovery-baseline.json',JSON.stringify(baselineReport,null,2)+'\\n');
+ writeFileSync('recovery-baseline.json',JSON.stringify(baselineReport,null,2)+String.fromCharCode(10));
  if(!baselineReport.passed)
    fail('v2.9.00 RECOVERY ACCEPTANCE GATE FAILED: '+JSON.stringify(baselineReport));
  console.log('RECOVERY ACCEPTANCE GATE PASS: '+JSON.stringify(baselineReport));
