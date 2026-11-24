@@ -386,7 +386,43 @@ try{
     lightningActive.cards.some(n=>n!==5)||lightningActive.ram.some(n=>n!==0)||
     lightningActive.murals!==2)
    fail('Plasma lightning absent or changed arena: '+JSON.stringify(lightningActive));
- await page.waitForTimeout(5400);
+ // v2.9.13: distinct phases are sourced from each channel's
+ // newest eligible observation; they do not mutate gameplay.
+ const phaseLaunch=await page.evaluate(()=>['attackLightning','recoveryLightning'].map(id=>{
+   const svg=document.getElementById(id);
+   return {phase:svg?.dataset.phase,source:svg?.dataset.source,
+     age:Number(svg?.dataset.ageMs),head:Number(svg?.querySelector('.plasmaTravelHead')?.getAttribute('cx')),
+     opacity:svg?.querySelector('.plasmaTravelHead')?.getAttribute('opacity')};
+ }));
+ if(phaseLaunch.some(x=>x.phase!=='launch'&&x.phase!=='travel')||
+    !phaseLaunch[0].source.startsWith('attack:')||
+    !phaseLaunch[1].source.startsWith('attack:')||
+    phaseLaunch.some(x=>x.age<0||x.age>=1600||x.opacity!=='1'))
+   fail('Lightning phase lacks independent source provenance: '+JSON.stringify(phaseLaunch));
+ await page.waitForTimeout(550);
+ const phaseTravel=await page.evaluate(()=>({
+   channels:['attackLightning','recoveryLightning'].map(id=>{
+     const svg=document.getElementById(id),head=svg?.querySelector('.plasmaTravelHead');
+     return {phase:svg?.dataset.phase,source:svg?.dataset.source,
+       age:Number(svg?.dataset.ageMs),cx:Number(head?.getAttribute('cx')),
+       opacity:head?.getAttribute('opacity')};
+   }),
+   cards:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length),
+   realRam:[state.p.ram,state.e.ram]
+ }));
+ if(phaseTravel.channels.some(x=>x.phase!=='travel'||x.cx<=0||x.cx>=320||
+      !x.source||x.opacity!=='1')||
+    phaseTravel.cards.some(x=>x!==5)||phaseTravel.realRam.some(x=>x!==0))
+   fail('Lightning travel phase failed or altered gameplay: '+JSON.stringify(phaseTravel));
+ await page.waitForTimeout(1300);
+ const phaseDecay=await page.evaluate(()=>['attackLightning','recoveryLightning'].map(id=>{
+   const svg=document.getElementById(id);
+   return {phase:svg?.dataset.phase,opacity:svg?.querySelector('.plasmaTravelHead')?.getAttribute('opacity'),
+     cx:Number(svg?.querySelector('.plasmaTravelHead')?.getAttribute('cx'))};
+ }));
+ if(phaseDecay.some(x=>x.phase!=='decay'||x.opacity!=='0.28'||x.cx!==320))
+   fail('Lightning decay phase failed: '+JSON.stringify(phaseDecay));
+ await page.waitForTimeout(3800);
  const plasmaQuiet=await page.evaluate(()=>({
    levels:[document.getElementById('attackEnvelopeLevel')?.textContent,
      document.getElementById('recoveryEnvelopeLevel')?.textContent],
@@ -397,6 +433,13 @@ try{
    timer:recoveryMonitorTimer!==null,
    slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
  }));
+ const phaseQuiet=await page.evaluate(()=>['attackLightning','recoveryLightning'].map(id=>{
+   const svg=document.getElementById(id);
+   return {phase:svg?.dataset.phase,source:svg?.dataset.source,
+     headOpacity:svg?.querySelector('.plasmaTravelHead')?.getAttribute('opacity')};
+ }));
+ if(phaseQuiet.some(x=>x.phase!=='quiet'||x.source!==''||x.headOpacity!=='0'))
+   fail('Plasma phase did not become quiet: '+JSON.stringify(phaseQuiet));
  const lightningQuiet=await page.evaluate(()=>['attackLightning','recoveryLightning'].map(id=>{
    const svg=document.getElementById(id),bolt=svg?.querySelector('.plasmaBolt');
    return {active:svg?.dataset.active,level:bolt?.dataset.level,
@@ -425,6 +468,7 @@ try{
  if(historyReset.entries!==0||historyReset.attacks!==0||
     historyReset.recoveries!==0||historyReset.slots.some(n=>n!==5))
    fail('Combat history persisted across match reset: '+JSON.stringify(historyReset));
+ console.log('PHASE-SYNCHRONIZED PLASMA PASS: source-bound launch, travel, decay, quiet on both channels');
  console.log('PLASMA LIGHTNING PASS: independent source-driven bolts, natural extinguish and protected arena');
  console.log('ACTIVITY DENSITY PASS: 10 attack events, five retained positive recovery sources, five-second window, clean reset');
  console.log('BOUNDED COMBAT HISTORY PASS: latest eight of ten attacks, independent release identity, reset clean');
