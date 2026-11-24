@@ -52,6 +52,34 @@ function line(a,b,color,width,glow,opacity=1){
  ctx.shadowColor=color;ctx.shadowBlur=glow;ctx.beginPath();
  ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.shadowBlur=0;ctx.globalAlpha=1;
 }
+/* v2.9.21 — deterministic visual plasma on actual 4D hypercube edges.
+ * No engine authority. When no attack or recovery evidence is observed, quiet.
+ */
+const PLASMA_EDGE_LIMIT=32;
+function plasmaPass(view,shadow,activity,t){
+ const envelope=clamp((activity.attack+activity.returnCount)/6,0,1);
+ let bright=0,shadowBright=0;
+ if(envelope>0&&!motion?.matches){
+  for(let e=0;e<edges.length;e++){
+   const [a,b,axis]=edges[e],phase=(t*(axis===3?.62:.88)+e*.0618)%1;
+   const color=axis===3?'#83fff3':axis===0?'#ffb26d':'#b98aff';
+   const A=view[a],B=view[b],S=shadow[a],T=shadow[b];
+   const last=clamp(phase-.16,0,1);
+   const at=u=>({x:A.x+(B.x-A.x)*u,y:A.y+(B.y-A.y)*u});
+   line(at(last),at(phase),color,axis===3?5:3.5,18+envelope*18,envelope*.85);
+   bright++;
+   if(axis===3){
+     const atShadow=u=>({x:S.x+(T.x-S.x)*u,y:S.y+(T.y-S.y)*u});
+     line(atShadow(last),atShadow(phase),'#76fff0',4,20,envelope*.36);
+     shadowBright++;
+   }
+  }
+ }
+ section.dataset.plasmaEdges=String(bright);
+ section.dataset.shadowPlasmaEdges=String(shadowBright);
+ section.dataset.plasmaActive=String(bright>0);
+ return {bright,shadowBright};
+}
 function draw(ts){
  const W=canvas.width,H=canvas.height;
  const reduced=!!motion?.matches;
@@ -81,6 +109,7 @@ function draw(ts){
   line(view[a],view[b],colors[k],7+power*4,17+power*15,alpha*.25);
   line(view[a],view[b],colors[k],1.8+power*1.1,8+power*7,alpha);
  }
+ const plasma=plasmaPass(view,shadow,o,state.angle*1.618);
  for(let i=0;i<view.length;i++){
   const p=view[i],radius=2.1+power*1.2;
   ctx.fillStyle=i%2?'#fff2ff':'#cffffb';ctx.shadowColor=colors[i%4];ctx.shadowBlur=14;
@@ -95,7 +124,7 @@ function draw(ts){
  ctx.textAlign='right';ctx.fillStyle='#ffe0a0';
  ctx.fillText('ATTACK '+o.attack+'  ·  RECOVERY '+o.returnCount,973,29);
  ctx.fillStyle='#8ffff0';ctx.fillText('SEALED '+o.sealed+'  ·  ID-LINKED '+o.linked,973,48);
- info.textContent='4D→3D SHADOW · '+o.attack+' ATTACK · '+o.returnCount+' RECOVERY · '+o.sealed+' SEALED · READ ONLY';
+ info.textContent='4D→3D SHADOW · '+o.attack+' ATTACK · '+o.returnCount+' RECOVERY · '+plasma.bright+' PLASMA EDGES · '+o.sealed+' SEALED · READ ONLY';
  section.dataset.vertices=String(vertices.length);section.dataset.edges=String(edges.length);
  section.dataset.causality='not-proven';section.dataset.gameplayMutation='none';
  state.frames++;
@@ -119,6 +148,6 @@ window.addEventListener('pagehide',()=>cancelAnimationFrame(raf),{once:true});
 draw(0);raf=requestAnimationFrame(frame);
 window.neuroscapeTesseract=Object.freeze({snapshot:()=>Object.freeze({
  vertices:vertices.length,edges:edges.length,rotation4D:true,shadow3D:true,
- frames:state.frames,causality:'not-proven',gameplayMutation:false
+ frames:state.frames,plasmaEdgeLimit:PLASMA_EDGE_LIMIT,plasmaEdges:Number(section.dataset.plasmaEdges)||0,shadowPlasmaEdges:Number(section.dataset.shadowPlasmaEdges)||0,plasmaActive:section.dataset.plasmaActive==='true',causality:'not-proven',gameplayMutation:false
 })});
 })();
