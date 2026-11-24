@@ -19,6 +19,22 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.17: audit reads only existing telemetry, cannot mutate game.
+ const lineageInitial=await page.evaluate(()=>{
+   const before={ram:[state.p.ram,state.e.ram],turn:state.turn,actions:state.actions,
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes > .slot').length)};
+   const audit=window.neuroscapeCausalAudit?.snapshot();
+   const after={ram:[state.p.ram,state.e.ram],turn:state.turn,actions:state.actions,
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes > .slot').length)};
+   return {before,audit,after,panel:!!document.getElementById('causalLineageAudit')};
+ });
+ if(!lineageInitial.panel||!lineageInitial.audit||
+    lineageInitial.audit.causality!=='not-proven'||
+    lineageInitial.audit.independentWitnesses!==0||
+    lineageInitial.audit.linked!==0||lineageInitial.audit.returns!==0||
+    JSON.stringify(lineageInitial.before)!==JSON.stringify(lineageInitial.after))
+    fail('Causal lineage observer invented evidence or mutated arena: '+JSON.stringify(lineageInitial));
+
  // v2.9.16 — purely observational correlation; no gameplay state mutation.
  const phaseScope=await page.evaluate(()=>{
    const before={ram:[state.p.ram,state.e.ram],actions:state.actions,turn:state.turn,
