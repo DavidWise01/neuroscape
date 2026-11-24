@@ -684,6 +684,63 @@ try{
       x.transfers.join(',')!==item.transferIds.join(',')||x.cycle!==item.cycle))
      fail('Multi-card recovery reservoir does not conserve sum: '+JSON.stringify(item));
  }
+ // v2.8.95 — one blocked attack with reciprocal lethal retaliation.
+ // The authoritative consequence is two separate release accounts, both
+ // retaining the same attack origin but never pooling RAM across players.
+ const retaliationConservation=await page.evaluate(()=>{
+   const seq=989950,impact=989949;
+   const widths=['p','e'].map(k=>document.getElementById(k+'RamAvailable').style.width);
+   const impacts=[
+     {side:'p',slot:0,amount:2,role:'attacker'},
+     {side:'e',slot:3,amount:4,role:'defender'}
+   ];
+   drawEnergyPathways({seq,impactSeq:impact,events:[
+     {side:'p',type:'release',amount:2,slots:[{slot:0,amount:2}]},
+     {side:'e',type:'release',amount:4,slots:[{slot:3,amount:4}]}
+   ]});
+   const observed=impacts.map(x=>{
+     const cycle='attack:'+impact+':flow:'+seq+':'+x.side;
+     const nodes=[...document.querySelectorAll('[data-cycle-id="'+cycle+'"]')];
+     const selected=cls=>nodes.filter(n=>n.classList.contains(cls));
+     const reservoir=selected('neonRamReservoir');
+     const photon=selected('neonRecoveryReturn');
+     const afterglow=selected('neonRamAfterglow');
+     const charge=selected('neonRamCharge');
+     const sample=nodes.map(node=>({
+       cls:node.getAttribute('class'),side:node.dataset.recoverySide,
+       amount:node.dataset.returnedRam,cycle:node.dataset.cycleId,
+       id:node.dataset.lifecycleId,
+       transfer:node.dataset.transferId||null
+     }));
+     return {...x,cycle,nodeCount:nodes.length,
+       reservoirCount:reservoir.length,photonCount:photon.length,
+       afterglowCount:afterglow.length,chargeCount:charge.length,
+       reservoirAmount:reservoir[0]?.dataset.returnedRam,
+       photonAmount:photon[0]?.dataset.returnedRam,
+       transfers:reservoir[0]?.dataset.transferIds,
+       colors:afterglow[0]?getComputedStyle(afterglow[0]).backgroundImage:'',
+       pointerSafe:nodes.every(n=>getComputedStyle(n).pointerEvents==='none'),sample};
+   });
+   return {observed,widths,after:['p','e'].map(k=>document.getElementById(k+'RamAvailable').style.width),
+     lanes:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)};
+ });
+ const attackSide=retaliationConservation.observed.find(x=>x.side==='p');
+ const defenseSide=retaliationConservation.observed.find(x=>x.side==='e');
+ for(const row of retaliationConservation.observed){
+   const id='attack:989949:'+row.side+':'+row.slot;
+   const expectedColor=row.side==='p'?'255, 210, 142':'248, 215, 255';
+   if(row.nodeCount<7||row.reservoirCount!==1||row.photonCount!==1||
+      row.afterglowCount!==1||row.chargeCount!==1||
+      +row.reservoirAmount!==row.amount||+row.photonAmount!==row.amount||
+      row.transfers!==id||!row.colors.includes(expectedColor)||!row.pointerSafe||
+      row.sample.some(x=>x.side!==row.side||x.id!=='attack:989949'))
+     fail('Reciprocal knockout crossed player recovery account: '+JSON.stringify(retaliationConservation));
+ }
+ if(!attackSide||!defenseSide||attackSide.cycle===defenseSide.cycle||
+    retaliationConservation.widths.join(',')!==retaliationConservation.after.join(',')||
+    retaliationConservation.lanes.some(x=>x!==5))
+   fail('Reciprocal knockout disrupted RAM ownership or cards: '+JSON.stringify(retaliationConservation));
+ console.log('RETALIATION CONSERVATION PASS: attacker +2, defender +4, independent neon cycles and no meter mutation');
  console.log('MULTI-CARD CONSERVATION PASS: five destroyed slots, four positive packets, two pooled reservoirs, zero phantom RAM');
  console.log('NEON RESERVOIR PASS: pooled positive releases, both sides, no RAM mutation');
  console.log('SIMULTANEOUS RECOVERY PASS: three positive card transfers, both RAM meters, zero false releases, unchanged fill widths');
@@ -1049,6 +1106,24 @@ try{
  console.log('LIVE MULTI-CARD STATUS: '+JSON.stringify({
    observed:liveMulti.length,
    status:liveMulti.length?'RECONCILED':'NOT_OBSERVED_IN_BOUNDED_MATCH'
+ }));
+ // v2.8.95 — distinguish actual reciprocal casualties from test fixture.
+ // Do not claim a real double knockout if bot combat does not produce one.
+ const reciprocal=matchAudit.destructions.filter(entry=>
+   new Set(entry.destruction.map(x=>x.side)).size===2);
+ for(const entry of reciprocal){
+   const bySide=new Map(entry.releases.map(x=>[x.side,x]));
+   for(const side of ['p','e']){
+     const cards=entry.destruction.filter(x=>x.side===side);
+     const amount=cards.reduce((sum,x)=>sum+x.ram,0);
+     const observed=bySide.get(side);
+     if(!observed||observed.amount!==amount)
+       fail('Actual reciprocal combat failed independent side accounting: '+JSON.stringify(entry));
+   }
+ }
+ console.log('LIVE RECIPROCAL DESTRUCTION: '+JSON.stringify({
+   attacks:reciprocal.length,
+   status:reciprocal.length?'OBSERVED_AND_RECONCILED':'NOT_OBSERVED_IN_BOUNDED_MATCH'
  }));
  // v2.8.92 — close the real evidence chain at final expiration.
  // Stop producing new actions; inspect only recovered visual cycles captured
