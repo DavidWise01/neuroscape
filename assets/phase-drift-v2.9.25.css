@@ -1,0 +1,12 @@
+/* v2.9.25 — visual-only controlled 4D drift projection */
+#phaseDriftLab{margin:12px 0;padding:13px;border:1px solid #84eefa;border-radius:10px;background:linear-gradient(130deg,#10152d,#241237);color:#f1eeff;font:11px ui-monospace,Consolas,monospace;box-shadow:0 0 21px #58e2f529}
+#phaseDriftLab .driftHead{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+#phaseDriftLab .driftHead strong{color:#9affeb;text-shadow:0 0 9px #4cf8ee}
+#phaseDriftCanvas{display:block;width:100%;height:180px;background:#0d1123;border:1px solid #635a9f;border-radius:7px;margin-top:9px}
+#phaseDriftLab .driftControls{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+#phaseDriftLab button{padding:7px 11px;color:#d5fff8;background:#19364b;border:1px solid #65e8e0;border-radius:5px}
+#phaseDriftLab .driftLegend{display:flex;gap:18px;margin:9px 0;color:#c7c7e4}
+#phaseDriftLab .driftLegend span:first-child{color:#ffa96c}
+#phaseDriftLab .driftLegend span:last-child{color:#7cf8e6}
+#phaseDriftLab .driftFoot{color:#bfc3dc;font-size:10px}
+@media(prefers-reduced-motion:reduce){#phaseDriftLab{box-shadow:none}}
