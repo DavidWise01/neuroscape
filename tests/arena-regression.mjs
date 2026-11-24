@@ -19,6 +19,23 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.24: coherence undefined at zero energy; all four axis groups present.
+ const resonanceBaseline=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),r=window.neuroscapeResonanceDisplay?.snapshot();
+   return {before,after:game(),r,axisRings:document.querySelectorAll('#plasmaResonanceRings circle').length};
+ });
+ if(!resonanceBaseline.r||resonanceBaseline.axisRings!==4||
+    resonanceBaseline.r.defined!==false||
+    resonanceBaseline.r.coherence!==null||
+    resonanceBaseline.r.active!==0||
+    resonanceBaseline.r.groupCount!==4||
+    resonanceBaseline.r.visualOnly!==true||
+    resonanceBaseline.r.gameplayMutation!==false||
+    JSON.stringify(resonanceBaseline.before)!==JSON.stringify(resonanceBaseline.after))
+   fail('Neon resonance invented quiet-phase alignment or mutated gameplay: '+JSON.stringify(resonanceBaseline));
+
  // v2.9.23 — independently bounded edge reservoirs cannot create input.
  const memoryInitial=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
