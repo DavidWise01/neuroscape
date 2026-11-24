@@ -1,0 +1,8 @@
+/* v2.9.23 · 32-edge plasma persistence — visual-only */
+#plasmaPersistencePanel{margin:12px 0;padding:12px;border:1px solid #82f8d8;border-radius:10px;background:linear-gradient(130deg,#11172d,#251539);color:#d9fffa;font:11px ui-monospace,Consolas,monospace;box-shadow:inset 0 0 18px #8a4cbb29,0 0 17px #79f9db29}
+#plasmaPersistencePanel .persistenceHead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#plasmaPersistencePanel .persistenceHead strong{color:#a4ffeb;text-shadow:0 0 9px #5ffce2}
+#plasmaPersistenceBars{display:grid;grid-template-columns:repeat(16,minmax(0,1fr));gap:5px;margin:10px 0}
+#plasmaPersistenceBars i{min-width:0;height:22px;background:linear-gradient(#ffae72,#b57bfa 55%,#70e8f7);border-radius:3px;box-shadow:0 0 8px #ab6bff77;opacity:.14}
+#plasmaPersistencePanel .persistenceFoot{font-size:10px;color:#c1c2de}
+@media(prefers-reduced-motion:reduce){#plasmaPersistencePanel{box-shadow:none}}
