@@ -19,6 +19,23 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.18 — empty observation cannot generate any sealed historical record.
+ const provenanceInitial=await page.evaluate(()=>{
+   const before={turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes > .slot').length)};
+   const archive=window.neuroscapeProvenanceFreeze?.snapshot();
+   const after={turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes > .slot').length)};
+   return {before,after,archive,export:!!document.getElementById('provenanceFreezeExport')};
+ });
+ if(!provenanceInitial.export||!provenanceInitial.archive||
+    provenanceInitial.archive.sealedCount!==0||provenanceInitial.archive.liveCount!==0||
+    provenanceInitial.archive.evicted!==0||
+    provenanceInitial.archive.causality!=='not-proven'||
+    provenanceInitial.archive.durable!==false||
+    JSON.stringify(provenanceInitial.before)!==JSON.stringify(provenanceInitial.after))
+   fail('Provenance freeze invented initial history or mutated engine: '+JSON.stringify(provenanceInitial));
+
  // v2.9.17: audit reads only existing telemetry, cannot mutate game.
  const lineageInitial=await page.evaluate(()=>{
    const before={ram:[state.p.ram,state.e.ram],turn:state.turn,actions:state.actions,
