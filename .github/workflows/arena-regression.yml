@@ -6,6 +6,7 @@ on:
       - index.html
       - tests/baseline-lock.mjs
       - tests/arena-regression.mjs
+      - tests/recovery-evidence-gate.mjs
       - docs/RECOVERY-BASELINE-v2.9.00.md
       - .github/workflows/arena-regression.yml
   workflow_dispatch:
@@ -28,6 +29,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Verify visible 5x2 arena and real game startup
         run: node tests/arena-regression.mjs
+      - name: Enforce frozen recovery acceptance evidence
+        run: node tests/recovery-evidence-gate.mjs
       - name: Upload recovery acceptance evidence
         if: always()
         uses: actions/upload-artifact@v4
