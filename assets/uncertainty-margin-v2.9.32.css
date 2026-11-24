@@ -1,0 +1,15 @@
+/* v2.9.32 — uncertainty-bounded margin, strictly visual-only */
+#uncertaintyMarginLab{margin:13px 0;padding:13px;border:1px solid #87ffe6;border-radius:11px;background:linear-gradient(126deg,#11172d,#281641);color:#ecfaff;font:11px ui-monospace,Consolas,monospace;box-shadow:0 0 23px #75eedf2b,inset 0 0 19px #ae75fe23}
+#uncertaintyMarginLab .uncertaintyHead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#uncertaintyMarginLab .uncertaintyHead strong{color:#a2ffe8;text-shadow:0 0 11px #57ffe8}
+#uncertaintyMarginCanvas{width:100%;height:215px;display:block;margin:10px 0;border:1px solid #7569b9;border-radius:7px;background:#0d1227}
+#uncertaintyMarginLab .uncertaintyControls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0}
+#uncertaintyMarginLab select{background:#1a344c;color:#e0fff9;padding:7px;border:1px solid #70eddb;border-radius:6px}
+#uncertaintyMarginLab input[type=range]{width:220px;accent-color:#80ffdf}
+#uncertaintyMarginLab .uncertaintyLegend{display:flex;gap:16px;flex-wrap:wrap;margin:9px 0}
+#uncertaintyMarginLab .uncertaintyLegend span:nth-child(1){color:#ffb378}
+#uncertaintyMarginLab .uncertaintyLegend span:nth-child(2){color:#81ffe0}
+#uncertaintyMarginLab .uncertaintyLegend span:nth-child(3){color:#d9a6ff}
+#uncertaintyMarginLab .uncertaintyCounts{color:#c7d7ff;margin:8px 0}
+#uncertaintyMarginLab .uncertaintyFoot{color:#b9c5e2;font-size:10px}
+@media(prefers-reduced-motion:reduce){#uncertaintyMarginLab{box-shadow:none}}
