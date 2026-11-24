@@ -19,6 +19,52 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.28: swept stability envelope distinguishes recovery regimes without any gameplay mutation.
+ const envelopeCheck=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),api=window.neuroscapeStabilityEnvelope;
+   const snap=api?.snapshot(),data=api?.sweep();
+   const short=api?.trial(.5,'adaptive'),longFixed=api?.trial(8.25,'fixed'),
+     longAdaptive=api?.trial(8.25,'adaptive');
+   const selector=document.getElementById('stabilityEnvelopePolicy');
+   if(selector)selector.value='1';
+   selector?.dispatchEvent(new Event('change',{bubbles:true}));
+   const shortSnapshot=api?.snapshot();
+   if(selector)selector.value='8';
+   selector?.dispatchEvent(new Event('change',{bubbles:true}));
+   const longSnapshot=api?.snapshot();
+   return {before,after:game(),snap,
+     count:data?.data.length,events:data?.data.map(x=>x.classification),
+     monotonic:data?.data.every((r,i,a)=>i===0||
+       (!a[i-1].adaptive.stable||r.adaptive.stable)&&
+       (!a[i-1].fixed.stable||r.fixed.stable)),
+     shortest:data?.data[0].classification,
+     longest:data?.data.at(-1).classification,
+     shortTrials:short?.preInjection.length,
+     shortStable:short?.stable,
+     longFixed:longFixed?.stable,longAdaptive:longAdaptive?.stable,
+     shortSnapshot,longSnapshot,
+     selectCount:selector?.options.length,
+     mounted:!!document.getElementById('stabilityEnvelopeCanvas')};
+ });
+ if(!envelopeCheck.mounted||!envelopeCheck.snap||
+    envelopeCheck.snap.periodsTested!==32||envelopeCheck.snap.trialsPerPeriod!==3||
+    !envelopeCheck.snap.visualOnly||envelopeCheck.snap.sourceMutated||
+    envelopeCheck.snap.gameplayMutation||
+    !envelopeCheck.snap.adaptiveBound||!envelopeCheck.snap.fixedBound||
+    !(envelopeCheck.snap.adaptiveBound<envelopeCheck.snap.fixedBound)||
+    envelopeCheck.count!==32||envelopeCheck.selectCount!==32||
+    envelopeCheck.shortest!=='NEITHER RECOVERS'||
+    envelopeCheck.longest!=='BOTH RECOVER'||
+    envelopeCheck.shortTrials!==3||envelopeCheck.shortStable!==false||
+    envelopeCheck.longFixed!==true||envelopeCheck.longAdaptive!==true||
+    envelopeCheck.monotonic!==true||
+    envelopeCheck.shortSnapshot?.classification!=='NEITHER RECOVERS'||
+    envelopeCheck.longSnapshot?.classification!=='BOTH RECOVER'||
+    JSON.stringify(envelopeCheck.before)!==JSON.stringify(envelopeCheck.after))
+   fail('v2.9.28 stability envelope or immutable gameplay violated: '+JSON.stringify(envelopeCheck));
+
  // v2.9.27: all phase injections declared, no autonomous amplification or source mutation.
  const repeatedDisturbance=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
