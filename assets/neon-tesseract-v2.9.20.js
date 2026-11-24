@@ -84,11 +84,41 @@ function visualEnergyFrame(activity,t){
  return Object.freeze({input,edge,shadow,quiet,residual,activeEdges,shadowEdges});
 }
 
+/* v2.9.23: 32 independent visual edge reservoirs. Input is admitted
+ * exclusively while an actual observed attack/recovery source is active.
+ * When input disappears, each reservoir decays monotonically; no self-feed.
+ * Memory is visual, bounded to [0,1], reset across match boundaries.
+ */
+const edgeMemory=new Float64Array(PLASMA_EDGE_LIMIT);
+const PERSIST_HALF_LIFE=.72,PERSIST_QUIET=.0005;
+let persistenceMatch=null,persistenceLast=null;
+let persistence=Object.freeze({total:0,max:0,nonzero:0,quiet:true,input:0,halfLifeSeconds:PERSIST_HALF_LIFE,capacity:32,match:'none'});
+function advancePersistence(activity,dt){
+ const banner=document.getElementById('recoveryTelemetryStatus')?.textContent||'';
+ const parsed=/MATCH\\s+(\\d+)/.exec(banner);
+ const marker=parsed?.[1]||'none';
+ if(persistenceMatch!==null&&marker!==persistenceMatch)edgeMemory.fill(0);
+ persistenceMatch=marker;
+ const input=clamp((activity.attack+activity.returnCount)/6,0,1);
+ const decay=Math.exp(-Math.LN2*clamp(dt,0,.05)/PERSIST_HALF_LIFE);
+ let total=0,max=0,nonzero=0;
+ for(let i=0;i<edgeMemory.length;i++){
+   // Observed input only. No neighboring edge may invent input.
+   const drive=input>0?input*(.65+.35*Math.sin(i*.53+state.angle)**2):0;
+   const next=clamp(edgeMemory[i]*decay+drive*(1-decay),0,1);
+   edgeMemory[i]=next<PERSIST_QUIET?0:next;
+   total+=edgeMemory[i];max=Math.max(max,edgeMemory[i]);
+   if(edgeMemory[i]>0)nonzero++;
+ }
+ persistence=Object.freeze({total,max,nonzero,quiet:nonzero===0,input,
+   halfLifeSeconds:PERSIST_HALF_LIFE,capacity:32,match:marker});
+ return persistence;
+}
 function plasmaPass(view,shadow,activity,t){
- const envelope=clamp((activity.attack+activity.returnCount)/6,0,1);
  let bright=0,shadowBright=0;
- if(envelope>0&&!motion?.matches){
+ if(!motion?.matches){
   for(let e=0;e<edges.length;e++){
+   const envelope=edgeMemory[e];if(envelope<=0)continue;
    const [a,b,axis]=edges[e],phase=(t*(axis===3?.62:.88)+e*.0618)%1;
    const color=axis===3?'#83fff3':axis===0?'#ffb26d':'#b98aff';
    const A=view[a],B=view[b],S=shadow[a],T=shadow[b];
@@ -138,6 +168,7 @@ function draw(ts){
   line(view[a],view[b],colors[k],1.8+power*1.1,8+power*7,alpha);
  }
  visualEnergy=visualEnergyFrame(o,state.angle*1.618);
+ advancePersistence(o,dt);
  const plasma=plasmaPass(view,shadow,o,state.angle*1.618);
  section.dataset.visualEnergyInput=String(visualEnergy.input);
  section.dataset.visualEnergyResidual=String(visualEnergy.residual);
@@ -179,6 +210,6 @@ window.addEventListener('pagehide',()=>cancelAnimationFrame(raf),{once:true});
 draw(0);raf=requestAnimationFrame(frame);
 window.neuroscapeTesseract=Object.freeze({snapshot:()=>Object.freeze({
  vertices:vertices.length,edges:edges.length,rotation4D:true,shadow3D:true,
- frames:state.frames,visualEnergy,plasmaEdgeLimit:PLASMA_EDGE_LIMIT,plasmaEdges:Number(section.dataset.plasmaEdges)||0,shadowPlasmaEdges:Number(section.dataset.shadowPlasmaEdges)||0,plasmaActive:section.dataset.plasmaActive==='true',causality:'not-proven',gameplayMutation:false
+ frames:state.frames,visualEnergy,persistence,plasmaEdgeLimit:PLASMA_EDGE_LIMIT,plasmaEdges:Number(section.dataset.plasmaEdges)||0,shadowPlasmaEdges:Number(section.dataset.shadowPlasmaEdges)||0,plasmaActive:section.dataset.plasmaActive==='true',causality:'not-proven',gameplayMutation:false
 })});
 })();
