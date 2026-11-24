@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.97 — Cross-Cycle Recovery Isolation</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.8.98 — Match-Boundary Recovery Isolation</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -2588,7 +2588,25 @@ const committed=p=>p.units.reduce((a,u)=>a+cost(card(u.n)),0);
 const free=p=>p.ram-committed(p);
 
 function log(msg){state.events.unshift(msg);if(state.events.length>30)state.events.length=30}
-function restart(kind=mode){if(state&&!state.done)settleLongitudinal('interrupted');temporalEvidence.match++;if(botTimer!==null)clearTimeout(botTimer);botTimer=null;lastImpact=null;targetPreview=null;lastRamFlow=null;mode=kind;resetBotMemory();state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
+/* v2.8.98 — delete ONLY transient presentation effects at a match boundary.
+   Cards, both generative murals, game log archives and engine-owned evidence
+   are deliberately untouched. */
+function clearMatchRecoveryVisuals(){
+ const transient='.energyRoute,.neonRecoveryReturn,.neonRecoveryCore,'+
+   '.neonRecoveryArrival,.neonRamCharge,.neonRamReservoir,'+
+   '.neonRamDischarge,.neonRamAfterglow,.neonAttackTrail,'+
+   '.neonAttackCore,.neonImpactCorona,.neonRetaliationRebound,'+
+   '.neonRetaliationCore,[data-cycle-id]';
+ for(const root of ['pPathways','ePathways','combatPathways','gameBoard']){
+   const element=$(root);if(!element)continue;
+   for(const node of element.querySelectorAll(transient))node.remove();
+ }
+ for(const element of document.querySelectorAll('.neonStrikeOrigin,.neonStrikeTarget')){
+   element.classList.remove('neonStrikeOrigin','neonStrikeTarget');
+   delete element.dataset.neonAttackSeq;
+ }
+}
+function restart(kind=mode){if(state&&!state.done)settleLongitudinal('interrupted');temporalEvidence.match++;if(botTimer!==null)clearTimeout(botTimer);botTimer=null;clearMatchRecoveryVisuals();lastImpact=null;targetPreview=null;lastRamFlow=null;mode=kind;resetBotMemory();state={p:makePlayer(237,deckA),e:makePlayer(241,deckB),active:'p',phase:0,actions:1,turn:1,done:false,winner:null,events:[]};log('New '+(mode==='auto'?'bot-versus-bot':'player-versus-bot')+' match. Install RAM to begin.');render();scheduleBot()}
 function legalActions(s,k){if(s.done||s.active!==k)return[];let p=s[k],a=[];
 if(s.phase===0){if(s.actions>0){if(p.ram<25)a.push({kind:'ram'});if(p.deck.length)a.push({kind:'draw'})}a.push({kind:'next'});}
 else if(s.phase===1){if(p.units.length<5)p.hand.forEach((n,i)=>{if(cost(card(n))<=free(p))a.push({kind:'deploy',i})});a.push({kind:'next'});}
@@ -3631,10 +3649,14 @@ function schedulePathways(){
  const drawRam=ram&&ram.seq!==drawnRamSeq,drawImpact=impact&&impact.seq!==drawnImpactSeq;
  if(drawRam)drawnRamSeq=ram.seq;if(drawImpact)drawnImpactSeq=impact.seq;
  if(typeof requestAnimationFrame!=='function')return;
- if(drawRam||drawImpact)requestAnimationFrame(()=>{
-  if(drawRam)drawEnergyPathways(ram);
-  if(drawImpact)drawCombatPathways(impact);
- });
+ if(drawRam||drawImpact){
+  const matchToken=temporalEvidence.match,capturedState=state;
+  requestAnimationFrame(()=>{
+   if(temporalEvidence.match!==matchToken||state!==capturedState)return;
+   if(drawRam)drawEnergyPathways(ram);
+   if(drawImpact)drawCombatPathways(impact);
+  });
+ }
 }
 /* UI: actual square buttons are bound to legal engine actions. */
 function cardIdentity(c){const type=c.t||'unknown',target=c.hit==='MAINFRAME'?'MF':c.hit==='BIOFRAME'?'BF':null;const tag=type==='character'?(target||'UNIT'):type==='program'?'CODE':type==='gear'?'GEAR':type==='mainframe'?'CORE':type==='ram'?'RAM':'CARD';return {type,target,tag,level:Math.max(0,Math.min(3,Math.floor((Number(c.a)||0)/3)))}} 
