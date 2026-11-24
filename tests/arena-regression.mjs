@@ -19,6 +19,54 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.27: all phase injections declared, no autonomous amplification or source mutation.
+ const repeatedDisturbance=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),api=window.neuroscapeDisturbanceStability;
+   const fixture=Object.freeze([
+     Object.freeze({edge:0,axis:0,amplitude:1,phase:0}),
+     Object.freeze({edge:31,axis:3,amplitude:1,phase:0})
+   ]);
+   const sim=api?.simulate(fixture);
+   let bounded=true,nonIncreasing=true,knownInjections=true;
+   if(sim){
+     for(let i=0;i<sim.rows.length;i++){
+       const row=sim.rows[i];
+       bounded&&=row.fixed>=0&&row.fixed<=Math.PI&&row.adaptive>=0&&row.adaptive<=Math.PI;
+       knownInjections&&=(row.injected>0)===[0,20,40,60].includes(i);
+       if(i&&row.injected===0){
+         nonIncreasing&&=row.fixed<=sim.rows[i-1].fixed+1e-12;
+         nonIncreasing&&=row.adaptive<=sim.rows[i-1].adaptive+1e-12;
+       }
+     }
+   }
+   const start=document.getElementById('disturbanceStabilityRun');
+   const reset=document.getElementById('disturbanceStabilityReset');
+   start?.click();const started=api?.snapshot();
+   reset?.click();const stopped=api?.snapshot();
+   return {before,after:game(),bounded,nonIncreasing,knownInjections,
+      simSummary:sim?{length:sim.rows.length,events:sim.events.length,
+        injections:sim.totalInjections,mutation:sim.sourceMutated,
+        game:sim.writeToGame,last:sim.rows.at(-1),
+        injectionSteps:sim.events.map(e=>e.step)}:null,
+      started,stopped,fixtureUnchanged:fixture.every(x=>x.amplitude===1&&x.phase===0),
+      mounted:!!document.getElementById('disturbanceStabilityCanvas')};
+ });
+ if(!repeatedDisturbance.mounted||!repeatedDisturbance.simSummary||
+    repeatedDisturbance.simSummary.length!==101||
+    repeatedDisturbance.simSummary.events!==4||
+    repeatedDisturbance.simSummary.injections!==4||
+    repeatedDisturbance.simSummary.mutation||repeatedDisturbance.simSummary.game||
+    repeatedDisturbance.simSummary.injectionSteps.join(',')!=='0,20,40,60'||
+    !repeatedDisturbance.bounded||!repeatedDisturbance.nonIncreasing||
+    !repeatedDisturbance.knownInjections||!repeatedDisturbance.fixtureUnchanged||
+    !(repeatedDisturbance.simSummary.last.adaptive<repeatedDisturbance.simSummary.last.fixed)||
+    !repeatedDisturbance.started?.running||repeatedDisturbance.started.sourceMutated||
+    repeatedDisturbance.stopped?.running||repeatedDisturbance.stopped?.sourceCount!==0||
+    JSON.stringify(repeatedDisturbance.before)!==JSON.stringify(repeatedDisturbance.after))
+   fail('Repeated disturbance stability or source/game isolation violation: '+JSON.stringify(repeatedDisturbance));
+
  // v2.9.26 — copies recover deterministically; no source or engine mutation.
  const adaptiveBaseline=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
