@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.13 — Phase-Synchronized Plasma</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.14 — Isolated Plasma Phase Memory</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1662,6 +1662,16 @@ padding:10px 14px}
  box-shadow:0 0 9px #ba80ff}
 @media(prefers-reduced-motion:reduce){.combatEnvelopeTrack i{transition:none}}
 /* v2.9.12 - deterministic bounded SVG lightning, outside battlefield. */
+.plasmaPhaseMemory{margin-top:9px;padding:9px;background:#161023;border:1px solid #8058a7;border-radius:7px}
+.plasmaPhaseMemory>strong{font:10px ui-monospace,Consolas,monospace;color:#f3d6e9;letter-spacing:.07em}
+.plasmaPhaseMemoryGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:7px}
+.plasmaPhaseMemoryGrid>div>span{color:#c2acc9;font:9px ui-monospace,Consolas,monospace}
+.plasmaPhaseMemory ol{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px}
+.plasmaPhaseMemory li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;padding:5px 7px;
+ border-left:2px solid #fa9b53;background:#2b1b31;font:9px ui-monospace,Consolas,monospace;overflow-wrap:anywhere}
+.plasmaPhaseMemory li.recovery{border-left-color:#bd80ee}
+.plasmaPhaseMemory li em{font-style:normal;color:#e9c7f7}
+@media(max-width:600px){.plasmaPhaseMemoryGrid{grid-template-columns:1fr}}
 .plasmaLightning{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:5px 0 1px}
 .plasmaLightningLane{min-width:0;border:1px solid #8e4b4a;border-radius:6px;padding:6px;background:#100d1c}
 .plasmaLightningLane.recovery{border-color:#764da4}
@@ -1716,7 +1726,7 @@ background:linear-gradient(110deg,#302138,#1d182b);font:10px/1.45 ui-monospace,C
 .recoveryTelemetryLane.bot .recoveryWaveLevel{fill:#e3c7ff}
 @media(max-width:650px){.recoveryTelemetryGrid{grid-template-columns:1fr}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.9.13 · BONE WHITE ARENA / PHASE-SYNCHRONIZED PLASMA</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.9.14 · BONE WHITE ARENA / INDEPENDENT PULSE MEMORY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText">STARTING ARCADE · FIVE SQUARES PER PLAYER</strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" data-arena-invariant="5x2-visible-square-card-slots" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes" aria-label="Five bot card squares"><div class="slot" data-slot="1"></div><div class="slot" data-slot="2"></div><div class="slot" data-slot="3"></div><div class="slot" data-slot="4"></div><div class="slot" data-slot="5"></div></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1746,13 +1756,20 @@ background:linear-gradient(110deg,#302138,#1d182b);font:10px/1.45 ui-monospace,C
     <div class="plasmaLightning" id="plasmaLightning" aria-label="Read-only neon plasma lightning tied to observed activity">
       <div class="plasmaLightningLane"><span>ATTACK LIGHTNING</span>
         <svg viewBox="0 0 320 42" id="attackLightning" aria-hidden="true">
-          <polyline class="plasmaBolt" points="" data-level="0"></polyline><circle class="plasmaTravelHead" cx="0" cy="21" r="4" opacity="0"></circle><circle class="plasmaTravelHead" cx="0" cy="21" r="4" opacity="0"></circle>
+          <polyline class="plasmaBolt" points="" data-level="0"></polyline><circle class="plasmaTravelHead" cx="0" cy="21" r="4" opacity="0"></circle>
         </svg>
       </div>
       <div class="plasmaLightningLane recovery"><span>RECOVERY LIGHTNING</span>
         <svg viewBox="0 0 320 42" id="recoveryLightning" aria-hidden="true">
-          <polyline class="plasmaBolt" points="" data-level="0"></polyline>
+          <polyline class="plasmaBolt" points="" data-level="0"></polyline><circle class="plasmaTravelHead" cx="0" cy="21" r="4" opacity="0"></circle>
         </svg>
+      </div>
+    </div>
+    <div class="plasmaPhaseMemory" id="plasmaPhaseMemory" aria-label="Independent recent lightning pulse memory">
+      <strong>◉ PULSE MEMORY · LATEST 8 SOURCES PER CHANNEL</strong>
+      <div class="plasmaPhaseMemoryGrid">
+        <div><span>ATTACK SOURCES</span><ol id="plasmaMemoryAttack"></ol></div>
+        <div><span>RECOVERY SOURCES</span><ol id="plasmaMemoryRecovery"></ol></div>
       </div>
     </div>
     <div class="combatDensityGrid">
@@ -2848,6 +2865,26 @@ function combatEnvelopeLevels(data){
    The bolt is not a physical measurement and cannot mutate combat. */
 /* v2.9.13 — phase comes from the most recently OBSERVED monitor event.
    Positive release only; zero-RAM observations never energize this channel. */
+/* v2.9.14 — each source keeps its own age; newest source cannot
+   reset or overwrite the phase of an older active pulse. */
+function paintPlasmaPhaseMemory(now){
+ for(const [id,events,channel] of [
+  ['plasmaMemoryAttack',attackMonitorEntries,'attack'],
+  ['plasmaMemoryRecovery',recoveryMonitorEntries.filter(x=>x.amount>0),'recovery']]){
+  const list=$(id);if(!list)continue;
+  list.replaceChildren(...events.slice(-RECOVERY_MONITOR_LIMIT).reverse().map(item=>{
+   const source=channel==='attack'?item.key:item.source;
+   const age=Math.max(0,now-item.born);
+   const phase=age>=5000?'quiet':age<350?'launch':age<1600?'travel':'decay';
+   const li=document.createElement('li');li.className=channel;
+   li.dataset.source=source;li.dataset.phase=phase;
+   li.dataset.ageMs=String(Math.round(age));
+   const key=document.createElement('span');key.textContent=source;
+   const status=document.createElement('em');status.textContent=phase.toUpperCase();
+   li.append(key,status);return li;
+  }));
+ }
+}
 function observedPlasmaPhase(side,now){
  const events=(side==='attack'?attackMonitorEntries:
    recoveryMonitorEntries.filter(x=>x.amount>0)).filter(x=>now>=x.born&&now-x.born<5000);
@@ -2904,6 +2941,7 @@ function paintCombatDensity(now){
  }
  const levels=combatEnvelopeLevels(data);
  paintPlasmaLightning(levels,now);
+ paintPlasmaPhaseMemory(now);
  for(const [fill,label,value] of [
   ['attackEnvelopeFill','attackEnvelopeLevel',levels.attack],
   ['recoveryEnvelopeFill','recoveryEnvelopeLevel',levels.recovery]]){
