@@ -239,6 +239,69 @@ try{
  if(joinedReset.rows||joinedReset.attacks||joinedReset.recoveries||
     joinedReset.cards.some(n=>n!==5))
    fail('Linked combat timeline leaked across match boundary: '+JSON.stringify(joinedReset));
+ // v2.9.08 — two consecutive events retain separate expiry provenance.
+ for(const c of [
+   {seq:989976,flow:989977,side:'p',opposite:'e',damage:5,returned:2,slot:1},
+   {seq:989978,flow:989979,side:'e',opposite:'p',damage:7,returned:4,slot:3}
+ ]){
+   await page.evaluate(item=>{
+     lastImpact={seq:item.seq,from:item.side,to:item.opposite,
+       source:0,target:1,kind:'blocked',damage:item.damage,retaliation:1};
+     lastRamFlow={seq:item.flow,impactSeq:item.seq,events:[
+       {side:item.side,type:'release',amount:item.returned,
+         slots:[{slot:item.slot,amount:item.returned}]},
+       {side:item.opposite,type:'release',amount:0,slots:[]}
+     ]};
+     schedulePathways();
+   },c);
+   await page.waitForTimeout(90);
+ }
+ const timelinePairs=await page.evaluate(()=>[...document.querySelectorAll(
+   '#combatTimelineEvents .temporalRuler')].map(svg=>({
+   attack:svg.dataset.attackId,damage:svg.dataset.damage,
+   ram:svg.dataset.returnedRam,returns:svg.dataset.recoveryCount,
+   attackSource:svg.querySelector('.rulerAttack')?.dataset.source,
+   returnSources:[...svg.querySelectorAll('.rulerRecovery')].map(x=>x.dataset.source)
+ })));
+ if(timelinePairs.length!==2||
+    !timelinePairs.some(x=>x.attack==='989976'&&x.damage==='5'&&x.ram==='2'&&
+      x.returns==='2'&&x.attackSource==='attack:989976:p'&&
+      x.returnSources.every(v=>v.startsWith('attack:989976:flow:989977:')))||
+    !timelinePairs.some(x=>x.attack==='989978'&&x.damage==='7'&&x.ram==='4'&&
+      x.returns==='2'&&x.attackSource==='attack:989978:e'&&
+      x.returnSources.every(v=>v.startsWith('attack:989978:flow:989979:'))))
+   fail('Consecutive timeline events cross-linked provenance: '+JSON.stringify(timelinePairs));
+ await page.waitForTimeout(5550);
+ const expiredPairs=await page.evaluate(()=>({
+   rulers:[...document.querySelectorAll('#combatTimelineEvents .temporalRuler')].map(svg=>({
+     attack:svg.dataset.attackId,expired:svg.dataset.attackExpired,
+     settled:svg.dataset.expiredRecoveries,
+     attackMarks:[...svg.querySelectorAll('.rulerAttackExpiry')].map(x=>x.dataset.source),
+     returnMarks:[...svg.querySelectorAll('.rulerRecoveryExpiry')].map(x=>x.dataset.source),
+     activeReturns:svg.querySelectorAll('.rulerRecovery').length
+   })),
+   liveMeter:['p','e'].map(k=>document.getElementById(k+'RamAvailable').style.width),
+   slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
+ }));
+ if(expiredPairs.rulers.length!==2||expiredPairs.rulers.some(row=>
+      row.expired!=='true'||row.settled!=='1'||
+      row.attackMarks.length!==1||row.attackMarks[0]!=='attack:'+row.attack+
+        ':'+(row.attack==='989976'?'p':'e')||
+      row.returnMarks.length!==1||!row.returnMarks[0].startsWith(
+        'attack:'+row.attack+':flow:'+(row.attack==='989976'?'989977':'989979')+':')||
+      row.activeReturns!==2)||
+    expiredPairs.slots.some(n=>n!==5)||expiredPairs.liveMeter.some(w=>w!=='0%'))
+   fail('Multi-event expiry leaked or changed arena: '+JSON.stringify(expiredPairs));
+ await page.getByRole('button',{name:'Restart match'}).click();
+ const expiresReset=await page.evaluate(()=>({
+   rows:document.querySelectorAll('#combatTimelineEvents li').length,
+   attackHistory:attackMonitorEntries.length,recoveryHistory:recoveryMonitorEntries.length,
+   slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)
+ }));
+ if(expiresReset.rows||expiresReset.attackHistory||expiresReset.recoveryHistory||
+    expiresReset.slots.some(n=>n!==5))
+   fail('Expired timeline events crossed match reset: '+JSON.stringify(expiresReset));
+ console.log('MULTI-EVENT EXPIRY PASS: two independent attack sources, positive-return quiet markers, zero phantom expiry, reset clean');
  console.log('LINKED COMBAT TIMELINE PASS: attack 989964, 6 DMG, +3 RAM, zero bot, exact shared ID, settled/reset');
  console.log('DUAL WAVEFORM PASS: source-bound attack damage independent of RAM refund, decay and reset clean');
  console.log('RECOVERY WAVEFORM PASS: player active orange trace, zero-cost bot quiet, both settle to zero');
