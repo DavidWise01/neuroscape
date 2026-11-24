@@ -186,7 +186,7 @@ try{
  if(joined.rows.length!==1||!joined.rows[0].includes('ATTACK 989964')||
     !joined.rows[0].includes('6 DMG')||!joined.rows[0].includes('+3 RAM')||
     !joined.rows[0].includes('E:ZERO · NO ENERGY')||
-    !/Δ\\d+ms/.test(joined.rows[0])||
+    !/Δ\d+ms/.test(joined.rows[0])||
     joined.damage.length!==1||joined.recovery.length!==2||
     joined.playerAttack!=='6 DMG'||joined.playerRecovery!=='3 RAM ACTIVE'||
     joined.botRecovery!=='0 RAM'||joined.ram.some(n=>n!==0)||
