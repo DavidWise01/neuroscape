@@ -1,0 +1,14 @@
+/* v2.9.18 · independent session-only immutable provenance window */
+#temporalProvenanceFreeze{margin:12px 0;padding:12px;border:1px solid #78e4fd;border-radius:10px;
+background:linear-gradient(135deg,#111b2e,#23142e);color:#ecedff;
+font:11px ui-monospace,Consolas,monospace;box-shadow:0 0 20px #55aaff29,inset 0 0 24px #ae68ff1d}
+#temporalProvenanceFreeze .freezeHead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+#temporalProvenanceFreeze .freezeHead strong{color:#a8f7ff;text-shadow:0 0 10px #70eaff}
+#provenanceFreezeExport{font-size:11px;background:#183b4d;color:#c7fdff;border:1px solid #72dcec;border-radius:5px;padding:5px 9px}
+#provenanceFreezeRows{list-style:none;margin:10px 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:7px}
+#provenanceFreezeRows li{display:flex;flex-direction:column;gap:5px;background:#1b233a;border-left:3px solid #79f8e9;border-radius:4px;padding:8px;overflow-wrap:anywhere}
+#provenanceFreezeRows li[data-seal-reason*="UNVERIFIED"]{border-left-color:#ffa56f}
+#provenanceFreezeRows li strong{color:#b4f7ff}
+#provenanceFreezeRows li span{color:#d1b5ff}
+#provenanceFreezeRows li small,.freezeDisclaimer{color:#bac4d9}
+@media(prefers-reduced-motion:reduce){#temporalProvenanceFreeze{box-shadow:none}}
