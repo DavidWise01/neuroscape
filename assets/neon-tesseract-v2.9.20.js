@@ -114,6 +114,37 @@ function advancePersistence(activity,dt){
    halfLifeSeconds:PERSIST_HALF_LIFE,capacity:32,match:marker});
  return persistence;
 }
+/* v2.9.24 — observational phase coherence, not forced synchronization.
+ * Each of the 32 independent reservoirs contributes its own phase and weight.
+ * Circular-vector magnitude R is undefined when no reservoirs are active.
+ * The algorithm NEVER writes to edgeMemory or creates gameplay observations.
+ */
+let resonance=Object.freeze({defined:false,coherence:null,phase:null,active:0,
+ groups:Object.freeze([]),source:'visual-edge-memory',gameplayMutation:false});
+function measureResonance(t){
+ let cx=0,cy=0,weight=0,count=0;
+ const axisGroups=[0,1,2,3].map(axis=>({axis,cos:0,sin:0,weight:0,active:0}));
+ for(let i=0;i<edges.length;i++){
+   const amp=edgeMemory[i];if(amp<=0)continue;
+   const axis=edges[i][2];
+   const theta=(t*(axis===3?.62:.88)+i*.0618)*2*Math.PI;
+   const x=amp*Math.cos(theta),y=amp*Math.sin(theta);
+   cx+=x;cy+=y;weight+=amp;count++;
+   const group=axisGroups[axis];group.cos+=x;group.sin+=y;group.weight+=amp;group.active++;
+ }
+ const groups=axisGroups.map(g=>Object.freeze({
+   axis:g.axis,active:g.active,
+   coherence:g.weight>0?Math.min(1,Math.hypot(g.cos,g.sin)/g.weight):null
+ }));
+ resonance=Object.freeze({
+   defined:weight>0,
+   coherence:weight>0?Math.min(1,Math.hypot(cx,cy)/weight):null,
+   phase:weight>0?Math.atan2(cy,cx):null,
+   active:count,groups:Object.freeze(groups),
+   source:'visual-edge-memory',gameplayMutation:false
+ });
+ return resonance;
+}
 function plasmaPass(view,shadow,activity,t){
  let bright=0,shadowBright=0;
  if(!motion?.matches){
@@ -169,6 +200,7 @@ function draw(ts){
  }
  visualEnergy=visualEnergyFrame(o,state.angle*1.618);
  advancePersistence(o,dt);
+ measureResonance(state.angle*1.618);
  const plasma=plasmaPass(view,shadow,o,state.angle*1.618);
  section.dataset.visualEnergyInput=String(visualEnergy.input);
  section.dataset.visualEnergyResidual=String(visualEnergy.residual);
@@ -210,6 +242,6 @@ window.addEventListener('pagehide',()=>cancelAnimationFrame(raf),{once:true});
 draw(0);raf=requestAnimationFrame(frame);
 window.neuroscapeTesseract=Object.freeze({snapshot:()=>Object.freeze({
  vertices:vertices.length,edges:edges.length,rotation4D:true,shadow3D:true,
- frames:state.frames,visualEnergy,persistence,plasmaEdgeLimit:PLASMA_EDGE_LIMIT,plasmaEdges:Number(section.dataset.plasmaEdges)||0,shadowPlasmaEdges:Number(section.dataset.shadowPlasmaEdges)||0,plasmaActive:section.dataset.plasmaActive==='true',causality:'not-proven',gameplayMutation:false
+ frames:state.frames,visualEnergy,persistence,resonance,plasmaEdgeLimit:PLASMA_EDGE_LIMIT,plasmaEdges:Number(section.dataset.plasmaEdges)||0,shadowPlasmaEdges:Number(section.dataset.shadowPlasmaEdges)||0,plasmaActive:section.dataset.plasmaActive==='true',causality:'not-proven',gameplayMutation:false
 })});
 })();
