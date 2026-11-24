@@ -1,0 +1,14 @@
+/* v2.9.20 · real 4D hypercube projection, isolated from arena */
+#neonTesseractLab{margin:14px 0;padding:13px;border:1px solid #5eeff0;border-radius:12px;
+ background:linear-gradient(135deg,#10132c,#250e37 50%,#091f29);color:#e8ffff;
+ box-shadow:0 0 22px #7b5aff44,inset 0 0 25px #29d9ee18}
+#neonTesseractLab .tesseractHead{display:flex;justify-content:space-between;flex-wrap:wrap;align-items:center;gap:9px}
+#neonTesseractLab .tesseractHead strong{font:700 13px ui-monospace,Consolas,monospace;color:#99fff2;text-shadow:0 0 9px #37fff6,0 0 20px #ff55df}
+#neonTesseractStatus{font:10px ui-monospace,Consolas,monospace;color:#dbb8ff}
+#neonTesseractCanvas{display:block;width:100%;aspect-ratio:1000/530;max-height:530px;border:1px solid #635bbd;border-radius:7px;
+ background:#0b1023;cursor:grab;touch-action:pan-y;box-shadow:0 0 16px #c459ff33;margin-top:10px}
+#neonTesseractCanvas:active{cursor:grabbing}
+#neonTesseractLab .tesseractFoot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:9px;
+ font:10px ui-monospace,Consolas,monospace;color:#c3c3de}
+#neonTesseractPause{padding:6px 10px;border:1px solid #7aefff;background:#172947;color:#aafcfb;border-radius:5px}
+@media(prefers-reduced-motion:reduce){#neonTesseractLab{box-shadow:none}#neonTesseractCanvas{box-shadow:none}}
