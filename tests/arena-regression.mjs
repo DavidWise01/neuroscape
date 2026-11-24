@@ -19,6 +19,48 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.32: explicit uncertainty classification and immutable source/game acceptance.
+ const uncertaintyCheck=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),api=window.neuroscapeUncertaintyMargin;
+   const snap=api?.snapshot();
+   const stable=api?.evaluate(.2,.05);
+   const unstable=api?.evaluate(-.2,.05);
+   const unknown=api?.evaluate(.02,.05);
+   const exact=api?.evaluate(0,0);
+   const sweep=api?.sweep(.05);
+   const period=document.getElementById('uncertaintyMarginPeriod');
+   const width=document.getElementById('uncertaintyMarginWidth');
+   if(period)period.value='8';
+   period?.dispatchEvent(new Event('change',{bubbles:true}));
+   if(width)width.value='0.2';
+   width?.dispatchEvent(new Event('input',{bubbles:true}));
+   const changed=api?.snapshot();
+   const consistent=sweep?.rows.every(row=>{
+     const original=window.neuroscapeAdversarialMargin.audit(row.period);
+     return ['fixed','adaptive'].every(key=>
+       Math.abs(row[key].margin-original[key].margin)<1e-10&&
+       Math.abs(row[key].lower-(original[key].margin-.05))<1e-10&&
+       Math.abs(row[key].upper-(original[key].margin+.05))<1e-10);
+   });
+   return {before,after:game(),snap,stable,unstable,unknown,exact,consistent,
+     count:sweep?.rows.length,selectCount:period?.options.length,changed,
+     mounted:!!document.getElementById('uncertaintyMarginCanvas')};
+ });
+ if(!uncertaintyCheck.mounted||!uncertaintyCheck.snap||
+    uncertaintyCheck.snap.periods!==32||uncertaintyCheck.snap.measuredUncertainty!==false||
+    uncertaintyCheck.snap.sourceMutated||uncertaintyCheck.snap.gameplayMutation||
+    uncertaintyCheck.stable?.classification!=='CONFIRMED STABLE'||
+    uncertaintyCheck.unstable?.classification!=='CONFIRMED UNSTABLE'||
+    uncertaintyCheck.unknown?.classification!=='INDETERMINATE'||
+    uncertaintyCheck.exact?.classification!=='CONFIRMED STABLE'||
+    uncertaintyCheck.count!==32||uncertaintyCheck.selectCount!==32||
+    !uncertaintyCheck.consistent||
+    uncertaintyCheck.changed?.period!==8||uncertaintyCheck.changed?.epsilon!==.2||
+    JSON.stringify(uncertaintyCheck.before)!==JSON.stringify(uncertaintyCheck.after))
+    fail('v2.9.32 uncertainty interval semantics or engine isolation violated: '+JSON.stringify(uncertaintyCheck));
+
  // v2.9.31: signed margins computed from the inherited 24 adversarial trials.
  const marginAudit=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
