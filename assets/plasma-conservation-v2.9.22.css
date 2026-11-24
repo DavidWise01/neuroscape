@@ -1,0 +1,16 @@
+/* v2.9.22 · read-only normalized visual-energy audit */
+#plasmaConservation{margin:12px 0;padding:12px;border:1px solid #6efadf;border-radius:10px;
+background:linear-gradient(115deg,#10172d,#21143d);color:#f6efff;
+font:11px ui-monospace,Consolas,monospace;box-shadow:0 0 19px #66e7ff2a}
+#plasmaConservation .plasmaEnergyHead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#plasmaConservation .plasmaEnergyHead strong{color:#9dfff0;text-shadow:0 0 9px #7bf9ed}
+#plasmaConservation .plasmaEnergyGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:9px;margin:10px 0}
+#plasmaConservation .plasmaEnergyCell{padding:8px;background:#1c213a;border:1px solid #635694;border-radius:6px}
+#plasmaConservation .plasmaEnergyCell b{display:block;margin:5px 0;color:#fff}
+#plasmaConservation .plasmaEnergyTrack{height:7px;border-radius:6px;background:#070d19;overflow:hidden}
+#plasmaConservation .plasmaEnergyTrack i{display:block;height:100%;width:0;background:#75f8e9;transition:width .15s linear}
+#plasmaConservation .plasmaEnergyCell:nth-child(2) i{background:#ffac65}
+#plasmaConservation .plasmaEnergyCell:nth-child(3) i{background:#bd88ff}
+#plasmaConservation .plasmaEnergyCell:nth-child(4) i{background:#6d99ef}
+#plasmaConservation .plasmaEnergyFoot{color:#c1c1db;font-size:10px}
+@media(prefers-reduced-motion:reduce){#plasmaConservation .plasmaEnergyTrack i{transition:none}#plasmaConservation{box-shadow:none}}
