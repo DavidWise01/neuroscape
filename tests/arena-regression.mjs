@@ -924,6 +924,53 @@ try{
        fail('Live recovery neon has missing or fabricated transfer: '+JSON.stringify(result));
    }
  }
+ // v2.8.93 — conserve observed live return value across successive
+ // attack events. Distinguish card destructions (including zero-cost) from
+ // positive recoveries; count ledger amounts once per attack/flow/side.
+ const seenAttack=new Set(),seenFlowSide=new Set(),seenVisual=new Set();
+ const totals={destroyed:0,released:0,visualized:0,attacks:0,positive:0,zero:0};
+ for(const entry of matchAudit.destructions){
+   if(seenAttack.has(entry.seq))
+     fail('Real attack was recorded twice: '+JSON.stringify(entry));
+   seenAttack.add(entry.seq);totals.attacks++;
+   const positiveDestroyed=entry.destruction.filter(d=>d.ram>0);
+   totals.destroyed+=positiveDestroyed.reduce((n,d)=>n+d.ram,0);
+   totals.zero+=entry.destruction.filter(d=>d.ram===0).length;
+   for(const release of entry.releases){
+     const flowKey=entry.flowSeq+':'+release.side;
+     if(seenFlowSide.has(flowKey))
+       fail('Recovery ledger counted a side twice: '+JSON.stringify(entry));
+     seenFlowSide.add(flowKey);
+     totals.released+=release.amount;
+     if(release.amount<=0)continue;
+     totals.positive++;
+     const sources=positiveDestroyed.filter(d=>d.side===release.side);
+     if(sources.reduce((n,d)=>n+d.ram,0)!==release.amount)
+       fail('Observed recovery violates conservation: '+JSON.stringify(entry));
+     const reservoir=entry.visuals.filter(v=>v.cls?.includes('neonRamReservoir')&&
+       v.side===release.side);
+     if(reservoir.length!==1)
+       fail('Positive recovery must have exactly one visual reservoir: '+JSON.stringify(entry));
+     const evidence=reservoir[0],visualKey=evidence.cycle;
+     if(seenVisual.has(visualKey)||evidence.flowSeq!==String(entry.flowSeq)||
+        visualKey!=='attack:'+entry.seq+':flow:'+entry.flowSeq+':'+release.side)
+       fail('Recovery reservoir is duplicated or orphaned: '+JSON.stringify(entry));
+     seenVisual.add(visualKey);
+     totals.visualized+=Number(evidence.amount);
+     const rays=entry.visuals.filter(v=>v.cls?.includes('neonRecoveryReturn')&&
+       v.side===release.side);
+     const expectedSlots=sources.map(d=>d.slot+':'+d.ram).sort();
+     const actualSlots=rays.map(v=>v.slot+':'+v.amount).sort();
+     if(expectedSlots.join(',')!==actualSlots.join(','))
+       fail('Visual photon transfer repeated or omitted destroyed slot: '+JSON.stringify(entry));
+   }
+ }
+ if(totals.destroyed!==totals.released||totals.released!==totals.visualized||
+    totals.positive!==seenVisual.size)
+   fail('Conservation totals differ across source, ledger and neon: '+JSON.stringify(totals));
+ console.log('LIVE RAM CONSERVATION: '+JSON.stringify({
+   ...totals,status:totals.positive?'POSITIVE_RETURNS_RECONCILED':'NO_POSITIVE_RETURN_OBSERVED'
+ }));
  // v2.8.92 — close the real evidence chain at final expiration.
  // Stop producing new actions; inspect only recovered visual cycles captured
  // by the immutable attack/flow tuple. An older animation must self-expire.
