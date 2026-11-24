@@ -848,10 +848,26 @@ try{
      widths:['p','e'].map(side=>document.getElementById(side+'RamAvailable').style.width),
      lanes:['p','e'].map(side=>document.querySelectorAll('#'+side+'Lanes>.slot').length),
      errors:document.querySelectorAll('.neonRamAfterglow:not([data-cycle-id])').length
-   }}};
+   }};
  });
- // finish functions cannot cross Playwright serialization; use a page-side
- // collector stored only on the test page, not in the shipped arcade.
+ await page.waitForTimeout(9500);
+ const matchAudit=await page.evaluate(()=>{
+   const result=window.__liveMatchAuditFinish();
+   delete window.__liveMatchAuditFinish;
+   return result;
+ });
+ if(matchAudit.samples.length<20||matchAudit.lanes.some(n=>n!==5)||
+    matchAudit.errors||matchAudit.samples.some(sample=>
+      sample.values.some(value=>value.cycleCount>12)))
+   fail('Live match recovery audit changed board or exceeded visual bound: '+JSON.stringify(matchAudit));
+ if(!matchAudit.samples.some(sample=>
+    sample.values[0].turn!==matchAudit.samples[0].values[0].turn))
+   fail('Live match did not advance while auditing recovery: '+JSON.stringify(matchAudit));
+ console.log('LIVE MATCH AUDIT: '+JSON.stringify({
+   samples:matchAudit.samples.length,positiveReleases:matchAudit.positiveFlows.length,
+   endTurn:matchAudit.endTurn,
+   limitation:matchAudit.positiveFlows.length?'Natural recovery observed':'No positive recovery observed in fixed observation window'
+ }));
  console.log('LIVE COMBAT PASS: real bot actions, matching mural telemetry, 10 protected card stations');
 
 
