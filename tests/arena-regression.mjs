@@ -19,6 +19,49 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.29: four fully declared deterministic schedules; recovery before each next injection.
+ const irregularCheck=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),api=window.neuroscapeIrregularEnvelope;
+   const snap=api?.snapshot(),sweep=api?.sweep();
+   const schedules=['regular','alternating','clustered','deterministic'];
+   const trials=schedules.map(name=>api?.trial(3,'adaptive',name));
+   const short=api?.trial(.5,'adaptive','clustered');
+   const long=api?.trial(8.25,'fixed','clustered');
+   const selector=document.getElementById('irregularEnvelopePeriod');
+   if(selector)selector.value='1';
+   selector?.dispatchEvent(new Event('change',{bubbles:true}));
+   const selectedShort=api?.snapshot();
+   if(selector)selector.value='8';
+   selector?.dispatchEvent(new Event('change',{bubbles:true}));
+   const selectedLong=api?.snapshot();
+   const declared=trials.every(t=>t&&t.count===4&&t.events.length===4&&
+     t.events.every(e=>e.injectedRadians===Math.PI)&&
+     t.segments.every(s=>s.intervalSeconds>=.1&&s.preNextResidual>=0&&s.preNextResidual<=Math.PI));
+   const deterministic=trials.every((t,i)=>JSON.stringify(t)===JSON.stringify(api?.trial(3,'adaptive',schedules[i])));
+   const monotonic=sweep?.rows.every((row,i,all)=>i===0||
+     (!all[i-1].adaptiveAll||row.adaptiveAll)&&(!all[i-1].fixedAll||row.fixedAll));
+   return {before,after:game(),snap,declared,deterministic,monotonic,
+     count:sweep?.rows.length,patterns:sweep?.patterns,
+     shortStable:short?.stable,longStable:long?.stable,
+     selectedShort:selectedShort?.classification,selectedLong:selectedLong?.classification,
+     selectCount:selector?.options.length,mounted:!!document.getElementById('irregularEnvelopeCanvas')};
+ });
+ if(!irregularCheck.mounted||!irregularCheck.snap||
+    irregularCheck.snap.periods!==32||irregularCheck.snap.patterns!==4||
+    irregularCheck.snap.injectionsPerPattern!==4||
+    irregularCheck.snap.sourceMutated||irregularCheck.snap.gameplayMutation||
+    irregularCheck.count!==32||irregularCheck.patterns!==4||
+    irregularCheck.selectCount!==32||
+    !irregularCheck.declared||!irregularCheck.deterministic||
+    !irregularCheck.monotonic||
+    irregularCheck.shortStable!==false||irregularCheck.longStable!==true||
+    irregularCheck.selectedShort!=='NEITHER ROBUST'||
+    irregularCheck.selectedLong!=='BOTH ROBUST'||
+    JSON.stringify(irregularCheck.before)!==JSON.stringify(irregularCheck.after))
+   fail('v2.9.29 irregular envelope or engine isolation violated: '+JSON.stringify(irregularCheck));
+
  // v2.9.28: swept stability envelope distinguishes recovery regimes without any gameplay mutation.
  const envelopeCheck=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
