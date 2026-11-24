@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.05 — Dual-Channel Combat Telemetry</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Neuroscape v2.9.06 — Synchronized Combat Timeline</title><style>
 :root{color-scheme:dark;--bg:#100e1c;--panel:#21182d;--line:#77518f;--orange:#ff9d46;--purple:#ba86ef;--text:#f9edf9}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,sans-serif}
@@ -1629,6 +1629,16 @@ padding:10px 14px}
 .recoveryWave{display:block;width:100%;height:62px;margin:7px 0 4px;border-radius:6px;
  background:repeating-linear-gradient(90deg,#ffffff06 0,#ffffff06 1px,transparent 1px,transparent 24px),#110f1e;
  border:1px solid #88538e;overflow:hidden}
+.combatTimeline{margin-top:10px;padding:9px;background:#120e1dcc;border:1px solid #835a9c;border-radius:7px}
+.combatTimeline>strong{font:10px ui-monospace,Consolas,monospace;color:#ffdfc0;letter-spacing:.08em}
+.combatTimeline ol{list-style:none;display:grid;gap:5px;margin:7px 0 0;padding:0}
+.combatTimeline li{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:9px;align-items:center;
+ padding:7px;background:#2b2037;border-left:3px solid #b782e6;
+ font:10px ui-monospace,Consolas,monospace}
+.combatTimeline li b{color:#f3c8a3;overflow-wrap:anywhere}
+.combatTimeline .timelineDamage{color:#ffab71}
+.combatTimeline .timelineRecovery{color:#d4adff}
+@media(max-width:600px){.combatTimeline li{grid-template-columns:1fr;gap:3px}}
 .combatWaveLabel{font:9px ui-monospace,Consolas,monospace;letter-spacing:.1em;color:#bf9dbb;margin:7px 0 2px}
 .recoveryWaveGrid{fill:none;stroke:#7c6782;stroke-width:.5;opacity:.35}
 .combatAttackWave{border-color:#d06c56}
@@ -1643,7 +1653,7 @@ padding:10px 14px}
 .recoveryTelemetryLane.bot .recoveryWaveLevel{fill:#e3c7ff}
 @media(max-width:650px){.recoveryTelemetryGrid{grid-template-columns:1fr}}
 </style></head><body>
-<header><div><h1>NEUROSCAPE</h1><p>v2.9.05 · BONE WHITE ARENA / ATTACK + RECOVERY CHANNELS</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
+<header><div><h1>NEUROSCAPE</h1><p>v2.9.06 · BONE WHITE ARENA / LINKED ATTACK + RECOVERY</p></div><nav><button id="modeHuman" class="active" type="button">Play vs Bot</button><button id="modeAuto" type="button">Bot vs Bot</button><button id="restart" type="button">Restart match</button><a href="./archive/neuroscape-v2.7.4.html">Archive / Labs</a></nav></header>
 <main><div class="turnbar" id="turnbar"><strong id="turnText">STARTING ARCADE · FIVE SQUARES PER PLAYER</strong><div class="phases" id="phaseStrip"></div></div>
 <section class="board" id="gameBoard" data-arena-invariant="5x2-visible-square-card-slots" aria-label="Two-player square card battlefield"><svg id="combatPathways" class="combatPathways" aria-hidden="true"></svg>
 <div class="side opponent"><div class="side-head"><strong>BOT / COYOTE</strong><div class="meters"><span id="eHealth"></span><span id="eRam"></span><span id="eDeck"></span><span id="eBin"></span><span id="eCircuit" class="recycleCircuit" aria-live="polite"></span></div></div><div class="ramGauge" aria-label="Bot RAM allocation"><div class="ramGaugeLegend"><span>INSTALLED <b id="eInstalled">0</b></span><span>COMMITTED <b id="eCommitted">0</b></span><span>AVAILABLE <b id="eAvailable">0</b></span></div><div class="ramGaugeTrack"><i id="eRamCommitted" class="ramCommitted"></i><i id="eRamAvailable" class="ramAvailable"></i></div><div id="eFlow" class="ramFlow" aria-live="polite"></div></div><div class="lanes" id="eLanes" aria-label="Five bot card squares"><div class="slot" data-slot="1"></div><div class="slot" data-slot="2"></div><div class="slot" data-slot="3"></div><div class="slot" data-slot="4"></div><div class="slot" data-slot="5"></div></div><svg id="ePathways" class="energyPathways" aria-hidden="true"></svg></div>
@@ -1659,6 +1669,10 @@ padding:10px 14px}
   <div class="recoveryTelemetryGrid">
     <div class="recoveryTelemetryLane player" id="recoveryTelemetryP" aria-label="Player recovery monitor"><strong>PLAYER / ORANGE</strong><div class="combatWaveLabel">ATTACK · DAMAGE</div><svg class="recoveryWave combatAttackWave" id="attackWaveP" viewBox="0 0 240 52" role="img" aria-label="Observed player attack-damage waveform"><path class="recoveryWaveGrid" d="M0 26 H240 M0 13 H240 M0 39 H240"/><polyline class="attackWaveTrace" points="0,44 240,44"/><text x="235" y="11" text-anchor="end" class="attackWaveLevel">0 DMG</text></svg><div class="combatWaveLabel">RECOVERY · RETURNED RAM</div><svg class="recoveryWave" id="recoveryWaveP" viewBox="0 0 240 52" role="img" aria-label="Observed player recovery timing waveform"><path class="recoveryWaveGrid" d="M0 26 H240 M0 13 H240 M0 39 H240"/><polyline class="recoveryWaveTrace" points="0,44 240,44"/><text x="235" y="11" text-anchor="end" class="recoveryWaveLevel">0 RAM</text></svg><ol></ol></div>
     <div class="recoveryTelemetryLane bot" id="recoveryTelemetryE" aria-label="Bot recovery monitor"><strong>BOT / PURPLE</strong><div class="combatWaveLabel">ATTACK · DAMAGE</div><svg class="recoveryWave combatAttackWave" id="attackWaveE" viewBox="0 0 240 52" role="img" aria-label="Observed bot attack-damage waveform"><path class="recoveryWaveGrid" d="M0 26 H240 M0 13 H240 M0 39 H240"/><polyline class="attackWaveTrace" points="0,44 240,44"/><text x="235" y="11" text-anchor="end" class="attackWaveLevel">0 DMG</text></svg><div class="combatWaveLabel">RECOVERY · RETURNED RAM</div><svg class="recoveryWave" id="recoveryWaveE" viewBox="0 0 240 52" role="img" aria-label="Observed bot recovery timing waveform"><path class="recoveryWaveGrid" d="M0 26 H240 M0 13 H240 M0 39 H240"/><polyline class="recoveryWaveTrace" points="0,44 240,44"/><text x="235" y="11" text-anchor="end" class="recoveryWaveLevel">0 RAM</text></svg><ol></ol></div>
+  </div>
+  <div class="combatTimeline" id="combatTimeline" aria-label="Attack and RAM recovery linked timeline">
+    <strong>◈ CAUSE / RESPONSE · SHARED ATTACK ID</strong>
+    <ol id="combatTimelineEvents"></ol>
   </div>
   <div class="recoveryTelemetryFooter" id="recoveryTelemetryStatus" aria-live="polite">OBSERVING · NO RECOVERY EVENTS IN THIS MATCH</div>
 </section>
@@ -2715,6 +2729,33 @@ function paintAttackWaves(now){
     events.reduce((sum,event)=>sum+event.damage,0)+' DMG':'0 DMG';
  }
 }
+/* v2.9.06 — join observed channels ONLY on their exact attack ID.
+   This panel is presentation, not another authoritative combat ledger. */
+function paintCombatTimeline(){
+ const list=$('combatTimelineEvents');if(!list)return;
+ const attacks=attackMonitorEntries.slice(-RECOVERY_MONITOR_LIMIT).reverse();
+ list.replaceChildren(...attacks.map(attack=>{
+  const seq=Number(attack.key.split(':')[1]);
+  const related=recoveryMonitorEntries.filter(item=>
+   item.source.startsWith('attack:'+seq+':flow:'));
+  const same=related.filter(item=>item.source.includes('attack:'+seq+':'));
+  const amount=same.reduce((sum,item)=>sum+item.amount,0);
+  const row=document.createElement('li'),name=document.createElement('b'),
+    damage=document.createElement('span'),recovery=document.createElement('span');
+  name.textContent='ATTACK '+seq+' · '+(attack.side==='p'?'PLAYER':'BOT');
+  damage.className='timelineDamage';damage.textContent=attack.damage+' DMG';
+  recovery.className='timelineRecovery';
+  // The time delta is *observed monitor scheduling*, not a claim about
+  // simulated attack physics or the CSS photon travel time.
+  if(!related.length)recovery.textContent='NO RECOVERY RECORD';
+  else{
+   const offset=Math.round(Math.max(0,Math.min(...related.map(item=>item.born))-attack.born));
+   recovery.textContent='+'+amount+' RAM · Δ'+offset+'ms · '+related.map(item=>
+     item.side.toUpperCase()+':'+item.status).join(' / ');
+  }
+  row.append(name,damage,recovery);return row;
+ }));
+}
 function paintRecoveryTelemetry(){
  const now=performance.now();
  for(const item of recoveryMonitorEntries){
@@ -2740,6 +2781,7 @@ function paintRecoveryTelemetry(){
  }
  paintRecoveryWaves(now);
  paintAttackWaves(now);
+ paintCombatTimeline();
  const live=recoveryMonitorEntries.filter(x=>x.status==='RETURNING'||x.status==='AFTERGLOW').length;
  const all=recoveryMonitorEntries.length;
  const footer=$('recoveryTelemetryStatus');
