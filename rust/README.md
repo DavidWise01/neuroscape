@@ -310,3 +310,28 @@ repository history externally, or grant live gameplay authority.
 [Pages Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-017 — Pinned cross-runner WASM reproduction
+
+The Pages workflow adds a separate `cross-environment` job on Ubuntu 22.04,
+using pinned Rust 1.85.1 to rebuild the exact GitHub commit. The deploy job
+uses Ubuntu 24.04 and the same pinned toolchain. Both builds record the
+compiler version, byte count, source commit and compiled WASM SHA-256.
+
+The Ubuntu 22.04 fingerprint travels as a GitHub Actions artifact, not through
+shared workspace state. The deployment compares it against its own compiled
+binary and fails closed on missing files, mismatched toolchain metadata, or
+different bytes. After the gate, the public RUST-013 dashboard reads
+`assets/rust017-cross-environment.json`, and post-deploy Chromium must
+confirm the same fingerprint from the served release manifest.
+
+A matching fingerprint is **cross-runner reproducibility evidence**, not
+independent source ancestry or proof of external custody: both builds use the
+same repository, GitHub infrastructure and compiler toolchain.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[Cross-runner neon dashboard](https://davidwise01.github.io/neuroscape/rust/tests/rust013-release.html) ·
+[Combat replay](https://davidwise01.github.io/neuroscape/rust/tests/rust011-browser.html) ·
+[Pages Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
