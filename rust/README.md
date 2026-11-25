@@ -436,3 +436,46 @@ checked outside GitHub to resist repository-wide rollback.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-021 — Externally signed genesis to first successor
+
+`rust/tests/successor_rust021.py` accepts a fresh RUST-018 adjudication,
+a historical RUST-020 genesis candidate, a custodian Ed25519 public key,
+and the matching raw signature. It **re-verifies** the candidate using
+`genesis_rust020.authenticated` with an independently pinned public-key
+SPKI SHA-256 and checks source ancestry using `git merge-base --is-ancestor`.
+
+It denies same-commit reuse, replay of the genesis observation, mismatched
+candidate and signature claims, missing key-pin, and non-descendant commits.
+Qualified successors receive sequence 1 with a hash of the canonical
+previous custody attestation. The output is created exclusively and never
+overwrites existing evidence. This is not a general public-authority
+or global anti-rollback certificate: protection against full-history
+replacement still requires a trusted external checkpoint and retention.
+
+The **automatic GitHub Actions workflow does not possess external custody
+material**, and emits an archived `HOLD_EXTERNAL_GENESIS` receipt instead
+of constructing fictional signatures. The optional manually supplied
+qualified path is:
+
+```sh
+RUST020_CUSTODIAN_PUBKEY_SHA256="<independently pinned DER SPKI SHA-256>" \
+python3 rust/tests/successor_rust021.py \
+  --current rust/tests/.rust018-adjudication.json \
+  --candidate /external/genesis-candidate.json \
+  --public-key /external/custodian-public.pem \
+  --signature /external/genesis.sig \
+  --output /external/first-successor.json
+```
+
+The genesis candidate must be genuinely from an **earlier** commit,
+and the signature and public key must belong to a real off-repository
+custodian; a signature on the current run's candidate cannot satisfy
+the descendant condition.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[Neon First Successor](https://davidwise01.github.io/neuroscape/rust/tests/rust021-successor.html) ·
+[Genesis Observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust020-genesis.html) ·
+[Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
