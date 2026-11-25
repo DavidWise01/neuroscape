@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RUST-013 · Neuroscape Publication Witness</title>
+<style>
+:root{color-scheme:dark}body{margin:0;background:radial-gradient(ellipse at 50% 15%,#282047,#090b16 70%);color:#f7f5ff;font:16px system-ui,sans-serif}
+main{max-width:900px;margin:0 auto;padding:28px}h1{color:#ffb36e;text-shadow:0 0 22px #ff651f;letter-spacing:.09em}
+section{background:#15192c;border:1px solid #7d4afb;border-radius:18px;padding:20px;box-shadow:0 0 27px #743de751}
+.status{font-size:22px;font-weight:700;color:#ffb36e}.pass{color:#8bffe9}
+dl{display:grid;grid-template-columns:minmax(130px,200px) 1fr;gap:14px;overflow-wrap:anywhere}
+dt{color:#a8adc7}dd{margin:0;color:#e7f7ff}a{color:#8bffe9}
+small{color:#a4a9bf}code{color:#ffca8b}
+</style><main>
+<h1>RUST-013 · PUBLICATION WITNESS</h1>
+<p>Release identification for the copied-state Rust/WASM combat witness. This report does not confer gameplay authority.</p>
+<section aria-live="polite">
+<div id="status" class="status">HOLD · waiting for published build evidence</div>
+<dl>
+<dt>Source commit</dt><dd id="commit">Not verified</dd>
+<dt>Actions run</dt><dd id="run">Not verified</dd>
+<dt>WASM SHA-256</dt><dd id="digest">Not verified</dd>
+<dt>Browser parity</dt><dd id="parity">Not verified</dd>
+<dt>Build timestamp</dt><dd id="time">Not verified</dd>
+</dl></section>
+<p><a href="../../index.html">Open Neuroscape arcade</a> · <a href="rust011-browser.html">Open combat replay</a></p>
+<small>.dlw · The manifest is self-reported by CI and proves neither independent custody nor authenticity of external evidence.</small>
+<script src="../../assets/neuroscape-rust-wasm.generated.js"></script>
+<script>
+(async()=>{
+  const status=document.getElementById("status");
+  try {
+    const response=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+    if(!response.ok)throw Error("published release manifest absent ("+response.status+")");
+    const m=await response.json();
+    if(m.phase!=="RUST-013"||!(/^[0-9a-f]{40}$/.test(m.source_commit))||
+       !(/^[0-9a-f]{64}$/.test(m.wasm_sha256))||
+       m.chromium_phase_and_combat_gate!=="passed_in_deployment_job"||
+       m.native_rust_gate!=="passed_in_deployment_job"||
+       m.live_gameplay_authority!==false)throw Error("release manifest missing required gate fields");
+    const b64=window.NEUROSCAPE_RUST_WASM_BASE64;
+    if(!b64)throw Error("WASM asset absent");
+    const data=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+    const hash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",data)))
+      .map(b=>b.toString(16).padStart(2,"0")).join("");
+    if(hash!==m.wasm_sha256)throw Error("live WebAssembly does not match manifest SHA-256");
+    document.getElementById("commit").textContent=m.source_commit;
+    const a=document.createElement("a");a.href="https://github.com/DavidWise01/neuroscape/actions/runs/"+encodeURIComponent(m.github_run_id);a.textContent=m.github_run_id;
+    document.getElementById("run").replaceChildren(a);
+    document.getElementById("digest").textContent=hash;
+    document.getElementById("parity").textContent="CI-reported PASS · native Rust + Chromium";
+    document.getElementById("time").textContent=m.generated_at_utc;
+    status.textContent="BUILD-MATCH PASS · published WASM digest agrees with CI release manifest";
+    status.className="status pass";
+  }catch(err){
+    status.textContent="HOLD · "+String(err.message||err);
+  }
+})();
+</script>
+</main></html>
