@@ -153,6 +153,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_highwater_rust025.py' -v
       - name: RUST-026 reject witness forks and missing independent key pins
         run: python3 -m unittest discover -s rust/tests -p 'test_multiwitness_rust026.py' -v
+      - name: RUST-027 regression-test fork reconstruction and missing ancestry
+        run: python3 -m unittest discover -s rust/tests -p 'test_fork_lineage_rust027.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -230,6 +232,11 @@ jobs:
           python3 rust/tests/multiwitness_rust026.py \
             --output rust/tests/.rust026-multiwitness.json \
             --allow-hold-record
+      - name: RUST-027 archive graph ancestry HOLD without external history
+        run: |
+          python3 rust/tests/fork_lineage_rust027.py \
+            --output rust/tests/.rust027-fork-lineage.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -250,6 +257,7 @@ jobs:
             rust/tests/.rust024-recovery.json
             rust/tests/.rust025-highwater.json
             rust/tests/.rust026-multiwitness.json
+            rust/tests/.rust027-fork-lineage.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
