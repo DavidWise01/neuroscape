@@ -1,0 +1,18 @@
+/* Neuroscape v2.9.33 · uncalibrated component evidence audit */
+#componentUncertaintyLab{margin:13px 0;padding:14px;border:1px solid #7ef7e4;border-radius:11px;background:linear-gradient(132deg,#12172c,#26153e);color:#effdff;font:11px ui-monospace,Consolas,monospace;box-shadow:0 0 24px #7affee24,inset 0 0 20px #ab6eff20}
+#componentUncertaintyLab .componentHead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#componentUncertaintyLab .componentHead strong{color:#9bffef;text-shadow:0 0 10px #63ffe6}
+#componentUncertaintyLab .componentControls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:10px 0}
+#componentUncertaintyPeriod{padding:7px;background:#193347;color:#e2fff7;border:1px solid #66eedc;border-radius:6px}
+#componentUncertaintyBars{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:9px;margin:12px 0}
+#componentUncertaintyBars .componentRow{display:flex;flex-direction:column;gap:9px;padding:10px;border:1px solid #675aaf;background:#161d36;border-radius:8px}
+#componentUncertaintyBars .componentRow label{color:#dacfff;font-size:10px}
+#componentUncertaintyBars input{width:100%;accent-color:#82ffe6}
+#componentUncertaintyBars output{color:#9cffed}
+#componentUncertaintyTotal{font-weight:bold;color:#ffd09a;text-shadow:0 0 7px #fd965d;margin:8px 0}
+#componentUncertaintyStatus{line-height:1.7;margin:7px 0;color:#d7f5ff}
+#componentUncertaintySensitivity{display:grid;gap:6px;margin:9px 0}
+#componentUncertaintySensitivity .componentSensitivityRow{padding:7px;background:#11192e;border-left:3px solid #79f5e1;color:#cfeee8}
+#componentUncertaintySensitivity .componentSensitivityRow[data-sensitive=true]{border-left-color:#ffa56a;color:#ffd2b8}
+#componentUncertaintyLab .componentFoot{font-size:10px;color:#bfc8df}
+@media(prefers-reduced-motion:reduce){#componentUncertaintyLab{box-shadow:none}}
