@@ -7,6 +7,9 @@ on:
       - tests/baseline-lock.mjs
       - tests/arena-regression.mjs
       - tests/recovery-evidence-gate.mjs
+      - assets/neuroscape-rust-parity-v2.9.35.js
+      - .github/workflows/pages.yml
+      - rust/**
       - docs/RECOVERY-BASELINE-v2.9.00.md
       - .github/workflows/arena-regression.yml
   workflow_dispatch:
@@ -16,6 +19,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Compile Rust WASM for browser parity
+        run: cargo build --manifest-path rust/neuroscape-core/Cargo.toml --target wasm32-unknown-unknown --release --locked
+      - name: Generate browser parity binary asset
+        run: python3 rust/build-wasm.py
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
