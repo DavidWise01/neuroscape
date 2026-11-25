@@ -81,7 +81,7 @@ const final=first.evidence.at(-1);
 if(final.winner!==0||final.terminal!==1||final.released.join(",")!=="2,3")throw Error("terminal/resource mismatch");
 let rejected=false;try{window.neuroscapeEvidenceParity.parity(instance,initial(),actions.concat(actions[0]),oracle);}catch(e){rejected=true;}
 if(!rejected)throw Error("terminal action allowed");
-window.RUST011_RESULT={pass:true,steps:first.steps,removed:final.removed,released:final.released,winner:final.winner,repeat:true,terminalRejected:true};
+window.RUST011_RESULT={pass:true,steps:first.steps,removed:final.removed,released:final.released,winner:final.winner,repeat:true,terminalRejected:true,evidence:first.evidence};
 document.getElementById("status").textContent="PASS · COPIED RUST / JS COMBAT PARITY";
 document.getElementById("steps").textContent=first.steps;
 document.getElementById("ram").textContent=final.released.join(" / ");
