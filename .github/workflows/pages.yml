@@ -146,6 +146,15 @@ jobs:
         env:
           RUST014_PAGES_URL: ${{ steps.deploy.outputs.page_url }}
         run: python3 rust/tests/verify_live_pages.py
+      - name: RUST-018 run negative evidence adjudication tests
+        run: python3 -m unittest discover -s rust/tests -p 'test_adjudicate_rust018.py' -v
+      - name: RUST-018 seal consistent three-observation release receipt
+        run: |
+          python3 rust/tests/adjudicate_rust018.py \
+            --build assets/rust013-release.json \
+            --replay rust/tests/.rust015-local-evidence.json \
+            --public rust/tests/.rust015-public-evidence.json \
+            --output rust/tests/.rust018-adjudication.json
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -157,6 +166,7 @@ jobs:
             assets/rust016-reproduction.json
             assets/rust017-cross-environment.json
             rust/tests/.rust017-cross-build.json
+            rust/tests/.rust018-adjudication.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
