@@ -134,3 +134,21 @@ capacity in this ABI is limited to eight cards per side; the live game
 may hold more and remains JavaScript-owned.
 
 `.dlw`
+
+## RUST-006 — Unified copied match replay
+
+The `match_core` module combines RUST-005 turn phases and RUST-004 combat
+into a single atomic, caller-owned 256-word match-state buffer. Action code
+`4` attacks by immutable UID (`word[7]`) against the declared BF/MF meter
+(`word[8]`). Post-action state includes BF/MF values, recycled bin counts,
+released RAM, winner and cumulative attack count in words 224–233.
+
+Chromium runs 48 deterministic real-catalog action histories on copied
+JavaScript and Rust states. It checks every transition, card identity, health,
+unit compaction, hand/deck state, resource conservation, winner and turn
+rotation. Both match histories are **read-only relative to the live game**.
+
+This does not transfer match authority to Rust and is not a full port of
+bot decision-making, logging, animation, or unconstrained hand/deck capacity.
+
+`.dlw`
