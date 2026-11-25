@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-025 · External Highwater Witness</title>
+<style>
+:root{color-scheme:dark}body{margin:0;color:#f4f5ff;background:radial-gradient(ellipse at 50% 5%,#352552,#0b101f 75%);font:15px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:26px}h1{color:#ffb36b;text-shadow:0 0 22px #ff6628;font-size:clamp(25px,4vw,42px);letter-spacing:.07em}
+.panel{background:#151a30;border:1px solid #9b64f8;border-radius:18px;padding:24px;box-shadow:0 0 32px #885aff48}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:24px 0}
+.cell{border:1px solid #38cdd0;border-radius:12px;padding:18px;min-height:125px;box-shadow:inset 0 0 18px #24c7d225}
+.cell:nth-child(2){border-color:#ff9a4e}.cell:nth-child(3){border-color:#ac85ff}
+b{display:block;margin-bottom:9px}p,small{color:#b9c6d6;line-height:1.5}
+.status{color:#ffbc70;font-size:22px;font-weight:800}a{color:#92f5e7}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-025 · HIGHWATER WITNESS</h1>
+<p>Signed checkpoint · anti-replay · fork rejection · immutable evidence boundary.</p>
+<div class="panel">
+<div class="status">HOLD · No authenticated latest external checkpoint</div>
+<div class="grid">
+<div class="cell"><b>PAST · RETAIN</b><small>Witness-signed highwater: epoch, sequence, source commit and exact checkpoint digest.</small></div>
+<div class="cell"><b>PRESENT · COMPARE</b><small>Next checkpoint must reference precisely the prior highwater fingerprint.</small></div>
+<div class="cell"><b>FUTURE · DENY</b><small>Reject signature replay, forked predecessor, skipped sequence and epoch rollback.</small></div>
+</div>
+<p id="evidence">No static GitHub Pages assertion substitutes for a separately held and authenticated latest highwater.</p>
+</div>
+<p><a href="../../index.html">Neuroscape Arcade</a> · <a href="rust024-recovery.html">Recovery Epochs</a> · <a href="rust023-revocation.html">Revocation</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">Actions Gate</a></p>
+<small>.dlw · A signed historical checkpoint may be valid but stale. An independently authenticated latest checkpoint remains necessary for global anti-rollback.</small>
+<script>
+(async()=>{
+try{
+const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+if(!r.ok)throw Error("No published manifest");
+const m=await r.json();
+if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("Invalid manifest");
+document.getElementById("evidence").textContent="Current published source "+m.source_commit+". This is only a repository-origin observation. No independently held latest highwater was authenticated; freeze remains HOLD.";
+}catch(e){document.getElementById("evidence").textContent="HOLD · "+String(e.message||e);}
+})();
+</script></main></html>
