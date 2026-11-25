@@ -149,6 +149,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_revocation_rust023.py' -v
       - name: RUST-024 test quarantine and highwater rollback invariants
         run: python3 -m unittest discover -s rust/tests -p 'test_recovery_epoch_rust024.py' -v
+      - name: RUST-025 verify highwater witness and anti-fork negative tests
+        run: python3 -m unittest discover -s rust/tests -p 'test_highwater_rust025.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -216,6 +218,11 @@ jobs:
           python3 rust/tests/recovery_epoch_rust024.py \
             --output rust/tests/.rust024-recovery.json \
             --allow-hold-record
+      - name: RUST-025 archive unsigned highwater HOLD
+        run: |
+          python3 rust/tests/highwater_rust025.py \
+            --output rust/tests/.rust025-highwater.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -234,6 +241,7 @@ jobs:
             rust/tests/.rust022-rotation.json
             rust/tests/.rust023-revocation.json
             rust/tests/.rust024-recovery.json
+            rust/tests/.rust025-highwater.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
