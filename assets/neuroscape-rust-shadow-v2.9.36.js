@@ -28,7 +28,7 @@ const ready=(async()=>{
    }
    const validate=ok=>{checks++;if(ok)passed++};
    // Native catalog cards; card costs are computed by the REAL JavaScript engine.
-   const cards=CATALOG.cards.filter(c=>Number.isInteger(c.num)&&Number.isFinite(c.a)&&Number.isFinite(c.d));
+   const cards=CATALOG.cards.filter(c=>Number.isInteger(Number(c.num))&&Number(c.num)>0);
    if(cards.length<200)throw Error('Expected complete native card catalog');
    for(const c of cards){
      const ownCost=cost(card(c.num));
@@ -41,8 +41,8 @@ const ready=(async()=>{
      }
    }
    // Use copied real card data and the actual engine predictedTarget() logic.
-   const attackers=cards.filter(c=>c.a>0).slice(0,32);
-   const defenders=cards.slice(0,32);
+   const attackers=cards.filter(c=>Number.isFinite(c.a)&&c.a>0&&Number.isFinite(c.d)).slice(0,32);
+   const defenders=cards.filter(c=>Number.isFinite(c.a)&&Number.isFinite(c.d)).slice(0,32);
    let boards=0;
    for(const a of attackers){
      for(const d of defenders){
