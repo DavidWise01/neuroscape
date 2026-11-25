@@ -19,6 +19,47 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.34: complete metadata earns REVIEW eligibility, never empirical authority.
+ const evidenceGate=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),api=window.neuroscapeEvidenceEligibility;
+   const initial=api?.snapshot();
+   const record={method:'Calibrated phase timing method',
+     calibrationRef:'reference-2026-001',
+     timestamp:'2026-11-24T19:00:00-06:00',
+     provenance:'declared source ancestry'};
+   const complete=api?.auditRecord(record);
+   const missing=api?.auditRecord({...record,provenance:''});
+   const badTime=api?.auditRecord({...record,timestamp:'last Tuesday'});
+   const fields=['method','calibrationRef','timestamp','provenance'];
+   for(const [key,value] of Object.entries(record)){
+     const input=document.getElementById('evidence_sampling_'+key);
+     if(input){input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}))}
+   }
+   const updated=api?.snapshot();
+   document.getElementById('componentEvidenceReset')?.click();
+   const cleared=api?.snapshot();
+   return {before,after:game(),initial,complete,missing,badTime,updated,cleared,
+     fields:document.querySelectorAll('#componentEvidenceRows input').length,
+     mounted:!!document.getElementById('componentEvidenceLab')};
+ });
+ if(!evidenceGate.mounted||!evidenceGate.initial||
+    evidenceGate.initial.completeCount!==0||evidenceGate.initial.empiricalVerifiedCount!==0||
+    evidenceGate.initial.gameplayMutation||evidenceGate.initial.sourceMutated||
+    evidenceGate.fields!==12||
+    evidenceGate.complete?.complete!==true||
+    evidenceGate.complete?.status!=='READY FOR INDEPENDENT REVIEW'||
+    evidenceGate.complete?.empiricalVerified!==false||
+    evidenceGate.complete?.independentEvidenceConfirmed!==false||
+    evidenceGate.missing?.complete!==false||
+    evidenceGate.badTime?.complete!==false||
+    evidenceGate.updated?.completeCount!==1||
+    evidenceGate.updated?.empiricalVerifiedCount!==0||
+    evidenceGate.cleared?.completeCount!==0||
+    JSON.stringify(evidenceGate.before)!==JSON.stringify(evidenceGate.after))
+   fail('v2.9.34 metadata evidence falsely granted authority or changed gameplay: '+JSON.stringify(evidenceGate));
+
  // v2.9.33: component uncertainty is a declared worst-case assumption, not evidence calibration.
  const componentAudit=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
