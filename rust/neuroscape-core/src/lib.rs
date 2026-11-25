@@ -297,3 +297,5 @@ mod shadow_tests {
 pub mod replay;
 
 pub mod turn;
+
+pub mod match_core;
