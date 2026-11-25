@@ -73,3 +73,23 @@ pub extern "C" fn ns_shadow_attacker_destroyed(attacker_hp:i32,retaliation:i32,b
 pub extern "C" fn ns_shadow_defender_destroyed(defender_hp:i32,damage:i32,blocked:i32)->i32 {
     i32::from(crate::shadow_attack(0,defender_hp,damage,0,0,blocked!=0).defender_destroyed)
 }
+
+
+// RUST-004: own the bounded copied replay buffer. JS receives only this
+// temporary WASM allocation, never an address into the live arcade state.
+#[no_mangle]
+pub extern "C" fn ns_replay_alloc() -> *mut i32 {
+    Box::into_raw(Box::new([0_i32; crate::replay::REPLAY_WORDS])) as *mut i32
+}
+#[no_mangle]
+pub unsafe extern "C" fn ns_replay_apply(ptr: *mut i32) -> i32 {
+    if ptr.is_null() { return -3; }
+    let words = &mut *(ptr as *mut [i32;crate::replay::REPLAY_WORDS]);
+    crate::replay::replay_buffer(words)
+}
+#[no_mangle]
+pub unsafe extern "C" fn ns_replay_free(ptr: *mut i32) {
+    if !ptr.is_null() {
+        drop(Box::from_raw(ptr as *mut [i32;crate::replay::REPLAY_WORDS]));
+    }
+}
