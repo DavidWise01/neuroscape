@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-021 · First Qualified Successor</title>
+<style>
+:root{color-scheme:dark}
+body{margin:0;background:radial-gradient(ellipse at 50% 10%,#39234e,#0c1221 72%);color:#f2f7ff;font:15px system-ui,sans-serif}
+main{max-width:1050px;margin:auto;padding:24px}
+h1{font-size:clamp(25px,4vw,41px);letter-spacing:.07em;color:#ffac69;text-shadow:0 0 22px #ff6923}
+.panel{border:1px solid #995df5;border-radius:18px;background:#171b31;padding:25px;box-shadow:0 0 30px #a45cfa35}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0}
+.cell{padding:17px;border:1px solid #22d4ca;border-radius:12px;min-height:116px;box-shadow:inset 0 0 17px #27cfc51c}
+.cell:nth-child(2){border-color:#ffa051}.cell:nth-child(3){border-color:#ae7cff}
+small,p{color:#b8c3d9}strong{display:block;margin-bottom:8px}
+.hold{font-size:22px;color:#ffb666;font-weight:bold}.pass{color:#8dffe6}
+a{color:#92ffe8}code{overflow-wrap:anywhere}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-021 · GENESIS → SUCCESSOR</h1>
+<p>Externally signed custody, exact source ancestry, first append-only continuation.</p>
+<div class="panel">
+<div id="status" class="hold">HOLD · External genesis acknowledgment not qualified</div>
+<div class="grid">
+<div class="cell"><strong>PAST · OBSERVES</strong><small>External Ed25519 signature and independently pinned public-key digest</small><p>Not authenticated</p></div>
+<div class="cell"><strong>PRESENT · DESERVES</strong><small>Successor commit and fresh RUST-018 receipt</small><p id="present">Not verified</p></div>
+<div class="cell"><strong>FUTURE · RESERVES</strong><small>Anchored first successor, sequence 1</small><p>HOLD</p></div>
+</div>
+<p id="detail">The repository cannot issue its own externally authenticated genesis.</p>
+</div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust020-genesis.html">Genesis observatory</a> · <a href="rust019-lineage.html">Lineage observatory</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · This site is an observation surface only. No custody, anti-rollback, or gameplay authority is inferred from an unsigned release.</small>
+<script>
+(async()=>{
+try{
+const response=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+if(!response.ok)throw Error("current release manifest not published");
+const release=await response.json();
+if(!/^[0-9a-f]{40}$/.test(release.source_commit)||release.live_gameplay_authority!==false)throw Error("release manifest identity invalid");
+document.getElementById("present").textContent=release.source_commit.slice(0,16)+"…";
+document.getElementById("detail").textContent="Current source metadata is visible, but the required off-repository custody acknowledgment and first-successor receipt are not publicly authenticated. The gate remains HOLD.";
+}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}
+})();
+</script></main></html>
