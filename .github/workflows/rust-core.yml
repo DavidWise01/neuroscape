@@ -38,3 +38,11 @@ jobs:
       - name: Verify generated browser asset
         working-directory: .
         run: python3 rust/build-wasm.py
+      - name: Install Chromium parity harness
+        working-directory: .
+        run: |
+          python3 -m pip install playwright
+          python3 -m playwright install --with-deps chromium
+      - name: RUST-010 certify 64-step browser parity
+        working-directory: .
+        run: python3 rust/tests/run_rust009_browser.py
