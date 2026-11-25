@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """RUST-011 Chromium gate: certify phase and combat WASM replay fixtures."""
 from pathlib import Path
+import hashlib
+import json
+import os
 from playwright.sync_api import sync_playwright
 
 root = Path(__file__).resolve().parent
@@ -31,6 +34,24 @@ with sync_playwright() as p:
                 and result.get("winner") == 0
             ):
                 raise SystemExit("FAIL: combat conservation/terminal evidence")
+            if result_key == "RUST011_RESULT":
+                evidence = result.get("evidence")
+                if not isinstance(evidence, list) or len(evidence) != expected_steps:
+                    raise SystemExit("FAIL: full combat evidence missing")
+                canonical = json.dumps(evidence, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                sha = hashlib.sha256(canonical).hexdigest()
+                receipt = {
+                    "phase": "RUST-015",
+                    "source_commit": os.environ.get("GITHUB_SHA", "local"),
+                    "replay_sha256": sha,
+                    "replay_steps": len(evidence),
+                    "scope": "copied_state_combat_only",
+                }
+                (root / ".rust015-local-evidence.json").write_text(
+                    json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+                    encoding="utf-8",
+                )
+                print("RUST-015 local replay fingerprint:", sha)
             page.close()
         print("PASS: phase and combat WASM browser parity.")
     finally:
