@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-019 · Lineage Observatory</title>
+<style>
+:root{color-scheme:dark}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 25%,#301c42,#0c101d 72%);font:15px system-ui,sans-serif;color:#f5f7ff}
+main{max-width:990px;margin:0 auto;padding:24px}h1{font-size:clamp(24px,4vw,40px);color:#ffb567;text-shadow:0 0 22px #fe6515;letter-spacing:.06em}
+p,small{color:#bac0d5}.panel{border:1px solid #994af8;background:#14192d;border-radius:17px;box-shadow:0 0 26px #7e42fa55;padding:24px}
+.belt{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:22px 0}.cell{min-height:100px;border-radius:12px;border:1px solid #26c9d7;padding:14px;box-shadow:inset 0 0 15px #19cad122}
+.cell:nth-child(2){border-color:#ff9239;box-shadow:inset 0 0 15px #ff923922}.cell:nth-child(3){border-color:#b47bff}
+b{display:block;margin-bottom:7px;color:#d9fff8}.hold{color:#ffba63;font-size:20px;font-weight:800}.pass{color:#84ffe0}
+a{color:#8efce6}code{overflow-wrap:anywhere}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}
+@media(max-width:620px){.belt{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-019 · RELEASE LINEAGE</h1><p>Neuroscape · 4D shadow witness / three observations / one source ancestry</p>
+<div class="panel">
+<div id="status" class="hold">HOLD · No authenticated public lineage anchor</div>
+<div class="belt">
+<div class="cell"><b>PAST · OBSERVES</b><small>Retained predecessor record</small><p id="past">Unverified</p></div>
+<div class="cell"><b>PRESENT · DESERVES</b><small>New release receipt</small><p id="present">Unverified</p></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Append-only continuation</small><p id="future">Requires anchored predecessor</p></div>
+</div>
+<pre id="detail">The site cannot certify global anti-rollback from a single deployment.</pre>
+</div>
+<p><a href="../../index.html">Arcade</a> · <a href="rust013-release.html">WASM release witness</a> · <a href="rust011-browser.html">Combat replay</a></p>
+<small>.dlw · A hash chain can detect relative tampering with retained records, not their deletion or replacement without an independently held checkpoint.</small>
+<script>
+(async()=>{
+ try{
+  const response=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+  if(!response.ok)throw Error("No verified current release manifest");
+  const m=await response.json();
+  if(!/^[a-f0-9]{40}$/.test(m.source_commit))throw Error("Invalid source identity");
+  document.getElementById("present").textContent=m.source_commit.slice(0,12)+" · "+m.phase;
+  document.getElementById("detail").textContent="CI release metadata present, but no public authenticated RUST-019 predecessor chain exists yet. GitHub Actions receipts are not automatically a permanent external anchor.";
+ }catch(e){document.getElementById("detail").textContent=String(e.message||e);}
+})();
+</script></main></html>
