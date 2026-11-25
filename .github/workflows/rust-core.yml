@@ -24,6 +24,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
       - name: Format Rust source in CI workspace
         run: cargo fmt --all
       - name: Verify formatted workspace
@@ -32,3 +33,8 @@ jobs:
         run: cargo test --all-targets --locked
       - name: Rust clippy
         run: cargo clippy --all-targets --locked -- -D warnings
+      - name: Compile browser WebAssembly
+        run: cargo build --target wasm32-unknown-unknown --release --locked
+      - name: Verify generated browser asset
+        working-directory: .
+        run: python3 rust/build-wasm.py
