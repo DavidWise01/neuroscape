@@ -72,7 +72,7 @@ jobs:
           report = {
               "replay_sha256": replay["replay_sha256"],
               "replay_steps": replay["replay_steps"],
-              "phase": "RUST-015",
+              "phase": "RUST-013",
               "source_commit": os.environ["SOURCE_COMMIT"],
               "github_run_id": os.environ["RUN_ID"],
               "wasm_sha256": digest,
