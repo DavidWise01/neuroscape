@@ -139,7 +139,7 @@ def main():
     else:
         result=qualify(
             load(args.previous),load(args.revocation),load(args.highwater),
-            load(args.quarantine),args.new_key,args.recovery_public,
+            json.loads(Path(args.quarantine).read_text(encoding="utf-8")),args.new_key,args.recovery_public,
             args.recovery_signature,args.new_public,args.new_signature,
             pin_recovery,pin_new,prior_authenticated=False)
     save_exclusive(args.output,result)
