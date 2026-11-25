@@ -45,7 +45,8 @@ def verify_once(browser):
         page.wait_for_function(
             """() => {
               const t = document.querySelector('#status')?.textContent || '';
-              return t.startsWith('BUILD-MATCH PASS') || t.startsWith('HOLD');
+              return t.startsWith('BUILD-MATCH PASS') ||
+                (t.startsWith('HOLD') && !t.includes('waiting for published build evidence'));
             }""",
             timeout=30000,
         )
