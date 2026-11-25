@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-020 · Genesis Custody Observatory</title>
+<style>
+:root{color-scheme:dark}body{margin:0;background:radial-gradient(ellipse at 50% 8%,#34234d,#0a101d 75%);color:#ebf3ff;font:15px system-ui,sans-serif}
+main{max-width:1040px;margin:auto;padding:27px}h1{letter-spacing:.09em;color:#ffb679;text-shadow:0 0 22px #ff742d;font-size:clamp(22px,4vw,38px)}
+article{padding:23px;border:1px solid #8d53f9;border-radius:19px;background:#131a30;box-shadow:0 0 27px #8e4dfa60}
+.row{display:flex;gap:12px;align-items:stretch;flex-wrap:wrap}.unit{flex:1;min-width:172px;padding:16px;border-radius:12px;border:1px solid #33c6d9;box-shadow:inset 0 0 17px #35c3de22}
+.unit:nth-child(2){border-color:#ff9b48}.unit:nth-child(3){border-color:#a278ff}.small{font-size:12px;color:#aeb9d3}
+strong{display:block;margin-bottom:9px}.hold{color:#ffb679;font-size:21px;font-weight:800}.pass{color:#96f9e7}
+p{line-height:1.5;color:#bac4d7}code{overflow-wrap:anywhere}a{color:#8df6e6}
+#source{font-family:monospace;overflow-wrap:anywhere}
+</style>
+<main><h1>RUST-020 · GENESIS CUSTODY</h1>
+<p>One lineage candidate. Three observations. Zero presumed external custodians.</p>
+<article><div id="status" class="hold">HOLD · no independently authenticated genesis</div>
+<div class="row" style="margin-top:22px">
+<div class="unit"><strong>1 · SOURCE</strong><span class="small">Current Pages manifest</span><p id="source">Not verified</p></div>
+<div class="unit"><strong>2 · CANDIDATE</strong><span class="small">Generated in Actions after RUST-018</span><p>Requires retrieved Actions artifact</p></div>
+<div class="unit"><strong>3 · CUSTODY</strong><span class="small">External pinned Ed25519 signature</span><p>Not supplied or authenticated</p></div>
+</div>
+<p id="detail">A SHA-256 receipt is not an external witness. The signing public key must have an independently pinned fingerprint before a signature can qualify.</p>
+</article>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust019-lineage.html">Lineage observatory</a> · <a href="rust013-release.html">WASM release evidence</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions evidence</a></p>
+<p class="small">.dlw · This display does not grant gameplay authority, authenticate a custodian, or establish anti-rollback against repository-wide replacement.</p>
+<script>
+(async()=>{
+try{
+const response=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+if(!response.ok)throw Error("Release manifest unavailable");
+const m=await response.json();
+if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("Release declaration invalid");
+document.getElementById("source").textContent=m.source_commit.slice(0,16)+"…";
+document.getElementById("detail").textContent="Source metadata is present. A RUST-020 genesis candidate is retained only as an Actions artifact after adjudication; this site does not have an externally verified custody signature. Genesis remains HOLD.";
+}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}
+})();
+</script></main></html>
