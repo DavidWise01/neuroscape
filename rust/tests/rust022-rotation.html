@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-022 · Custodian Rotation Observatory</title>
+<style>
+:root{color-scheme:dark}
+body{margin:0;color:#f1f7ff;font:15px system-ui,sans-serif;background:radial-gradient(ellipse at 45% 10%,#35224e,#09101c 74%)}
+main{max-width:1000px;margin:auto;padding:28px}h1{color:#ffad6f;text-shadow:0 0 19px #fa6a25;letter-spacing:.08em;font-size:clamp(25px,4vw,40px)}
+.panel{background:#151b30;border:1px solid #9855ed;border-radius:18px;box-shadow:0 0 28px #9752ef40;padding:24px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0}
+.cell{border:1px solid #42c9d1;border-radius:12px;padding:18px;box-shadow:inset 0 0 16px #42c9d120;min-height:115px}
+.cell:nth-child(2){border-color:#ffa252}.cell:nth-child(3){border-color:#ba89ff}
+strong{display:block;margin-bottom:9px}p,small{color:#bfc8d9;line-height:1.5}.hold{color:#ffc07f;font-weight:800;font-size:22px}
+a{color:#8dfff0}@media(max-width:640px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-022 · KEY ROTATION</h1>
+<p>One predecessor · pinned custodian continuity · dual signature for rotation · observation only.</p>
+<div class="panel"><div class="hold">HOLD · External custody keys not authenticated</div>
+<div class="grid">
+<div class="cell"><strong>PAST · OLD KEY</strong><small>Externally pinned Ed25519 key signs the next checkpoint</small></div>
+<div class="cell"><strong>PRESENT · ROTATION</strong><small>Any new key must be externally pinned and countersign the exact same proposal</small></div>
+<div class="cell"><strong>FUTURE · SUCCESSOR</strong><small>Exact predecessor hash, sequential index, descendant commit and fresh receipt</small></div>
+</div>
+<p id="report">A GitHub-hosted source or release manifest cannot authenticate an off-repository custodian. If custody is missing, the workflow records HOLD rather than creating a qualified successor.</p>
+</div>
+<p><a href="../../index.html">Neuroscape Arcade</a> · <a href="rust021-successor.html">First Successor</a> · <a href="rust020-genesis.html">Genesis Custody</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Neither a matching signature nor an archived receipt alone establishes global anti-rollback or independent source ancestry.</small>
+<script>
+(async()=>{
+try{
+const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+if(!r.ok)throw Error("No published release manifest");
+const m=await r.json();
+if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("Manifest invalid");
+document.getElementById("report").textContent="Current release source: "+m.source_commit+"; external custody continuity and key rotation remain HOLD unless separately authenticated. This display does not infer key ownership.";
+}catch(e){document.getElementById("report").textContent="HOLD · "+String(e.message||e)}
+})();
+</script></main></html>
