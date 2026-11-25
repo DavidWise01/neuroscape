@@ -9,6 +9,7 @@ publish = false
 [lib]
 name = "neuroscape_core"
 path = "src/lib.rs"
+crate-type = ["rlib", "cdylib"]
 
 [features]
 default = []
