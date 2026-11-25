@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-026 · Multi-Witness Highwater</title>
+<style>
+:root{color-scheme:dark}
+body{margin:0;color:#f6f7ff;font:15px system-ui,sans-serif;background:radial-gradient(ellipse at 48% 4%,#32244d,#09101e 76%)}
+main{max-width:1080px;margin:auto;padding:26px}h1{color:#ffb179;text-shadow:0 0 24px #ff6c26;letter-spacing:.07em;font-size:clamp(25px,4vw,42px)}
+.panel{background:#15192f;border:1px solid #9a5bfb;border-radius:19px;padding:24px;box-shadow:0 0 28px #9154fc40}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:24px 0}
+.cell{border:1px solid #35d0cb;border-radius:12px;padding:18px;min-height:116px;box-shadow:inset 0 0 16px #2accd322}
+.cell:nth-child(2){border-color:#ffa351}.cell:nth-child(3){border-color:#bc81fb}
+b{display:block;margin-bottom:10px}p,small{color:#bdc9d9;line-height:1.5}
+.status{font-size:21px;color:#ffbd71;font-weight:800}a{color:#8ff7e8}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-026 · THREE HIGHWATER OBSERVERS</h1>
+<p>Distinct cryptographic keys are not independent custodial ancestries.</p>
+<div class="panel">
+<div class="status">HOLD · Three externally signed snapshots not supplied</div>
+<div class="grid">
+<div class="cell"><b>FF · FRONT WITNESS</b><small>Retained checkpoint, Ed25519 signature, external SPKI key pin</small></div>
+<div class="cell"><b>CF · CENTER WITNESS</b><small>Separate signed observation of the same purported highwater</small></div>
+<div class="cell"><b>RR · REAR WITNESS</b><small>Preserve contradictions even when the other two agree</small></div>
+</div>
+<p id="detail">A two-to-one majority can conceal a fork. This observatory does not publish a winning checkpoint or authorize a release.</p>
+</div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust025-highwater.html">Highwater</a> · <a href="rust024-recovery.html">Recovery</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Three signatures / three claims / one origin until external custody ancestry is independently established.</small>
+<script>
+(async()=>{
+try{
+const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+if(!r.ok)throw Error("No published manifest");
+const m=await r.json();
+if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("Invalid release manifest");
+document.getElementById("detail").textContent="Published source reported: "+m.source_commit+". Three independently controlled external highwater checkpoints have not been demonstrated by this repository. HOLD is preserved.";
+}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}
+})();
+</script></main></html>
