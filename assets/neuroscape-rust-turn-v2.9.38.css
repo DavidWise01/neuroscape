@@ -1,0 +1,6 @@
+#neuroscapeRustTurnLab{margin:12px 0;padding:13px;border:1px solid #76fce7;border-radius:11px;background:linear-gradient(118deg,#101c32,#2c1740);color:#effdff;box-shadow:0 0 22px #65fbe028;font:11px ui-monospace,Consolas,monospace}
+#neuroscapeRustTurnLab strong{color:#abffee;text-shadow:0 0 10px #77ffe2}
+#neuroscapeRustTurnStatus{display:block;margin:9px 0;color:#f6c9a4}
+#neuroscapeRustTurnLab[data-phase=PASS] #neuroscapeRustTurnStatus{color:#7ffff0}
+#neuroscapeRustTurnLab[data-phase=FAIL] #neuroscapeRustTurnStatus{color:#ff9a9a}
+#neuroscapeRustTurnDetail{font-size:10px;color:#ced4e6;overflow-wrap:anywhere}
