@@ -50,7 +50,7 @@ pub const WORDS:usize=256;
 fn card(w:&[i32],at:usize)->Card{Card{id:w[at],cost:w[at+1],defense:w[at+2],attack:w[at+3]}}
 fn write_card(w:&mut[i32],at:usize,c:Card){w[at]=c.id;w[at+1]=c.cost;w[at+2]=c.defense;w[at+3]=c.attack;}
 fn side_offsets(p:usize)->(usize,usize,usize){if p==0{(24,84,148)}else{(54,116,180)}}
-fn read_player(w:&[i32],p:usize)->Player{
+pub(crate) fn read_player(w:&[i32],p:usize)->Player{
  let (u,h,d)=side_offsets(p);
  Player{ram:w[10+p],
   units:(0..w[12+p] as usize).map(|i|{
@@ -59,7 +59,7 @@ fn read_player(w:&[i32],p:usize)->Player{
   hand:(0..w[14+p] as usize).map(|i|card(w,h+i*4)).collect(),
   deck:(0..w[16+p] as usize).map(|i|card(w,d+i*4)).collect()}
 }
-fn write_player(w:&mut[i32],p:usize,x:&Player){
+pub(crate) fn write_player(w:&mut[i32],p:usize,x:&Player){
  let (u,h,d)=side_offsets(p);
  w[10+p]=x.ram;w[12+p]=x.units.len() as i32;
  w[14+p]=x.hand.len() as i32;w[16+p]=x.deck.len() as i32;
