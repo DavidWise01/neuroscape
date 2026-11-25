@@ -584,3 +584,36 @@ the retained revocation state.
 [Pages workflow](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-024 — Recovery epochs, permanent quarantine and replay fencing
+
+`rust/tests/recovery_epoch_rust024.py` adds a structured recovery-epoch
+proposal. It validates a retained RUST-022 custodian predecessor, a
+hash-consistent RUST-023 revocation, a separately retained highwater
+checkpoint with its epoch and sequence, and an explicit quarantine
+set containing the revoked key. The next epoch and sequence must
+advance monotonically. A quarantined key cannot be selected as the
+new custodian; the recovery signer cannot silently promote itself.
+
+Qualifying a proposal requires **two** verified Ed25519 signatures on
+the exact canonical proposal, from independently pinned recovery and
+new-custodian keys. It also requires external verification of the
+previous custody checkpoint and highwater; a consistent local JSON
+file or a caller-provided assertion is not enough. Even after the
+two signatures, the output sets
+`custody_resume_authorized: false`; a separate policy and external
+authority decision would be required to resume.
+
+The default GitHub workflow has no external checkpoint or custody
+signatures. It runs regression tests before deploying and archives
+`HOLD_QUARANTINED` as an append-only, finite-retention Actions
+artifact. The CLI deliberately declines to self-attest the historical
+trust condition. Source-level regression tests do not establish live
+Pages deployment or authenticated anti-rollback.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-024 neon epoch observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust024-recovery.html) ·
+[Revocation witness](https://davidwise01.github.io/neuroscape/rust/tests/rust023-revocation.html) ·
+[Pages Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
