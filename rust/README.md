@@ -389,3 +389,50 @@ repository is **not** independent custody, even if it is hash-consistent.
 [Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-020 — Genesis candidate, external Ed25519 custody gate
+
+`rust/tests/genesis_rust020.py` derives an **immutable candidate** from a
+RUST-018 accepted observation receipt. The candidate includes the source
+commit, replay and WASM SHA-256 digests, adjudication digest, sequence zero,
+and a canonical candidate fingerprint. CI emits
+`rust/tests/.rust020-genesis-candidate.json` after the public acceptance
+and three-observation steps; the run-specific artifact includes that file.
+It is explicitly `GENESIS_CANDIDATE`, not an authenticated checkpoint.
+
+An external custodian must separately retain the candidate hash and use
+their own Ed25519 private key to sign the **canonical compact JSON bytes**
+of the candidate (sorted keys, no spaces). The verification command
+requires the corresponding public key, the raw signature, and
+`RUST020_CUSTODIAN_PUBKEY_SHA256` pinned **outside this repository**.
+That environment variable is the SHA-256 of the public key's DER SPKI.
+For example, an external verifier can compute it with:
+
+```sh
+openssl pkey -pubin -in custodian-public.pem -outform DER | sha256sum
+```
+
+With the independently held pin and signed candidate available:
+
+```sh
+RUST020_CUSTODIAN_PUBKEY_SHA256="<externally-checked 64-hex pin>" \
+python3 rust/tests/genesis_rust020.py verify \
+  --candidate rust/tests/.rust020-genesis-candidate.json \
+  --public-key custodian-public.pem \
+  --signature external-custodian.sig \
+  --output genesis-verification.json
+```
+
+The verifier does **not** generate a custody key, invent an owner,
+authenticate the external key-pin process, establish three independent
+source ancestries, or automatically authorize a RUST-019 lineage freeze.
+A public key stored only alongside the source is insufficient proof
+of external custody. The signature acknowledgment must remain held and
+checked outside GitHub to resist repository-wide rollback.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[Neon Genesis Observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust020-genesis.html) ·
+[Lineage](https://davidwise01.github.io/neuroscape/rust/tests/rust019-lineage.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
