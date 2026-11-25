@@ -19,6 +19,24 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // RUST-004: native combat function replay parity on Rust-owned WASM buffers.
+ await page.waitForFunction(()=>window.neuroscapeRustReplay?.snapshot().phase!=='LOADING',
+   null,{timeout:30000});
+ const replay=await page.evaluate(async()=>{
+   const game=()=>({turn:state.turn,phase:state.phase,active:state.active,done:state.done,
+      actions:state.actions,ram:[state.p.ram,state.e.ram],
+      slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),result=await window.neuroscapeRustReplay?.ready;
+   const snap=window.neuroscapeRustReplay?.snapshot(),after=game();
+   return {before,after,result,snap,mounted:!!document.getElementById('neuroscapeRustReplayLab')};
+ });
+ if(!replay.mounted||replay.result?.pass!==true||replay.snap?.phase!=='PASS'||
+    replay.result.scenarios!==96||replay.result.steps<100||
+    replay.result.checked<1500||replay.result.passed!==replay.result.checked||
+    replay.result.sourceMutated||replay.result.gameplayMutation||
+    JSON.stringify(replay.before)!==JSON.stringify(replay.after))
+   fail('RUST-004 native Rust combat replay divergence: '+JSON.stringify(replay));
+
  // RUST-003: real JavaScript card data vs compiled Rust combat/deploy shadow.
  await page.waitForFunction(()=>window.neuroscapeRustShadow?.snapshot().phase!=='LOADING',
    null,{timeout:30000});
