@@ -113,3 +113,24 @@ No shadow result is permitted to drive a live game action.
 The original locked 5×2 arena, 256 cards and both murals are unaffected.
 
 `.dlw`
+
+## RUST-005 — Four-phase turn control
+
+This stage adds a separate pure Rust `turn` module. It covers legal RAM
+installation, deck-to-hand drawing, legal hand-to-five-slot deployment,
+immutable unit identity allocation, phase advancement, HP restoration,
+active-side rotation, per-turn action reset, and turn-limit detection.
+The existing RUST-004 module remains the combat calculation shadow.
+
+The compiled WebAssembly provides a caller-owned 256-word buffer through
+`ns_turn_alloc / ns_turn_step / ns_turn_free`. The browser tests 48
+deterministic seven-transition cycles against equivalent copied JavaScript
+state using real catalog card data, and confirms the live game state is
+unchanged. Invalid transitions fail without modifying the WASM input.
+
+This is a bounded reference implementation, **not** an authoritative
+replacement of the production gameplay engine or the bot. Hand/deck
+capacity in this ABI is limited to eight cards per side; the live game
+may hold more and remains JavaScript-owned.
+
+`.dlw`
