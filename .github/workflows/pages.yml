@@ -98,3 +98,14 @@ jobs:
         env:
           RUST014_PAGES_URL: ${{ steps.deploy.outputs.page_url }}
         run: python3 rust/tests/verify_live_pages.py
+      - name: RUST-015 archive immutable replay acceptance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust015-replay-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            rust/tests/.rust015-local-evidence.json
+            rust/tests/.rust015-public-evidence.json
+            assets/rust013-release.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
