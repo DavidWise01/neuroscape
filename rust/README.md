@@ -229,3 +229,28 @@ witness independence, or transfer live gameplay authority.
 - [Pages Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-014 — Public Pages acceptance after deploy
+
+Deployment success is insufficient to freeze a binary. The workflow now invokes
+`rust/tests/verify_live_pages.py` **after** `actions/deploy-pages@v4`.
+
+The public probe verifies:
+
+1. The live release manifest matches the exact `GITHUB_SHA` and `GITHUB_RUN_ID`.
+2. The public RUST-013 page recalculates the actual shipped WASM SHA-256.
+3. The public RUST-011 Chromium fixture passes the copied-state combat
+   replay, including blocker destruction, two-sided RAM release, terminal
+   outcome, replay reproducibility and post-terminal rejection.
+
+Transient public propagation is allowed up to eight attempts, but a missing,
+stale or inconsistent result keeps the job failed. A self-declared CI manifest
+is **not** independent evidence of source provenance; the browser probe
+establishes delivery and execution consistency only.
+
+[Live arcade](https://davidwise01.github.io/neuroscape/) ·
+[Combat parity](https://davidwise01.github.io/neuroscape/rust/tests/rust011-browser.html) ·
+[Publication readback](https://davidwise01.github.io/neuroscape/rust/tests/rust013-release.html) ·
+[Pages workflow](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
