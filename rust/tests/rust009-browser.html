@@ -1,0 +1,48 @@
+<!doctype html>
+<meta charset="utf-8"><title>RUST-009 copied-state browser parity</title>
+<script src="../../assets/neuroscape-rust-wasm.generated.js"></script>
+<script src="../evidence-parity.js"></script>
+<script>
+"use strict";
+window.RUST009_RESULT = {pass:false, error:"not started"};
+(async () => {
+  try {
+    const encoded = window.NEUROSCAPE_RUST_WASM_BASE64;
+    if (!encoded) throw Error("compiled WASM missing");
+    const wasmBytes = Uint8Array.from(atob(encoded), c => c.charCodeAt(0));
+    const {instance} = await WebAssembly.instantiate(wasmBytes, {});
+    const actions = Array.from({length:64}, () => ({code:3,uid:0,meter:0}));
+    const state = new Int32Array(256);
+    state[0]=0; state[1]=0; state[2]=2; state[3]=1;
+    state[10]=5; state[11]=5;
+    state[224]=20;state[225]=20;state[226]=20;state[227]=20;
+    state[230]=-1;
+    // Independent JavaScript oracle for empty-board phase transitions only.
+    // It intentionally does not reuse the Rust transition implementation.
+    function oracle(copy, action) {
+      if (action.code!==3 || copy[4]!==0) throw Error("invalid fixture");
+      if (copy[1]<3) copy[1] += 1;
+      else {
+        copy[0] = 1 - copy[0];
+        copy[1] = 0;
+        copy[2] = 2;
+        copy[3] += 1;
+      }
+      return copy;
+    }
+    const one = window.neuroscapeEvidenceParity.parity(instance,state,actions,oracle);
+    const two = window.neuroscapeEvidenceParity.parity(instance,state,actions,oracle);
+    if (JSON.stringify(one)!==JSON.stringify(two)) throw Error("non-deterministic replay");
+    if (one.steps!==64) throw Error("incomplete history");
+    const changed = actions.map(a => ({...a}));
+    changed[0].code = 99;
+    let rejected=false;
+    try {window.neuroscapeEvidenceParity.parity(instance,state,changed,oracle);}
+    catch (_e) {rejected=true;}
+    if (!rejected) throw Error("invalid action was accepted");
+    window.RUST009_RESULT={pass:true,steps:one.steps,negativeTest:true};
+  } catch (err) {
+    window.RUST009_RESULT={pass:false,error:String(err && err.stack || err)};
+  }
+})();
+</script>
