@@ -93,3 +93,20 @@ pub unsafe extern "C" fn ns_replay_free(ptr: *mut i32) {
         drop(Box::from_raw(ptr as *mut [i32;crate::replay::REPLAY_WORDS]));
     }
 }
+
+
+// RUST-005: caller-owned 256-word independent turn-control buffer.
+#[no_mangle]
+pub extern "C" fn ns_turn_alloc() -> *mut i32 {
+    Box::into_raw(Box::new([0_i32; crate::turn::WORDS])) as *mut i32
+}
+#[no_mangle]
+pub unsafe extern "C" fn ns_turn_step(ptr: *mut i32) -> i32 {
+    if ptr.is_null(){return -5;}
+    let words=&mut *(ptr as *mut [i32;crate::turn::WORDS]);
+    crate::turn::step_buffer(words)
+}
+#[no_mangle]
+pub unsafe extern "C" fn ns_turn_free(ptr:*mut i32) {
+    if !ptr.is_null(){drop(Box::from_raw(ptr as *mut [i32;crate::turn::WORDS]));}
+}
