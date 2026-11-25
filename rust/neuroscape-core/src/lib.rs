@@ -299,3 +299,6 @@ pub mod replay;
 pub mod turn;
 
 pub mod match_core;
+
+/// RUST-007 strict deterministic copied-match evidence ledger.
+pub mod evidence_ledger;
