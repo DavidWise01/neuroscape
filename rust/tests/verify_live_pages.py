@@ -51,6 +51,17 @@ def verify_once(browser):
         or manifest.get("reproduction_wasm_sha256") != manifest.get("wasm_sha256")
     ):
         raise RuntimeError("public RUST-016 build reproduction does not match")
+    cross = json.loads(fetch("assets/rust017-cross-environment.json"))
+    if (
+        cross.get("phase") != "RUST-017"
+        or cross.get("source_commit") != SHA
+        or cross.get("cross_runner_match") is not True
+        or cross.get("independent_source_witness") is not False
+        or cross.get("wasm_sha256") != manifest.get("wasm_sha256")
+        or manifest.get("cross_runner_reproducible") is not True
+        or manifest.get("cross_runner_wasm_sha256") != manifest.get("wasm_sha256")
+    ):
+        raise RuntimeError("public RUST-017 cross-runner receipt mismatch")
     # A browser-loaded WASM asset is checked again by the publication page.
     page = browser.new_page()
     try:
@@ -116,7 +127,8 @@ def verify_once(browser):
         raise RuntimeError("manifest replay digest/steps mismatch")
 
     return {
-        "phase": "RUST-016",
+        "phase": "RUST-017",
+        "cross_runner_sha256": cross["wasm_sha256"],
         "reproduced_wasm_sha256": reproduction["isolated_wasm_sha256"],
         "replay_sha256": replay_sha256,
         "source_commit": SHA,
