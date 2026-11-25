@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Neuroscape RUST-011 • Combat Replay Witness</title>
+<style>
+:root{color-scheme:dark}body{margin:0;background:#090b17;color:#f5f6ff;font:15px system-ui,sans-serif}
+main{max-width:960px;margin:auto;padding:30px}h1{color:#ffad65;letter-spacing:.08em;text-shadow:0 0 18px #ff621d}
+.neon{border:1px solid #9c60ff;border-radius:18px;padding:22px;background:#17152e;box-shadow:0 0 25px #6738bb40}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px;margin:22px 0}
+.stat{padding:15px;background:#11172a;border:1px solid #16dcd9;border-radius:12px;box-shadow:0 0 12px #13d4d440}
+small{color:#b5b3d3}strong{display:block;font-size:24px;color:#80ffe8}
+pre{overflow:auto;max-height:500px;line-height:1.4;font-size:12px}
+a{color:#80ffe8}.hold{color:#ffad65}
+</style>
+<main><h1>RUST-011 · 4D SHADOW REPLAY</h1>
+<p>Compiled Rust WebAssembly versus a separate JavaScript combat oracle. All states are copied, never the live game.</p>
+<div class="neon">
+<div id="status" class="hold">Checking available compiled WASM …</div>
+<div class="stats">
+<div class="stat"><small>Replay transitions</small><strong id="steps">—</strong></div>
+<div class="stat"><small>RAM released</small><strong id="ram">—</strong></div>
+<div class="stat"><small>Terminal winner</small><strong id="winner">—</strong></div>
+<div class="stat"><small>Repeat parity</small><strong id="repeat">—</strong></div>
+</div><pre id="ledger">No evidence yet.</pre>
+</div><p><small>.dlw · An FNV checksum detects deterministic mismatch; it does not authenticate the source or prove independent witness ancestry.</small></p>
+</main>
+<script src="../../assets/neuroscape-rust-wasm.generated.js"></script>
+<script src="../evidence-parity.js"></script>
+<script>
+"use strict";
+window.RUST011_RESULT={pass:false,error:"not started"};
+function initial(){
+const w=new Int32Array(256);
+w[0]=0;w[1]=2;w[2]=0;w[3]=2;w[10]=10;w[11]=10;w[12]=3;w[13]=1;
+w.set([36,101,2,3,4,3,37,102,2,4,5,4,38,103,3,5,7,5],24);
+w.set([65,202,3,2,3,2],54);
+w[224]=20;w[225]=20;w[226]=11;w[227]=20;w[230]=-1;
+return w;
+}
+function oracle(state,action){
+const side=state[0],enemy=1-side;
+if(action.code!==4||side!==0||state[1]!==2||state[4])throw Error("invalid combat action");
+const offsets=[24,54],counts=[state[12],state[13]];
+const flags=[212,217];
+const units=[0,1].map(p=>Array.from({length:counts[p]},(_,i)=>{
+const at=offsets[p]+i*6;return {card:state[at],uid:state[at+1],cost:state[at+2],
+defense:state[at+3],attack:state[at+4],hp:state[at+5],used:state[flags[p]+i]};}));
+const attacker=units[side].find(u=>u.uid===action.uid&&!u.used&&u.attack>0);
+if(!attacker)throw Error("attacker not found");
+const defender=units[enemy].find(u=>!u.used);
+if(defender){defender.hp-=attacker.attack;attacker.hp-=defender.attack;}
+else state[(enemy===0?224:226)+action.meter]-=attacker.attack;
+attacker.used=1;
+for(let p=0;p<2;p++){
+const lost=units[p].filter(u=>u.hp<=0);
+state[228+p]+=lost.length;state[231+p]+=lost.reduce((n,u)=>n+u.cost,0);
+const remaining=units[p].filter(u=>u.hp>0);
+state[12+p]=remaining.length;
+for(let i=0;i<5;i++){
+const at=offsets[p]+i*6;state.fill(0,at,at+6);state[flags[p]+i]=0;
+if(remaining[i]){const u=remaining[i];state.set([u.card,u.uid,u.cost,u.defense,u.attack,u.hp],at);state[flags[p]+i]=u.used;}
+}
+}
+state[233]++;
+if(state[224]<=0||state[225]<=0||state[226]<=0||state[227]<=0){
+state[4]=1;state[230]=state[226]<=0||state[227]<=0?0:1;
+}
+return state;
+}
+(async()=>{
+try{
+const encoded=window.NEUROSCAPE_RUST_WASM_BASE64;
+if(!encoded)throw Error("compiled WASM asset unavailable");
+const bytes=Uint8Array.from(atob(encoded),c=>c.charCodeAt(0));
+const {instance}=await WebAssembly.instantiate(bytes,{});
+const actions=[101,102,103].map(uid=>({code:4,uid,meter:0}));
+const first=window.neuroscapeEvidenceParity.parity(instance,initial(),actions,oracle);
+const second=window.neuroscapeEvidenceParity.parity(instance,initial(),actions,oracle);
+if(JSON.stringify(first)!==JSON.stringify(second))throw Error("repeat replay divergence");
+if(first.steps!==3||first.evidence[0].removed.join(",")!=="1,1")throw Error("blocker destruction mismatch");
+const final=first.evidence.at(-1);
+if(final.winner!==0||final.terminal!==1||final.released.join(",")!=="2,3")throw Error("terminal/resource mismatch");
+let rejected=false;try{window.neuroscapeEvidenceParity.parity(instance,initial(),actions.concat(actions[0]),oracle);}catch(e){rejected=true;}
+if(!rejected)throw Error("terminal action allowed");
+window.RUST011_RESULT={pass:true,steps:first.steps,removed:final.removed,released:final.released,winner:final.winner,repeat:true,terminalRejected:true};
+document.getElementById("status").textContent="PASS · COPIED RUST / JS COMBAT PARITY";
+document.getElementById("steps").textContent=first.steps;
+document.getElementById("ram").textContent=final.released.join(" / ");
+document.getElementById("winner").textContent="Player";
+document.getElementById("repeat").textContent="PASS";
+document.getElementById("ledger").textContent=JSON.stringify(first.evidence,null,2);
+}catch(e){
+window.RUST011_RESULT={pass:false,error:String(e&&e.stack||e)};
+document.getElementById("status").textContent="HOLD · "+String(e.message||e);
+document.getElementById("ledger").textContent=window.RUST011_RESULT.error;
+}
+})();
+</script></html>
