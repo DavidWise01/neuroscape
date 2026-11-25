@@ -152,3 +152,30 @@ This does not transfer match authority to Rust and is not a full port of
 bot decision-making, logging, animation, or unconstrained hand/deck capacity.
 
 `.dlw`
+
+## RUST-007/008 — Ordered evidence and WASM digest parity
+
+The copied-state Rust module `evidence_ledger` records every accepted action,
+the pre/post 256-word digests, ordered chain, resource counters and terminal
+status. Its FNV-1a digests are deterministic parity checks, **not cryptographic
+signatures or proof of source authenticity**. Invalid actions, terminal reuse,
+and nonmonotonic cumulative counters fail closed.
+
+RUST-008 exports `ns_evidence_digest_low/high` as the two unsigned halves of
+one 64-bit digest. The separate `rust/evidence-parity.js` adapter accepts
+only caller-provided copied match fixtures, a compiled WASM instance and a
+separately supplied JavaScript transition oracle. It compares state digests
+after **every** action and rejects any disagreement.
+
+To qualify this stage: run `cargo test`, `cargo fmt --all -- --check`,
+`cargo clippy --all-targets -- -D warnings`, rebuild WASM with
+`wasm32-unknown-unknown`, run the adapter in Chromium against the real
+JavaScript oracle, and verify the checked-in Pages WASM asset and live
+deployment. **These gates are not yet claimed complete.** Merely checking
+in the adapter does not execute it, and the previously pinned WASM binary
+does not automatically gain the new exports.
+
+The canonical game, artwork, card catalog, 5×2 arena, bot, and turn
+authority remain JavaScript-owned.
+
+`.dlw`
