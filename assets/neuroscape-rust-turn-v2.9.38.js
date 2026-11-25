@@ -87,6 +87,8 @@ const ready=(async()=>{
      const kind=sequence[step];b[6]=kind;b[7]=0;
      const result=w.ns_turn_step(ptr);
      check(result,0,'Rust transition '+seed+'/'+step);
+     // Reacquire the WASM view if Rust Vec allocations grew linear memory.
+     b=new Int32Array(w.memory.buffer,ptr,256);
      reference(x,kind);
      compare(b,x,'turn '+seed+'/'+step);
     }
