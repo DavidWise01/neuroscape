@@ -293,3 +293,5 @@ mod shadow_tests {
         assert!(!a.attacker_destroyed && !a.defender_destroyed);
     }
 }
+
+mod replay;
