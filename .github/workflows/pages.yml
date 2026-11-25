@@ -40,6 +40,44 @@ jobs:
           python3 -m playwright install --with-deps chromium
       - name: Require phase and combat replay parity before publication
         run: python3 rust/tests/run_rust009_browser.py
+      - name: RUST-013 write verified deployment manifest
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, os, re
+          from datetime import datetime, timezone
+          from pathlib import Path
+          asset = Path("assets/neuroscape-rust-wasm.generated.js")
+          source = asset.read_text(encoding="utf-8")
+          match = re.search(r"NEUROSCAPE_RUST_WASM_BASE64\s*=\s*['\"]([^'\"]+)['\"]", source)
+          if not match:
+              raise SystemExit("WASM content missing from generated browser asset")
+          blob = base64.b64decode(match.group(1), validate=True)
+          if blob[:4] != b"\\x00asm":
+              raise SystemExit("invalid WebAssembly magic")
+          digest = hashlib.sha256(blob).hexdigest()
+          advertised = re.search(r"NEUROSCAPE_RUST_WASM_SHA256\s*=\s*['\"]([a-f0-9]{64})['\"]", source)
+          if not advertised or advertised.group(1) != digest:
+              raise SystemExit("WASM digest mismatch: release blocked")
+          report = {
+              "phase": "RUST-013",
+              "source_commit": os.environ["SOURCE_COMMIT"],
+              "github_run_id": os.environ["RUN_ID"],
+              "wasm_sha256": digest,
+              "wasm_bytes": len(blob),
+              "native_rust_gate": "passed_in_deployment_job",
+              "chromium_phase_and_combat_gate": "passed_in_deployment_job",
+              "release_scope": "copied_state_observation_only",
+              "live_gameplay_authority": False,
+              "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+              "notice": "Build-time checks, not independent external custody or live gameplay authorization."
+          }
+          target = Path("assets/rust013-release.json")
+          target.write_text(json.dumps(report, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
+          print("RUST-013 manifest:", target, "WASM SHA-256:", digest)
+          PY
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
