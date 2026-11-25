@@ -127,3 +127,17 @@ pub unsafe extern "C" fn ns_match_step(ptr:*mut i32)->i32 {
 pub unsafe extern "C" fn ns_match_free(ptr:*mut i32) {
     if !ptr.is_null(){drop(Box::from_raw(ptr as *mut [i32;crate::match_core::WORDS]));}
 }
+
+// RUST-008: read-only digest exports. Combine as unsigned 64-bit in JavaScript.
+#[no_mangle]
+pub unsafe extern "C" fn ns_evidence_digest_low(ptr:*const i32)->i32 {
+ if ptr.is_null(){return 0;}
+ let state=&*(ptr as *const [i32;crate::match_core::WORDS]);
+ crate::evidence_ledger::state_digest(state) as u32 as i32
+}
+#[no_mangle]
+pub unsafe extern "C" fn ns_evidence_digest_high(ptr:*const i32)->i32 {
+ if ptr.is_null(){return 0;}
+ let state=&*(ptr as *const [i32;crate::match_core::WORDS]);
+ (crate::evidence_ledger::state_digest(state)>>32) as u32 as i32
+}
