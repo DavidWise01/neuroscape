@@ -1,0 +1,7 @@
+/* RUST-003 gameplay shadow read-only arcade status */
+#neuroscapeRustShadowLab{margin:12px 0;padding:13px;border-radius:11px;border:1px solid #83ffe7;background:linear-gradient(125deg,#121a2b,#2a153d);box-shadow:0 0 20px #7dffe72b;color:#e8fdff;font:11px ui-monospace,Consolas,monospace}
+#neuroscapeRustShadowLab strong{color:#a0fff0;text-shadow:0 0 10px #67ffdc}
+#neuroscapeRustShadowStatus{display:block;margin:8px 0;color:#e9c3a0}
+#neuroscapeRustShadowLab[data-phase=PASS] #neuroscapeRustShadowStatus{color:#81ffe3}
+#neuroscapeRustShadowLab[data-phase=FAIL] #neuroscapeRustShadowStatus{color:#ff9e9e}
+#neuroscapeRustShadowDetail{overflow-wrap:anywhere;font-size:10px;color:#c8cce1}
