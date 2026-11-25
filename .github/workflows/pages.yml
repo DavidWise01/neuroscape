@@ -155,6 +155,13 @@ jobs:
             --replay rust/tests/.rust015-local-evidence.json \
             --public rust/tests/.rust015-public-evidence.json \
             --output rust/tests/.rust018-adjudication.json
+      - name: RUST-020 test genesis integrity and untrusted key rejection
+        run: python3 -m unittest discover -s rust/tests -p 'test_genesis_rust020.py' -v
+      - name: RUST-020 emit append-only untrusted genesis candidate
+        run: |
+          python3 rust/tests/genesis_rust020.py emit \
+            --receipt rust/tests/.rust018-adjudication.json \
+            --output rust/tests/.rust020-genesis-candidate.json
       - name: RUST-019 test anti-rollback and lineage invariants
         run: python3 -m unittest discover -s rust/tests -p 'test_lineage_rust019.py' -v
       - name: RUST-019 record explicit predecessor state (HOLD when absent)
@@ -183,6 +190,7 @@ jobs:
             rust/tests/.rust017-cross-build.json
             rust/tests/.rust018-adjudication.json
             rust/tests/.rust019-lineage.json
+            rust/tests/.rust020-genesis-candidate.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
