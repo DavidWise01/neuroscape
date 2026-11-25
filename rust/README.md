@@ -49,12 +49,11 @@ all 32 inherited JavaScript adversarial periods. A missing binary, mismatched
 ABI version, or disagreement fails the parity check. This is **not** yet a
 Rust rewrite of card mechanics, rendering, or the main arcade application.
 
-The repository may have a second, platform-managed Pages build in addition
-to `Deploy Ether Arena`. Only the custom workflow includes the generated
-binary. Verify the live Pages monitor says `RUST/WASM PASS` before making
-a claim that the deployed page is running WebAssembly; if a plain Pages build
-wins the deployment race, the monitor will correctly report FAIL rather
-than present JavaScript as Rust.
+The compiled browser binary is checked into `assets/neuroscape-rust-wasm.generated.js`,
+so both the default GitHub Pages build and `Deploy Ether Arena` have a valid
+WASM asset. CI still rebuilds the binary independently from Rust source before
+testing and deploying. Verify the live monitor reports `RUST/WASM PASS`
+before claiming real browser acceptance.
 
 Run locally:
 
