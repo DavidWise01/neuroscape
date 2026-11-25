@@ -40,6 +40,8 @@ jobs:
           python3 -m playwright install --with-deps chromium
       - name: Require phase and combat replay parity before publication
         run: python3 rust/tests/run_rust009_browser.py
+      - name: RUST-016 reproduce exact-commit WASM in isolated Cargo build
+        run: python3 rust/tests/reproduce_wasm.py
       - name: RUST-013 write verified deployment manifest
         env:
           SOURCE_COMMIT: ${{ github.sha }}
@@ -69,7 +71,17 @@ jobs:
               raise SystemExit("RUST-015 invalid replay receipt ancestry")
           if not re.fullmatch(r"[0-9a-f]{64}", replay.get("replay_sha256", "")):
               raise SystemExit("RUST-015 invalid replay SHA-256")
+          reproduction_path = Path("assets/rust016-reproduction.json")
+          if not reproduction_path.is_file():
+              raise SystemExit("RUST-016 reproducibility receipt missing")
+          reproduction = json.loads(reproduction_path.read_text(encoding="utf-8"))
+          if reproduction.get("source_commit") != os.environ["SOURCE_COMMIT"] or not reproduction.get("reproducible"):
+              raise SystemExit("RUST-016 reproduction source/authority mismatch")
+          if reproduction.get("primary_wasm_sha256") != digest or reproduction.get("isolated_wasm_sha256") != digest:
+              raise SystemExit("RUST-016 source-build fingerprint mismatch")
           report = {
+              "reproduction_wasm_sha256": reproduction["isolated_wasm_sha256"],
+              "reproducible_build": True,
               "replay_sha256": replay["replay_sha256"],
               "replay_steps": replay["replay_steps"],
               "phase": "RUST-013",
@@ -106,6 +118,7 @@ jobs:
             rust/tests/.rust015-local-evidence.json
             rust/tests/.rust015-public-evidence.json
             assets/rust013-release.json
+            assets/rust016-reproduction.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
