@@ -1,0 +1,14 @@
+[package]
+name = "neuroscape-core"
+version = "0.1.0"
+edition = "2021"
+description = "Deterministic, read-only Neuroscape stability and provenance calculations"
+license = "MIT"
+publish = false
+
+[lib]
+name = "neuroscape_core"
+path = "src/lib.rs"
+
+[features]
+default = []
