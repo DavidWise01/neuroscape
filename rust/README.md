@@ -335,3 +335,27 @@ same repository, GitHub infrastructure and compiler toolchain.
 [Pages Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-018 — Three observation classes, one ancestry
+
+The build manifest, predeployment copied-state replay receipt, and
+postdeployment public-browser receipt have different **observed claims**.
+`rust/tests/adjudicate_rust018.py` requires agreement on the exact
+source commit, GitHub run ID, WASM SHA-256 and replay SHA-256, including
+reproduction checks and no transfer of gameplay authority. It fails
+closed on missing or contradictory fields. Ten negative mutations
+are covered by `test_adjudicate_rust018.py`.
+
+The seal is written **after successful public Pages readback**, to
+`rust/tests/.rust018-adjudication.json` with exclusive creation;
+the run-scoped Actions artifact archives it alongside RUST-015–017 receipts.
+This seal deliberately declares *three observation classes but only
+one source ancestry*. It is **not** three independent witnesses, external
+custody, or an immutable record beyond the artifact's retention period.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[Combat witness](https://davidwise01.github.io/neuroscape/rust/tests/rust011-browser.html) ·
+[Neon release dashboard](https://davidwise01.github.io/neuroscape/rust/tests/rust013-release.html) ·
+[Pages evidence workflow](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
