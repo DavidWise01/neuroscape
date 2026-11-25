@@ -19,6 +19,55 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // v2.9.33: component uncertainty is a declared worst-case assumption, not evidence calibration.
+ const componentAudit=await page.evaluate(()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),api=window.neuroscapeComponentUncertainty;
+   const initial=api?.snapshot();
+   const assumptions=Object.freeze([
+     Object.freeze({id:'sampling',value:.025,source:'declared-only'}),
+     Object.freeze({id:'clock',value:.05,source:'declared-only'}),
+     Object.freeze({id:'model',value:.075,source:'declared-only'})
+   ]);
+   const result=api?.calculate({fixed:{margin:.1},adaptive:{margin:-.25}},assumptions);
+   const stable=api?.classify(.5,.15),
+     uncertain=api?.classify(.1,.15),
+     unstable=api?.classify(-.5,.15);
+   const p=document.getElementById('componentUncertaintyPeriod'),
+     slider=document.getElementById('componentUncertainty_clock');
+   if(p)p.value='8';
+   p?.dispatchEvent(new Event('change',{bubbles:true}));
+   if(slider)slider.value='.2';
+   slider?.dispatchEvent(new Event('input',{bubbles:true}));
+   const updated=api?.snapshot();
+   return {before,after:game(),initial,updated,
+     sum:result?.epsilon,sensitive:result?.sensitivity.some(x=>x.mayChangeDecision),
+     fixed:result?.policies.fixed.classification,
+     adaptive:result?.policies.adaptive.classification,
+     stable:stable?.classification,uncertain:uncertain?.classification,
+     unstable:unstable?.classification,
+     sourceLabels:result?.components.every(x=>x.source==='declared-only'),
+     assumptionIntact:assumptions.every(x=>x.source==='declared-only'),
+     sliders:document.querySelectorAll('#componentUncertaintyBars input[type=range]').length,
+     selectorCount:p?.options.length,mounted:!!document.getElementById('componentUncertaintyLab')};
+ });
+ if(!componentAudit.mounted||!componentAudit.initial||
+    componentAudit.initial.components!==3||componentAudit.initial.evidenceCalibrated!==false||
+    componentAudit.initial.independenceAssumed||componentAudit.initial.sourceMutated||
+    componentAudit.initial.gameplayMutation||
+    Math.abs(componentAudit.sum-.15)>1e-10||
+    componentAudit.fixed!=='INDETERMINATE'||
+    componentAudit.adaptive!=='CONFIRMED UNSTABLE'||
+    componentAudit.stable!=='CONFIRMED STABLE'||
+    componentAudit.uncertain!=='INDETERMINATE'||
+    componentAudit.unstable!=='CONFIRMED UNSTABLE'||
+    !componentAudit.sensitive||!componentAudit.sourceLabels||!componentAudit.assumptionIntact||
+    componentAudit.sliders!==3||componentAudit.selectorCount!==32||
+    componentAudit.updated?.period!==8||Math.abs(componentAudit.updated.epsilon-.3)>1e-10||
+    JSON.stringify(componentAudit.before)!==JSON.stringify(componentAudit.after))
+   fail('v2.9.33 component provenance, sensitivity or gameplay isolation violated: '+JSON.stringify(componentAudit));
+
  // v2.9.32: explicit uncertainty classification and immutable source/game acceptance.
  const uncertaintyCheck=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
