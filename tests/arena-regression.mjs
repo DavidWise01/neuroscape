@@ -19,6 +19,26 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // RUST-006: fail closed on full action-by-action Rust/JS match-state parity.
+ await page.waitForFunction(()=>window.neuroscapeRustMatch?.snapshot().phase!=='LOADING',null,{timeout:35000});
+ const unified=await page.evaluate(async()=>{
+  const before={turn:state.turn,phase:state.phase,active:state.active,
+   actions:state.actions,ram:[state.p.ram,state.e.ram],done:state.done};
+  const report=await window.neuroscapeRustMatch?.ready;
+  const after={turn:state.turn,phase:state.phase,active:state.active,
+   actions:state.actions,ram:[state.p.ram,state.e.ram],done:state.done};
+  return {before,after,report,snapshot:window.neuroscapeRustMatch?.snapshot(),
+   mounted:!!document.getElementById('neuroscapeRustMatchLab')};
+ });
+ if(!unified.mounted||!unified.report?.pass||
+    unified.report.histories!==48||unified.report.events<400||
+    unified.report.checked<6000||unified.report.checked!==unified.report.passed||
+    unified.report.blocked<5||unified.report.terminal<4||
+    unified.snapshot?.phase!=='PASS'||
+    unified.report.gameplayMutation||unified.report.sourceMutated||
+    JSON.stringify(unified.before)!==JSON.stringify(unified.after))
+   fail('RUST-006 unified copied match replay divergence: '+JSON.stringify(unified));
+
  // RUST-005: four-phase cloned turn shadow, compiled Rust vs JS transitions.
  await page.waitForFunction(()=>window.neuroscapeRustTurn?.snapshot().phase!=='LOADING',null,{timeout:30000});
  const turnParity=await page.evaluate(async()=>{
