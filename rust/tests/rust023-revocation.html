@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-023 · Emergency Revocation Observatory</title>
+<style>
+:root{color-scheme:dark}body{margin:0;background:radial-gradient(ellipse at 50% 7%,#402647,#0a101f 75%);color:#f3f6ff;font:15px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:27px}h1{color:#ffa96a;text-shadow:0 0 22px #f16a24;font-size:clamp(25px,4vw,42px);letter-spacing:.06em}
+.panel{padding:24px;background:#171b2d;border:1px solid #aa5bf2;border-radius:19px;box-shadow:0 0 32px #9655ef55}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-top:24px}
+.cell{padding:18px;min-height:130px;border:1px solid #2bcfc5;border-radius:12px;box-shadow:inset 0 0 20px #2bcfc525}
+.cell:nth-child(2){border-color:#ff904d}.cell:nth-child(3){border-color:#b58cfc}
+b{display:block;margin-bottom:8px}p,small{color:#bbc6d6;line-height:1.5}.status{font-size:21px;font-weight:800;color:#ffbe77}a{color:#7df6e5}
+@media(max-width:700px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-023 · EMERGENCY FREEZE</h1>
+<p>Three safeguards · no invented external custody · no live-gameplay authority.</p>
+<div class="panel">
+<div class="status" id="status">HOLD · No authenticated external revocation receipt</div>
+<div class="grid">
+<div class="cell"><b>PAST · REVOKED KEY</b><small>Previously retained custodian fingerprint and predecessor hash</small><p>Required for accountable revocation</p></div>
+<div class="cell"><b>PRESENT · RECOVERY KEY</b><small>Separately pinned Ed25519 recovery public key signs canonical revocation</small><p>Signature must be verified</p></div>
+<div class="cell"><b>FUTURE · BLOCK</b><small>Compromised signatures denied; successor issuance remains frozen until qualified</small><p>Default: no recovery authority</p></div>
+</div>
+<p id="detail">The Actions workflow supports an emergency stop for new Pages deployments. GitHub release metadata alone cannot establish whether an external custodian has revoked a key.</p>
+</div>
+<p><a href="../../index.html">Arcade</a> · <a href="rust022-rotation.html">Key rotation</a> · <a href="rust021-successor.html">Successor</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">Workflow</a></p>
+<small>.dlw · The emergency switch is an operational GitHub control, not an independent cryptographic trust root.</small>
+<script>
+(async()=>{
+try{
+const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+if(!r.ok)throw Error("No published release manifest");
+const m=await r.json();
+if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("Invalid source report");
+document.getElementById("detail").textContent="Current published release commit: "+m.source_commit+". External revocation status is not independently provided by the Pages artifact. The cryptographic custody gate remains HOLD.";
+}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}
+})();
+</script></main></html>
