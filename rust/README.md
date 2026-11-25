@@ -179,3 +179,31 @@ The canonical game, artwork, card catalog, 5×2 arena, bot, and turn
 authority remain JavaScript-owned.
 
 `.dlw`
+
+## RUST-011 — Browser-visible combat evidence witness
+
+- [RUST-011 interactive neon evidence page](https://davidwise01.github.io/neuroscape/rust/tests/rust011-browser.html)
+- [Neuroscape live arcade](https://davidwise01.github.io/neuroscape/)
+- [Rust core regression workflow](https://github.com/DavidWise01/neuroscape/actions/workflows/rust-core.yml)
+
+The test page uses a **copied** 256-word state with three attacks. It checks
+a simultaneous attacker/blocker destruction, card compaction, two-sided RAM
+release, unblocked meter hits, a terminal winner and rejection of subsequent
+actions. The WASM digest is checked against independent JavaScript state
+serialization on every transition. Replaying the same actions twice must
+produce identical evidence. The phase test continues checking 64 transitions.
+
+`rust/tests/run_rust009_browser.py` now requires **both** RUST-009 and
+RUST-011 fixtures in Chromium. The established `rust-core.yml` workflow
+already invokes that runner after rebuilding WASM, so new pushes under
+`rust/**` qualify both.
+
+**Release policy:** GitHub source commits do not certify a Pages deployment.
+The browser display deliberately shows HOLD if the checked-in deployed WASM
+does not provide RUST-008 digest exports. Before declaring browser PASS,
+verify that Actions completed successfully, that the regenerated WASM reached
+the Pages deployment, and that the public page displays PASS. The test fixture
+is synthetic and does not imply real gameplay authority or independent witness
+ancestry. The original arcade is preserved.
+
+`.dlw`
