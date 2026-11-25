@@ -177,6 +177,14 @@ jobs:
               --output rust/tests/.rust019-lineage.json \
               --allow-unanchored-report
           fi
+      - name: RUST-021 test signed genesis successor safeguards
+        run: python3 -m unittest discover -s rust/tests -p 'test_successor_rust021.py' -v
+      - name: RUST-021 record successor HOLD without external custody material
+        run: |
+          python3 rust/tests/successor_rust021.py \
+            --current rust/tests/.rust018-adjudication.json \
+            --output rust/tests/.rust021-successor.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -191,6 +199,7 @@ jobs:
             rust/tests/.rust018-adjudication.json
             rust/tests/.rust019-lineage.json
             rust/tests/.rust020-genesis-candidate.json
+            rust/tests/.rust021-successor.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
