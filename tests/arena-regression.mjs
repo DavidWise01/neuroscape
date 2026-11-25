@@ -19,6 +19,27 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // RUST-003: real JavaScript card data vs compiled Rust combat/deploy shadow.
+ await page.waitForFunction(()=>window.neuroscapeRustShadow?.snapshot().phase!=='LOADING',
+   null,{timeout:30000});
+ const shadow=await page.evaluate(async()=>{
+   const game=()=>({turn:state.turn,phase:state.phase,active:state.active,
+     actions:state.actions,ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),result=await window.neuroscapeRustShadow?.ready,
+     snapshot=window.neuroscapeRustShadow?.snapshot(),after=game();
+   return {before,after,result,snapshot,
+     mounted:!!document.getElementById('neuroscapeRustShadowLab')};
+ });
+ if(!shadow.mounted||!shadow.result?.pass||shadow.snapshot?.phase!=='PASS'||
+    shadow.result.cards!==256||shadow.result.boards<1000||
+    shadow.result.checked<15000||
+    shadow.result.checked!==shadow.result.passed||
+    shadow.result.originalStatePreserved!==true||
+    shadow.result.gameplayMutation||shadow.result.sourceMutated||
+    JSON.stringify(shadow.before)!==JSON.stringify(shadow.after))
+   fail('RUST-003 observed gameplay parity violated: '+JSON.stringify(shadow));
+
  // RUST-002: compiled Rust WASM must execute and match the inherited JS
  // bounded-margin models across the full 32-period adversarial sweep.
  await page.waitForFunction(()=>window.neuroscapeRustParity?.snapshot().phase!=='LOADING',
