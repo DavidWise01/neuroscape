@@ -155,6 +155,21 @@ jobs:
             --replay rust/tests/.rust015-local-evidence.json \
             --public rust/tests/.rust015-public-evidence.json \
             --output rust/tests/.rust018-adjudication.json
+      - name: RUST-019 test anti-rollback and lineage invariants
+        run: python3 -m unittest discover -s rust/tests -p 'test_lineage_rust019.py' -v
+      - name: RUST-019 record explicit predecessor state (HOLD when absent)
+        run: |
+          if test -f rust/release/predecessor.json; then
+            python3 rust/tests/lineage_rust019.py \
+              --receipt rust/tests/.rust018-adjudication.json \
+              --predecessor rust/release/predecessor.json \
+              --output rust/tests/.rust019-lineage.json
+          else
+            python3 rust/tests/lineage_rust019.py \
+              --receipt rust/tests/.rust018-adjudication.json \
+              --output rust/tests/.rust019-lineage.json \
+              --allow-unanchored-report
+          fi
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -167,6 +182,7 @@ jobs:
             assets/rust017-cross-environment.json
             rust/tests/.rust017-cross-build.json
             rust/tests/.rust018-adjudication.json
+            rust/tests/.rust019-lineage.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
