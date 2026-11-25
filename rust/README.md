@@ -479,3 +479,50 @@ the descendant condition.
 [Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-022 — Custodian continuity and dual-signed key rotation
+
+`rust/tests/rotation_rust022.py` accepts a retained RUST-021 or
+RUST-022 predecessor, a newer RUST-018 receipt, an externally pinned old
+Ed25519 public key, and a signature on a canonical rotation proposal.
+It checks predecessor hash integrity, source descent, non-reuse of source
+or evidence, incremented sequence and custodian key pin.
+
+A **key change** additionally requires the new Ed25519 public key, an
+independently supplied new-key SPKI SHA-256 pin, and a second signature on
+the **same exact proposal**. Without these checks there is no qualified
+rotation. The returned `CUSTODIAN_CONTINUITY` record is append-only and
+records both signature digests, key fingerprints and predecessor hash.
+It explicitly declines external custodian identity certification, global
+anti-rollback and gameplay authority.
+
+The automatic Pages workflow has no custodian private keys and emits
+`HOLD_CUSTODIAN_CONTINUITY`. It runs synthetic structural negative tests
+and includes the HOLD record in its finite-retention Actions artifact.
+The source contains **no generated custodian key or forged witness**.
+
+Manual externally controlled verification example:
+
+```sh
+RUST022_OLD_KEY_SPKI_SHA256="<external old key pin>" \
+RUST022_NEW_KEY_SPKI_SHA256="<external new key pin, only for rotation>" \
+python3 rust/tests/rotation_rust022.py \
+  --current current-rust018.json \
+  --previous retained-rust021-or-rust022.json \
+  --old-key old-custodian-public.pem \
+  --old-signature signed-proposal.old.sig \
+  --new-key new-custodian-public.pem \
+  --new-signature signed-proposal.new.sig \
+  --output rotation-receipt.json
+```
+
+Both signatures must be made over the exact canonical JSON of the
+`proposal(...)` result. For unchanged-key continuity, omit all
+`--new-*` arguments and the new-key environment variable.
+
+[Live arcade](https://davidwise01.github.io/neuroscape/) ·
+[Neon rotation observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust022-rotation.html) ·
+[Previous successor](https://davidwise01.github.io/neuroscape/rust/tests/rust021-successor.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
