@@ -294,4 +294,4 @@ mod shadow_tests {
     }
 }
 
-mod replay;
+pub mod replay;
