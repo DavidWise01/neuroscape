@@ -1,0 +1,7 @@
+/* RUST-002 · WASM parity monitor; not gameplay control */
+#neuroscapeRustParityLab{margin:12px 0;padding:13px;border:1px solid #75fce3;border-radius:10px;background:linear-gradient(120deg,#0d1b30,#2d1538);color:#effeff;font:11px ui-monospace,Consolas,monospace;box-shadow:0 0 22px #58ffe522,inset 0 0 16px #af68fa1d}
+#neuroscapeRustParityLab strong{color:#a8fff0;text-shadow:0 0 10px #6bffe5}
+#neuroscapeRustParityStatus{display:block;color:#f9c595;margin:8px 0}
+#neuroscapeRustParityLab[data-phase=PASS] #neuroscapeRustParityStatus{color:#7dffdf}
+#neuroscapeRustParityLab[data-phase=FAIL] #neuroscapeRustParityStatus{color:#ffaaa6}
+#neuroscapeRustParityDetail{font-size:10px;color:#c2c9e4;overflow-wrap:anywhere}
