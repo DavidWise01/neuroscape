@@ -55,7 +55,7 @@ jobs:
           if not match:
               raise SystemExit("WASM content missing from generated browser asset")
           blob = base64.b64decode(match.group(1), validate=True)
-          if blob[:4] != b"\\x00asm":
+          if blob[:4] != b"\x00asm":
               raise SystemExit("invalid WebAssembly magic")
           digest = hashlib.sha256(blob).hexdigest()
           advertised = re.search(r"NEUROSCAPE_RUST_WASM_SHA256\s*=\s*['\"]([a-f0-9]{64})['\"]", source)
@@ -75,7 +75,7 @@ jobs:
               "notice": "Build-time checks, not independent external custody or live gameplay authorization."
           }
           target = Path("assets/rust013-release.json")
-          target.write_text(json.dumps(report, indent=2, sort_keys=True) + "\\n", encoding="utf-8")
+          target.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
           print("RUST-013 manifest:", target, "WASM SHA-256:", digest)
           PY
       - uses: actions/configure-pages@v5
