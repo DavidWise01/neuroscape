@@ -526,3 +526,61 @@ Both signatures must be made over the exact canonical JSON of the
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-023 — Emergency publication freeze and custodian recovery
+
+New deployments can be stopped with the repository Actions variable
+`RUST023_EMERGENCY_FREEZE=true`. The Pages deployment job checks this
+variable before checkout, compilation or publication, and exits with an
+error rather than publishing. This is a **GitHub operational emergency
+switch**, not a global freeze of already deployed pages, repository history
+or external copies. Turning the variable off merely permits the normal
+release gates to run; it does not authenticate a recovery.
+
+`rust/tests/revocation_rust023.py` defines a canonical, hash-linked
+`REVOCATION_PROPOSAL` for a retained RUST-022 custodian checkpoint. A
+valid emergency revocation requires a **separate externally pinned**
+Ed25519 recovery public key and its signature over that exact proposal.
+The compromised custodian key cannot be its own recovery key. The
+verified record marks `REVOKED_EMERGENCY_FREEZE`, and the denylist
+rejects later use of the revoked fingerprint. A RUST-021 predecessor
+without an authenticated current-key pin is insufficient for the
+automated revocation path and remains HOLD.
+
+**Trust boundary:** a JSON revocation record's self-consistent hash is
+not external authentication. The external recovery signature, pin
+provenance and retained predecessor must be checked independently by
+the verifier before treating the denylist as authoritative. The
+automatic workflow has no external recovery credentials; it runs
+negative tests and archives only
+`HOLD_REVOCATION_CUSTODY_UNVERIFIED`, without granting custody or
+gameplay authority. The archive retains the record for 90 days.
+
+For a real external recovery custodian to produce a verified revocation,
+first create the canonical proposal, sign its compact JSON bytes using
+the separately controlled recovery Ed25519 key, then supply the pinned
+public key SHA-256 (DER SPKI), predecessor and signature:
+
+```sh
+RUST023_RECOVERY_KEY_SPKI_SHA256="<externally pinned SHA-256>" \
+python3 rust/tests/revocation_rust023.py \
+  --previous /external/last-qualified-rust022.json \
+  --revoked-key "<current custodian SPKI SHA-256>" \
+  --reason COMPROMISE \
+  --recovery-key-public /external/recovery.pem \
+  --recovery-signature /external/recovery.sig \
+  --output /external/revocation-rust023.json
+```
+
+The command does not create keys, designate an actual recovery custodian,
+or authenticate an off-repository record's storage. The current RUST-022
+qualifier does not automatically query a network revocation register; any
+qualification workflow claiming active custody must supply and verify
+the retained revocation state.
+
+[Live arcade](https://davidwise01.github.io/neuroscape/) ·
+[Emergency neon observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust023-revocation.html) ·
+[Previous rotation](https://davidwise01.github.io/neuroscape/rust/tests/rust022-rotation.html) ·
+[Pages workflow](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
