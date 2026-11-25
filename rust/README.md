@@ -284,3 +284,29 @@ No transfer of gameplay authority. Freeze only after the public acceptance
 job finishes successfully.
 
 `.dlw`
+
+## RUST-016 — Exact-commit clean build reproduction
+
+The Pages workflow now runs `rust/tests/reproduce_wasm.py` after compiling
+its primary WASM binary and before publication. The second build extracts
+the exact `GITHUB_SHA` with `git archive` into a fresh temporary directory,
+uses a separate Cargo target directory, and builds `--release --locked`.
+Both generated WebAssembly binaries must have identical SHA-256 and size.
+
+The result is recorded in `assets/rust016-reproduction.json`, bound into
+the RUST-013 release manifest and checked again by the public Pages witness
+and post-deployment Chromium acceptance. Any missing or mismatching result
+fails the publication gate. The run-specific Actions artifact also stores
+this reproduction receipt.
+
+Two clean builds of the same GitHub source are useful reproducibility
+evidence, **not** two independent source witnesses. This experiment does not
+compare different Rust toolchains or operating systems, authenticate the
+repository history externally, or grant live gameplay authority.
+
+[Live Neuroscape](https://davidwise01.github.io/neuroscape/) ·
+[Neon release dashboard](https://davidwise01.github.io/neuroscape/rust/tests/rust013-release.html) ·
+[Combat replay](https://davidwise01.github.io/neuroscape/rust/tests/rust011-browser.html) ·
+[Pages Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
