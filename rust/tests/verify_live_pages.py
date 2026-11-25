@@ -39,6 +39,18 @@ def verify_once(browser):
         raise RuntimeError("browser gate not attested")
     if manifest.get("live_gameplay_authority") is not False:
         raise RuntimeError("unauthorized gameplay authority in manifest")
+    reproduction = json.loads(fetch("assets/rust016-reproduction.json"))
+    if (
+        reproduction.get("phase") != "RUST-016"
+        or reproduction.get("source_commit") != SHA
+        or reproduction.get("reproducible") is not True
+        or reproduction.get("same_source_ancestry") is not True
+        or reproduction.get("independent_source_witness") is not False
+        or reproduction.get("primary_wasm_sha256") != manifest.get("wasm_sha256")
+        or reproduction.get("isolated_wasm_sha256") != manifest.get("wasm_sha256")
+        or manifest.get("reproduction_wasm_sha256") != manifest.get("wasm_sha256")
+    ):
+        raise RuntimeError("public RUST-016 build reproduction does not match")
     # A browser-loaded WASM asset is checked again by the publication page.
     page = browser.new_page()
     try:
@@ -104,7 +116,8 @@ def verify_once(browser):
         raise RuntimeError("manifest replay digest/steps mismatch")
 
     return {
-        "phase": "RUST-015",
+        "phase": "RUST-016",
+        "reproduced_wasm_sha256": reproduction["isolated_wasm_sha256"],
         "replay_sha256": replay_sha256,
         "source_commit": SHA,
         "github_run_id": RUN,
