@@ -207,3 +207,25 @@ is synthetic and does not imply real gameplay authority or independent witness
 ancestry. The original arcade is preserved.
 
 `.dlw`
+
+## RUST-013 — Pages release identity and digest readback
+
+The deployment workflow now writes `assets/rust013-release.json` **only after**
+its native Rust, fresh WASM build, and Chromium replay checks complete.
+The manifest records the source commit, Actions run ID, SHA-256 digest of
+the *compiled binary*, and the UTC generation time. The publication witness
+at [RUST-013](https://davidwise01.github.io/neuroscape/rust/tests/rust013-release.html)
+fetches that JSON and recalculates SHA-256 from the WASM binary delivered
+alongside the public page. A mismatch or missing report means HOLD.
+
+This establishes consistency between the deployed binary and the
+self-reported CI manifest. It does **not** independently authenticate the
+workflow execution, guarantee the latest deployment completed, prove external
+witness independence, or transfer live gameplay authority.
+
+- [Main GitHub Pages arcade](https://davidwise01.github.io/neuroscape/)
+- [Combat witness](https://davidwise01.github.io/neuroscape/rust/tests/rust011-browser.html)
+- [Publication witness](https://davidwise01.github.io/neuroscape/rust/tests/rust013-release.html)
+- [Pages Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
