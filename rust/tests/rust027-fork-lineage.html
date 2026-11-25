@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-027 · Fork Ancestry Observatory</title>
+<style>
+:root{color-scheme:dark}body{margin:0;color:#f3f6ff;background:radial-gradient(ellipse at 50% 8%,#33204b,#0b101e 72%);font:15px system-ui,sans-serif}
+main{max-width:1080px;margin:auto;padding:27px}h1{color:#ffb479;text-shadow:0 0 22px #f57236;font-size:clamp(25px,4vw,43px);letter-spacing:.07em}
+.panel{background:#16192d;border:1px solid #a66cf9;border-radius:20px;padding:24px;box-shadow:0 0 34px #8754fa55}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:24px 0}
+.cell{padding:16px;min-height:112px;border:1px solid #25cbd0;border-radius:12px;box-shadow:inset 0 0 17px #27ccde22}
+.cell:nth-child(2){border-color:#ff9a58}.cell:nth-child(3){border-color:#b388fd}
+b{display:block;margin-bottom:10px}p,small{color:#c0cad8;line-height:1.5}
+.status{font-size:21px;font-weight:800;color:#ffbe79}a{color:#8cf6ea}
+svg{width:100%;height:auto;max-height:235px}path{fill:none;stroke-width:2}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<main>
+<h1>RUST-027 · FORK LINEAGE</h1>
+<p>Three signed reports · exact SHA-256 ancestry · contradictions remain visible.</p>
+<div class="panel">
+<div class="status">HOLD · External graph and ancestry witnesses unavailable</div>
+<svg viewBox="0 0 600 230" role="img" aria-label="A single observed ancestor branching into three preserved witness branches">
+<path d="M300 182 V138 M300 138 H105 V63 M300 138 V63 M300 138 H495 V63" stroke="#9e79fc"/>
+<circle cx="300" cy="182" r="23" fill="#171c34" stroke="#b48afa" stroke-width="2"/>
+<text x="300" y="187" fill="#f7f0ff" font-size="12" text-anchor="middle">?</text>
+<g font-size="13" font-family="system-ui" text-anchor="middle">
+<rect x="45" y="27" width="120" height="49" rx="9" stroke="#37cfd2" fill="#132c35"/>
+<text x="105" y="48" fill="#b8f7ee">FF · Branch A</text><text x="105" y="64" fill="#b8f7ee" font-size="10">PRESERVE</text>
+<rect x="240" y="27" width="120" height="49" rx="9" stroke="#ff985a" fill="#332335"/>
+<text x="300" y="48" fill="#ffcaab">CF · Branch B</text><text x="300" y="64" fill="#ffcaab" font-size="10">PRESERVE</text>
+<rect x="435" y="27" width="120" height="49" rx="9" stroke="#a982fd" fill="#25203c"/>
+<text x="495" y="48" fill="#e2ccff">RR · Branch C</text><text x="495" y="64" fill="#e2ccff" font-size="10">PRESERVE</text>
+<text x="300" y="221" fill="#c8c2d9" font-size="11">Common ancestor unknown until supplied nodes verify</text>
+</g>
+</svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Reconstruct each checkpoint path through exact parent fingerprints</small></div>
+<div class="cell"><b>PRESENT · DESERVES</b><small>Find the deepest observable shared ancestor, without inventing missing history</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Preserve all fork heads and HOLD pending external ancestry</small></div>
+</div>
+<p id="evidence">This static page cannot assert independence of custodians or select a winning fork.</p>
+</div>
+<p><a href="../../index.html">Neuroscape Arcade</a> · <a href="rust026-multiwitness.html">Three Witnesses</a> · <a href="rust025-highwater.html">Highwater</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">Actions Gate</a></p>
+<small>.dlw · Distinct keys do not prove distinct roots, and repeated source ancestry is not a new independent witness.</small>
+<script>
+(async()=>{
+try{
+const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+if(!r.ok)throw Error("Manifest missing");
+const m=await r.json();
+if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("Invalid release identity");
+document.getElementById("evidence").textContent="Repository source "+m.source_commit+" is reported. No externally authenticated RUST-027 history graph has been provided; source ancestry and fork resolution remain HOLD.";
+}catch(e){document.getElementById("evidence").textContent="HOLD · "+String(e.message||e);}
+})();
+</script></main></html>
