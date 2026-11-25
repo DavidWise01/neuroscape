@@ -6,7 +6,6 @@ Verify requires an externally pinned public-key fingerprint plus an Ed25519
 signature on the exact canonical candidate bytes. No key is generated here.
 """
 import argparse
-import base64
 import hashlib
 import json
 import os
@@ -67,6 +66,11 @@ def authenticated(candidate_data, public_key, signature, externally_pinned_diges
         capture_output=True, check=True,
     ).stdout
     require(sha(export) == externally_pinned_digest, "custodian key differs from external pin")
+    details = subprocess.run(
+        ["openssl","pkey","-pubin","-in",str(public_key),"-text_pub","-noout"],
+        capture_output=True, check=True, text=True,
+    ).stdout
+    require("ED25519" in details.upper(), "custodian key must be Ed25519")
     # Ed25519 keys use the SPKI algorithm OID 1.3.101.112, DER ending
     # is not relied upon; OpenSSL performs signature and key-type validation.
     with tempfile.TemporaryDirectory() as temporary:
