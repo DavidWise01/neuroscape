@@ -5,6 +5,7 @@ Source metadata is self-reported by this repository's deployment workflow.
 This probe checks public serving and parity; it is not independent custody.
 """
 import hashlib
+from pathlib import Path
 import json
 import os
 import time
@@ -84,8 +85,25 @@ def verify_once(browser):
     finally:
         page.close()
 
+    # RUST-015: compare complete replay evidence against independent
+    # CI-browser fingerprint produced before publication in this same run.
+    receipt_file = Path(__file__).resolve().parent / ".rust015-local-evidence.json"
+    if not receipt_file.is_file():
+        raise RuntimeError("local CI replay fingerprint missing")
+    expected = json.loads(receipt_file.read_text(encoding="utf-8"))
+    if expected.get("source_commit") != SHA or expected.get("replay_steps") != 3:
+        raise RuntimeError("local CI evidence ancestry/step count mismatch")
+    evidence = result.get("evidence")
+    if not isinstance(evidence, list) or len(evidence) != 3:
+        raise RuntimeError("public full replay evidence absent")
+    canonical = json.dumps(evidence, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    replay_sha256 = hashlib.sha256(canonical).hexdigest()
+    if replay_sha256 != expected.get("replay_sha256"):
+        raise RuntimeError("CI/public replay SHA-256 mismatch")
+
     return {
-        "phase": "RUST-014",
+        "phase": "RUST-015",
+        "replay_sha256": replay_sha256,
         "source_commit": SHA,
         "github_run_id": RUN,
         "wasm_sha256": manifest["wasm_sha256"],
