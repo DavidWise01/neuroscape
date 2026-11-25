@@ -1,0 +1,7 @@
+/* RUST-006 · unified copied match-state parity */
+#neuroscapeRustMatchLab{margin:12px 0;padding:13px;border:1px solid #78ffe6;border-radius:10px;background:linear-gradient(122deg,#0e1c31,#2b1541);color:#eefeff;box-shadow:0 0 22px #7cffeb26;font:11px ui-monospace,Consolas,monospace}
+#neuroscapeRustMatchLab strong{color:#adffef;text-shadow:0 0 10px #79ffe3}
+#neuroscapeRustMatchStatus{display:block;margin:9px 0;color:#ffd1ad}
+#neuroscapeRustMatchLab[data-phase=PASS] #neuroscapeRustMatchStatus{color:#7effe6}
+#neuroscapeRustMatchLab[data-phase=FAIL] #neuroscapeRustMatchStatus{color:#ff9f9f}
+#neuroscapeRustMatchDetail{font-size:10px;color:#c6d3e3;overflow-wrap:anywhere}
