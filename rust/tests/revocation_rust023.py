@@ -27,8 +27,10 @@ def revocation_proposal(predecessor, revoked_key, recovery_key, reason):
     require(revoked_key != recovery_key, "compromised custodian cannot be its own recovery key")
     # A previously committed key must be identified by externally retained
     # custody evidence. RUST-021 does not store the genesis signer fingerprint.
-    if prev["phase"]=="RUST-022":
-        require(revoked_key == prev.get("new_key_spki_sha256"), "revoked key is not current custodian")
+    require(prev["phase"] == "RUST-022",
+            "RUST-021 predecessor lacks an authenticated current-key pin; refuse revocation")
+    require(revoked_key == prev.get("new_key_spki_sha256"),
+            "revoked key is not the current custodian")
     require(reason in ("COMPROMISE", "LOSS", "EMERGENCY_FREEZE"), "unknown reason")
     value={
         "phase":"RUST-023","status":"REVOCATION_PROPOSAL",
@@ -74,6 +76,11 @@ def validate_revocation(record, predecessor):
     return record
 
 def deny_if_revoked(custodian_key_fingerprint, revocations, predecessor):
+    """Conservative denylist for records authenticated outside this function.
+
+    Hash-consistency alone is NOT custody authentication. Callers must
+    independently verify each signed record and its external key pin.
+    """
     require(valid_sha(custodian_key_fingerprint), "custodian key absent")
     for item in revocations:
         record=validate_revocation(item, predecessor)
