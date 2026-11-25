@@ -19,6 +19,23 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // RUST-005: four-phase cloned turn shadow, compiled Rust vs JS transitions.
+ await page.waitForFunction(()=>window.neuroscapeRustTurn?.snapshot().phase!=='LOADING',null,{timeout:30000});
+ const turnParity=await page.evaluate(async()=>{
+   const before={turn:state.turn,phase:state.phase,active:state.active,
+     actions:state.actions,ram:[state.p.ram,state.e.ram]};
+   const result=await window.neuroscapeRustTurn.ready;
+   const after={turn:state.turn,phase:state.phase,active:state.active,
+     actions:state.actions,ram:[state.p.ram,state.e.ram]};
+   return {before,after,result,snapshot:window.neuroscapeRustTurn.snapshot()};
+ });
+ if(!turnParity.result?.pass||turnParity.result.fixtures!==48||
+    turnParity.result.checked<3000||
+    turnParity.result.checked!==turnParity.result.passed||
+    turnParity.snapshot.phase!=='PASS'||
+    JSON.stringify(turnParity.before)!==JSON.stringify(turnParity.after))
+   fail('RUST-005 four-phase cloned Rust turn parity failed: '+JSON.stringify(turnParity));
+
  // RUST-004: native combat function replay parity on Rust-owned WASM buffers.
  await page.waitForFunction(()=>window.neuroscapeRustReplay?.snapshot().phase!=='LOADING',
    null,{timeout:30000});
