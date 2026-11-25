@@ -19,6 +19,7 @@ small{color:#a4a9bf}code{color:#ffca8b}
 <dt>Actions run</dt><dd id="run">Not verified</dd>
 <dt>WASM SHA-256</dt><dd id="digest">Not verified</dd>
 <dt>Browser parity</dt><dd id="parity">Not verified</dd>
+<dt>Independent rebuild</dt><dd id="rebuild">Not verified</dd>
 <dt>Build timestamp</dt><dd id="time">Not verified</dd>
 </dl></section>
 <p><a href="../../index.html">Open Neuroscape arcade</a> · <a href="rust011-browser.html">Open combat replay</a></p>
@@ -42,6 +43,16 @@ small{color:#a4a9bf}code{color:#ffca8b}
     const hash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",data)))
       .map(b=>b.toString(16).padStart(2,"0")).join("");
     if(hash!==m.wasm_sha256)throw Error("live WebAssembly does not match manifest SHA-256");
+    const rebuildResponse=await fetch("../../assets/rust016-reproduction.json",{cache:"no-store"});
+    if(!rebuildResponse.ok)throw Error("RUST-016 reproduction report missing");
+    const rebuild=await rebuildResponse.json();
+    if(rebuild.phase!=="RUST-016"||rebuild.source_commit!==m.source_commit||
+       rebuild.reproducible!==true||rebuild.same_source_ancestry!==true||
+       rebuild.independent_source_witness!==false||
+       rebuild.primary_wasm_sha256!==hash||rebuild.isolated_wasm_sha256!==hash||
+       m.reproduction_wasm_sha256!==hash||m.reproducible_build!==true)
+       throw Error("RUST-016 isolated build fingerprint mismatch");
+    document.getElementById("rebuild").textContent="PASS · clean checkout, isolated Cargo target";
     document.getElementById("commit").textContent=m.source_commit;
     const a=document.createElement("a");a.href="https://github.com/DavidWise01/neuroscape/actions/runs/"+encodeURIComponent(m.github_run_id);a.textContent=m.github_run_id;
     document.getElementById("run").replaceChildren(a);
