@@ -20,6 +20,7 @@ small{color:#a4a9bf}code{color:#ffca8b}
 <dt>WASM SHA-256</dt><dd id="digest">Not verified</dd>
 <dt>Browser parity</dt><dd id="parity">Not verified</dd>
 <dt>Independent rebuild</dt><dd id="rebuild">Not verified</dd>
+<dt>Cross-runner reproducibility</dt><dd id="cross">Not verified</dd>
 <dt>Build timestamp</dt><dd id="time">Not verified</dd>
 </dl></section>
 <p><a href="../../index.html">Open Neuroscape arcade</a> · <a href="rust011-browser.html">Open combat replay</a></p>
@@ -53,6 +54,15 @@ small{color:#a4a9bf}code{color:#ffca8b}
        m.reproduction_wasm_sha256!==hash||m.reproducible_build!==true)
        throw Error("RUST-016 isolated build fingerprint mismatch");
     document.getElementById("rebuild").textContent="PASS · clean checkout, isolated Cargo target";
+    const crossResponse=await fetch("../../assets/rust017-cross-environment.json",{cache:"no-store"});
+    if(!crossResponse.ok)throw Error("RUST-017 cross-runner report missing");
+    const cross=await crossResponse.json();
+    if(cross.phase!=="RUST-017"||cross.source_commit!==m.source_commit||
+       cross.cross_runner_match!==true||cross.independent_source_witness!==false||
+       cross.wasm_sha256!==hash||m.cross_runner_reproducible!==true||
+       m.cross_runner_wasm_sha256!==hash)
+       throw Error("RUST-017 cross-runner reproduction mismatch");
+    document.getElementById("cross").textContent="PASS · Ubuntu 22.04 / 24.04 pinned Rust";
     document.getElementById("commit").textContent=m.source_commit;
     const a=document.createElement("a");a.href="https://github.com/DavidWise01/neuroscape/actions/runs/"+encodeURIComponent(m.github_run_id);a.textContent=m.github_run_id;
     document.getElementById("run").replaceChildren(a);
