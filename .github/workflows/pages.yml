@@ -185,6 +185,14 @@ jobs:
             --current rust/tests/.rust018-adjudication.json \
             --output rust/tests/.rust021-successor.json \
             --allow-hold-record
+      - name: RUST-022 test custodian continuity and rotation safeguards
+        run: python3 -m unittest discover -s rust/tests -p 'test_rotation_rust022.py' -v
+      - name: RUST-022 archive HOLD without external custody
+        run: |
+          python3 rust/tests/rotation_rust022.py \
+            --current rust/tests/.rust018-adjudication.json \
+            --output rust/tests/.rust022-rotation.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -200,6 +208,7 @@ jobs:
             rust/tests/.rust019-lineage.json
             rust/tests/.rust020-genesis-candidate.json
             rust/tests/.rust021-successor.json
+            rust/tests/.rust022-rotation.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
