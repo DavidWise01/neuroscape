@@ -9,6 +9,7 @@ on:
       - tests/recovery-evidence-gate.mjs
       - assets/neuroscape-rust-parity-v2.9.35.js
       - assets/neuroscape-rust-shadow-v2.9.36.js
+      - assets/neuroscape-rust-replay-v2.9.37.js
       - assets/neuroscape-rust-wasm.generated.js
       - .github/workflows/pages.yml
       - rust/**
