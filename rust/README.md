@@ -649,3 +649,44 @@ qualified release. The arcade and live game state remain unchanged.
 [Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-026 — Three external highwater observations and fork retention
+
+`rust/tests/multiwitness_rust026.py` consumes three ordered signed
+RUST-025 checkpoints, from the configured `ff`, `cf`, and `rr`
+observation positions. For each it verifies the RUST-025 candidate
+digest and Ed25519 signature against a public key whose DER SPKI SHA-256
+fingerprint must be supplied separately in
+`RUST026_PIN_FF`, `RUST026_PIN_CF`, `RUST026_PIN_RR`.
+Duplicate key fingerprints, missing witnesses, altered checkpoints and
+signature failures stop adjudication.
+
+The JSON evidence receipt retains all three ordered observations,
+their candidate fingerprints, keys and signature hashes.
+`CONSISTENT_SIGNED_SNAPSHOTS` means only that these three signatures
+cover the same candidate and history position; the result still has
+`independent_custody_ancestries_verified: false`,
+`external_latest_checkpoint_confirmed: false`, and
+`release_authorized: false`.
+
+Any disagreement—including a 2:1 split—is retained as
+`HOLD_FORK_EVIDENCE` rather than erased by majority voting. Three
+different signing keys do not establish independent organizations,
+external storage or a globally latest checkpoint. The automated
+GitHub Pages job has no external witness material; it runs the
+predeployment negative tests and archives only
+`HOLD_MISSING_THREE_WITNESSES`.
+
+For a genuine externally sourced witness bundle, each element must
+include the position, RUST-025 checkpoint, PEM public-key path and raw
+signature path. Public-key pins must come from the externally retained
+custody records, **not** from the same bundle itself. The runner can
+check the signature and compare the snapshots, but cannot prove who
+ultimately controls the keys.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[Three-witness neon observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust026-multiwitness.html) ·
+[Highwater laboratory](https://davidwise01.github.io/neuroscape/rust/tests/rust025-highwater.html) ·
+[GitHub Pages Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
