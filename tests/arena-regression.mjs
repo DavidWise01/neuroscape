@@ -19,6 +19,28 @@ const initial=await page.evaluate(()=>{
 const fail=message=>{throw new Error(message+'\n'+JSON.stringify({initial,errors},null,2))};
 try{
  if(errors.length)fail('Uncaught browser error');
+ // RUST-002: compiled Rust WASM must execute and match the inherited JS
+ // bounded-margin models across the full 32-period adversarial sweep.
+ await page.waitForFunction(()=>window.neuroscapeRustParity?.snapshot().phase!=='LOADING',
+   null,{timeout:15000});
+ const wasmParity=await page.evaluate(async()=>{
+   const game=()=>({turn:state.turn,actions:state.actions,
+     ram:[state.p.ram,state.e.ram],
+     slots:['p','e'].map(k=>document.querySelectorAll('#'+k+'Lanes>.slot').length)});
+   const before=game(),api=window.neuroscapeRustParity;
+   const result=await api?.ready;
+   const after=game(),snap=api?.snapshot();
+   return {before,after,result,snap,mounted:!!document.getElementById('neuroscapeRustParityLab')};
+ });
+ if(!wasmParity.mounted||!wasmParity.result?.pass||
+    wasmParity.snap?.phase!=='PASS'||
+    wasmParity.result.checked<750||
+    wasmParity.result.checked!==wasmParity.result.passed||
+    !/^[0-9a-f]{64}$/.test(wasmParity.result.sha256||'')||
+    wasmParity.result.gameplayMutation||wasmParity.result.sourceMutated||
+    JSON.stringify(wasmParity.before)!==JSON.stringify(wasmParity.after))
+   fail('RUST-002 actual WASM parity or arena isolation failure: '+JSON.stringify(wasmParity));
+
  // v2.9.34: complete metadata earns REVIEW eligibility, never empirical authority.
  const evidenceGate=await page.evaluate(()=>{
    const game=()=>({turn:state.turn,actions:state.actions,ram:[state.p.ram,state.e.ram],
