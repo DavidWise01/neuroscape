@@ -110,3 +110,20 @@ pub unsafe extern "C" fn ns_turn_step(ptr: *mut i32) -> i32 {
 pub unsafe extern "C" fn ns_turn_free(ptr:*mut i32) {
     if !ptr.is_null(){drop(Box::from_raw(ptr as *mut [i32;crate::turn::WORDS]));}
 }
+
+
+// RUST-006: 256-word owned buffer; all match events are atomic copied steps.
+#[no_mangle]
+pub extern "C" fn ns_match_alloc()->*mut i32 {
+    Box::into_raw(Box::new([0_i32;crate::match_core::WORDS])) as *mut i32
+}
+#[no_mangle]
+pub unsafe extern "C" fn ns_match_step(ptr:*mut i32)->i32 {
+    if ptr.is_null(){return -5;}
+    let words=&mut *(ptr as *mut [i32;crate::match_core::WORDS]);
+    crate::match_core::step(words)
+}
+#[no_mangle]
+pub unsafe extern "C" fn ns_match_free(ptr:*mut i32) {
+    if !ptr.is_null(){drop(Box::from_raw(ptr as *mut [i32;crate::match_core::WORDS]));}
+}
