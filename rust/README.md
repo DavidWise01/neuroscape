@@ -254,3 +254,33 @@ establishes delivery and execution consistency only.
 [Pages workflow](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-015 — Dual-fingerprint release receipts
+
+A browser-independent Python SHA-256 is calculated over the canonical,
+sorted-key JSON of the **complete** RUST-011 combat replay evidence in the
+predeployment Chromium runner. This is separate from both the Rust FNV
+per-state checksum and the SHA-256 of the WASM binary.
+
+The Pages build embeds the replay SHA-256 and step count into its
+`assets/rust013-release.json` manifest while retaining the existing
+`phase: RUST-013` public ABI. After deployment, the public browser runner
+retrieves the same combat evidence and independently recomputes the SHA-256.
+The gate requires the public digest, CI digest and manifest digest all match,
+with the identical source commit and Actions run.
+
+After all checks succeed, the workflow uploads an immutable, run/attempt-
+specific GitHub Actions artifact containing the local replay receipt, public
+readback receipt, and deployment manifest. Artifact retention is 90 days;
+this is **not a permanent external custody service**, and CI/public probes
+still share the repository's own ancestry.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[Combat witness](https://davidwise01.github.io/neuroscape/rust/tests/rust011-browser.html) ·
+[Release dashboard](https://davidwise01.github.io/neuroscape/rust/tests/rust013-release.html) ·
+[Deploy actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+No transfer of gameplay authority. Freeze only after the public acceptance
+job finishes successfully.
+
+`.dlw`
