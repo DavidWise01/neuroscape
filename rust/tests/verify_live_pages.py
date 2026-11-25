@@ -100,6 +100,8 @@ def verify_once(browser):
     replay_sha256 = hashlib.sha256(canonical).hexdigest()
     if replay_sha256 != expected.get("replay_sha256"):
         raise RuntimeError("CI/public replay SHA-256 mismatch")
+    if replay_sha256 != manifest.get("replay_sha256") or manifest.get("replay_steps") != 3:
+        raise RuntimeError("manifest replay digest/steps mismatch")
 
     return {
         "phase": "RUST-015",
@@ -121,6 +123,11 @@ def main():
             for attempt in range(1, ATTEMPTS + 1):
                 try:
                     result = verify_once(browser)
+                    receipt = Path(__file__).resolve().parent / ".rust015-public-evidence.json"
+                    receipt.write_text(
+                        json.dumps(result, indent=2, sort_keys=True) + "\n",
+                        encoding="utf-8",
+                    )
                     print(json.dumps(result, indent=2, sort_keys=True))
                     return
                 except Exception as exc:
