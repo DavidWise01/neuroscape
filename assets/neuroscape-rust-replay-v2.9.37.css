@@ -1,0 +1,6 @@
+#neuroscapeRustReplayLab{margin:12px 0;padding:13px;border:1px solid #77ffe0;border-radius:11px;background:linear-gradient(120deg,#10192d,#2b1542);color:#edfdff;box-shadow:0 0 22px #73ffe525;font:11px ui-monospace,Consolas,monospace}
+#neuroscapeRustReplayLab strong{color:#a0ffea;text-shadow:0 0 10px #70ffe0}
+#neuroscapeRustReplayStatus{display:block;margin:9px 0;color:#f9c395}
+#neuroscapeRustReplayLab[data-phase=PASS] #neuroscapeRustReplayStatus{color:#86ffe8}
+#neuroscapeRustReplayLab[data-phase=FAIL] #neuroscapeRustReplayStatus{color:#ff999d}
+#neuroscapeRustReplayDetail{overflow-wrap:anywhere;font-size:10px;color:#c2c7e7}
