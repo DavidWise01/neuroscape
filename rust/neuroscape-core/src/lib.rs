@@ -227,3 +227,69 @@ mod tests {
 
 #[cfg(target_arch = "wasm32")]
 mod wasm;
+
+
+/// Shadow of the engine's \`free = ram - committed\` calculation.
+pub fn shadow_free_ram(ram: i32, committed: i32) -> i32 {
+    ram.saturating_sub(committed)
+}
+
+/// Shadow of deployment gate: 5 square limit and card cost <= available RAM.
+pub fn shadow_deploy_legal(free_ram: i32, card_cost: i32, occupied: i32) -> bool {
+    (0..5).contains(&occupied) && card_cost >= 0 && card_cost <= free_ram
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ShadowAttack {
+    pub attacker_after: i32,
+    pub defender_after: i32,
+    pub meter_after: i32,
+    pub attacker_destroyed: bool,
+    pub defender_destroyed: bool,
+}
+/// A single observed attack step, with direct hit when \`blocked=false\`.
+///
+/// \`defender_after\` is ignored for a direct attack and \`meter_after\`
+/// is ignored when a defender blocks. Matches \`predictedTarget\` semantics.
+pub fn shadow_attack(
+    attacker_hp: i32, defender_hp: i32, damage: i32,
+    retaliation: i32, meter_hp: i32, blocked: bool,
+) -> ShadowAttack {
+    let attacker_after = if blocked {attacker_hp.saturating_sub(retaliation)}
+                         else {attacker_hp};
+    let defender_after = if blocked {defender_hp.saturating_sub(damage)}
+                         else {defender_hp};
+    let meter_after = if blocked {meter_hp} else {meter_hp.saturating_sub(damage)};
+    ShadowAttack {
+        attacker_after, defender_after, meter_after,
+        attacker_destroyed: blocked && attacker_after<=0,
+        defender_destroyed: blocked && defender_after<=0,
+    }
+}
+
+#[cfg(test)]
+mod shadow_tests {
+    use super::*;
+    #[test]
+    fn deploy_and_ram_follow_real_engine_rules() {
+        assert_eq!(shadow_free_ram(8, 5), 3);
+        assert!(shadow_deploy_legal(3, 3, 4));
+        assert!(!shadow_deploy_legal(3, 4, 4));
+        assert!(!shadow_deploy_legal(3, 1, 5));
+    }
+    #[test]
+    fn blocked_exchange_and_destructive_trade() {
+        let a=shadow_attack(5, 4, 4, 5, 20, true);
+        assert_eq!(a.attacker_after, 0);
+        assert_eq!(a.defender_after, 0);
+        assert!(a.attacker_destroyed && a.defender_destroyed);
+        assert_eq!(a.meter_after, 20);
+    }
+    #[test]
+    fn direct_hit_is_unretaliated() {
+        let a=shadow_attack(5, 0, 7, 0, 6, false);
+        assert_eq!(a.attacker_after, 5);
+        assert_eq!(a.meter_after, -1);
+        assert!(!a.attacker_destroyed && !a.defender_destroyed);
+    }
+}
