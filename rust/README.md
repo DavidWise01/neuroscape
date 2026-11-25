@@ -690,3 +690,40 @@ ultimately controls the keys.
 [GitHub Pages Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-027 — Fork lineage reconstruction and source ancestry limits
+
+`rust/tests/fork_lineage_rust027.py` accepts a signed three-witness
+RUST-026 observation receipt and an explicit list of canonical RUST-025
+checkpoint records. It validates the witness receipt hash and each
+checkpoint hash, then follows SHA-256 parent pointers backward from
+every witnessed head. Every witness branch remains in the resulting
+ordered evidence ledger; a 2:1 split does not erase a minority branch.
+
+The verifier rejects missing witness heads, duplicated node IDs,
+inconsistent witness/graph fields, malformed hashes, replayed source
+or entry digests, non-sequential links and epoch rollback. It can
+identify the deepest **observed common ancestor** when all three
+paths contain the same checkpoint. If a node is missing, it records
+the missing predecessor explicitly and never manufactures a genesis.
+A common ancestor in a supplied graph is an observation, not
+authentication of that graph's historical custody.
+
+The branch report preserves the `ff`, `cf` and `rr` key and signature
+fingerprints, head hashes, paths, and missing predecessors.
+`independent_custody_ancestries_verified` remains **false**,
+`release_authorized` remains **false**, and every result is HOLD
+pending external custody. No majority vote or source duplication can
+authorize the next release.
+
+The GitHub Actions workflow runs synthetic reconstruction regression
+tests before publication. Since no externally qualified graph is
+available in the normal workflow, it archives an append-only
+`HOLD_MISSING_FORK_GRAPH` result with the other run-scoped evidence.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[Neon fork ancestry observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust027-fork-lineage.html) ·
+[Three-witness page](https://davidwise01.github.io/neuroscape/rust/tests/rust026-multiwitness.html) ·
+[Pages Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
