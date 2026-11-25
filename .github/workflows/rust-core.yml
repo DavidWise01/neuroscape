@@ -38,3 +38,6 @@ jobs:
       - name: Verify generated browser asset
         working-directory: .
         run: python3 rust/build-wasm.py
+      - name: Emit public generated WASM asset for source tracking
+        working-directory: .
+        run: cat assets/neuroscape-rust-wasm.generated.js
