@@ -224,3 +224,6 @@ mod tests {
         assert_eq!(audit_dossier(&incomplete).eligibility, EvidenceEligibility::IncompleteOrDeclared);
     }
 }
+
+#[cfg(target_arch = "wasm32")]
+mod wasm;
