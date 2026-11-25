@@ -63,3 +63,22 @@ cargo build --manifest-path rust/neuroscape-core/Cargo.toml --target wasm32-unkn
 python3 rust/build-wasm.py
 # Open index.html to inspect the resulting read-only WASM parity monitor.
 ```
+
+## RUST-003 — Gameplay shadow transition verification
+
+The Rust crate now exports deterministic calculations for RAM availability,
+deployment affordability, and a **single observed combat attack** (attacker
+health, defender health, meter health and destruction decisions). It matches
+the legacy JavaScript `cost`, `free`, `predictedTarget` and legal-deploy
+calculations using the actual 256-card catalog. Chromium creates **cloned
+combat fixtures** from real character cards; it does not issue player or bot
+actions or mutate the live board. The Rust shadow is not yet the authoritative
+gameplay engine.
+
+The compiled WebAssembly asset is checked into GitHub as
+`assets/neuroscape-rust-wasm.generated.js`, with its SHA-256 digest.
+GitHub Actions recompiles from Rust before running parity and deploying.
+`window.neuroscapeRustShadow.ready` exposes a fail-closed comparison result.
+
+Next steps are full turn/event state replay, identity-safe card removal,
+resource conservation and migration only after browser parity gates pass.
