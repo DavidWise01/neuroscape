@@ -359,3 +359,33 @@ custody, or an immutable record beyond the artifact's retention period.
 [Pages evidence workflow](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-019 — Append-only release lineage and anti-rollback boundary
+
+`rust/tests/lineage_rust019.py` validates a complete RUST-018 receipt,
+checks its canonical SHA-256, and optionally links to a **previously
+anchored** RUST-019 record. A valid continuation requires (a) an intact
+predecessor hash, (b) a new source commit that descends from the predecessor
+by Git ancestry, (c) a non-reused observation receipt and (d) a strictly
+incremented sequence. New records are created using exclusive file creation;
+preexisting output is never overwritten.
+
+**No predecessor is fabricated.** Until a genuine retained predecessor
+is supplied as `rust/release/predecessor.json`, the CI workflow records
+`HOLD_UNANCHORED` and archives it as evidence, not as an accepted freeze.
+The anchored path uses a strict exit status; unanchored reporting is
+explicitly permitted only for documentation/archiving. Synthetic tests cover
+missing ancestry, same-commit replay, tampered receipts, wrong sequence and
+non-descendant commits.
+
+The design does not yet prevent rollback of an entire repository, deletion
+of retained records, or counterfeit predecessor records if no independently
+held and authenticated checkpoint exists. A predecessor record in the same
+repository is **not** independent custody, even if it is hash-consistent.
+
+[Live arcade](https://davidwise01.github.io/neuroscape/) ·
+[Neon RUST-019 lineage observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust019-lineage.html) ·
+[Release dashboard](https://davidwise01.github.io/neuroscape/rust/tests/rust013-release.html) ·
+[Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
