@@ -82,6 +82,7 @@ def main():
     p.add_argument("--receipt", required=True)
     p.add_argument("--predecessor")
     p.add_argument("--output", required=True)
+    p.add_argument("--allow-unanchored-report", action="store_true", help="Archive HOLD evidence without asserting a freeze")
     args=p.parse_args()
     current=json.loads(Path(args.receipt).read_text(encoding="utf-8"))
     prev=json.loads(Path(args.predecessor).read_text(encoding="utf-8")) if args.predecessor else None
@@ -99,7 +100,7 @@ def main():
         json.dump(result,writer,indent=2,sort_keys=True)
         writer.write("\n")
     print(json.dumps(result,sort_keys=True))
-    if result["status"] != "ANCHORED":
+    if result["status"] != "ANCHORED" and not args.allow_unanchored_report:
         raise SystemExit("RUST-019 HOLD: lineage receipt recorded, no authenticated predecessor")
 if __name__=="__main__":
     main()
