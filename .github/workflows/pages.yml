@@ -61,8 +61,18 @@ jobs:
           advertised = re.search(r"NEUROSCAPE_RUST_WASM_SHA256\s*=\s*['\"]([a-f0-9]{64})['\"]", source)
           if not advertised or advertised.group(1) != digest:
               raise SystemExit("WASM digest mismatch: release blocked")
+          replay_receipt = Path("rust/tests/.rust015-local-evidence.json")
+          if not replay_receipt.is_file():
+              raise SystemExit("RUST-015 missing predeployment browser replay receipt")
+          replay = json.loads(replay_receipt.read_text(encoding="utf-8"))
+          if replay.get("source_commit") != os.environ["SOURCE_COMMIT"] or replay.get("replay_steps") != 3:
+              raise SystemExit("RUST-015 invalid replay receipt ancestry")
+          if not re.fullmatch(r"[0-9a-f]{64}", replay.get("replay_sha256", "")):
+              raise SystemExit("RUST-015 invalid replay SHA-256")
           report = {
-              "phase": "RUST-013",
+              "replay_sha256": replay["replay_sha256"],
+              "replay_steps": replay["replay_steps"],
+              "phase": "RUST-015",
               "source_commit": os.environ["SOURCE_COMMIT"],
               "github_run_id": os.environ["RUN_ID"],
               "wasm_sha256": digest,
