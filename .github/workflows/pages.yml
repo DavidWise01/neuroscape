@@ -11,8 +11,29 @@ concurrency:
   group: github-pages
   cancel-in-progress: false
 jobs:
+  cross-environment:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.85.1
+          targets: wasm32-unknown-unknown
+      - name: RUST-017 compile pinned Ubuntu 22.04 witness
+        run: cargo build --manifest-path rust/neuroscape-core/Cargo.toml --release --locked --target wasm32-unknown-unknown
+      - name: RUST-017 record exact-commit witness fingerprint
+        run: python3 rust/tests/reproduce_cross_runner.py emit
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rust017-witness-${{ github.run_id }}
+          path: rust/tests/.rust017-cross-build.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 90
   deploy:
-    runs-on: ubuntu-latest
+    needs: cross-environment
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment:
       name: github-pages
@@ -21,6 +42,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: 1.85.1
           components: rustfmt, clippy
           targets: wasm32-unknown-unknown
       - name: Normalize Rust formatting in CI workspace
@@ -42,6 +64,12 @@ jobs:
         run: python3 rust/tests/run_rust009_browser.py
       - name: RUST-016 reproduce exact-commit WASM in isolated Cargo build
         run: python3 rust/tests/reproduce_wasm.py
+      - uses: actions/download-artifact@v4
+        with:
+          name: rust017-witness-${{ github.run_id }}
+          path: rust/tests
+      - name: RUST-017 compare exact WASM across pinned runner environments
+        run: python3 rust/tests/reproduce_cross_runner.py compare
       - name: RUST-013 write verified deployment manifest
         env:
           SOURCE_COMMIT: ${{ github.sha }}
@@ -79,7 +107,15 @@ jobs:
               raise SystemExit("RUST-016 reproduction source/authority mismatch")
           if reproduction.get("primary_wasm_sha256") != digest or reproduction.get("isolated_wasm_sha256") != digest:
               raise SystemExit("RUST-016 source-build fingerprint mismatch")
+          cross = json.loads(Path("assets/rust017-cross-environment.json").read_text(encoding="utf-8"))
+          if (cross.get("source_commit") != os.environ["SOURCE_COMMIT"]
+                  or cross.get("wasm_sha256") != digest
+                  or cross.get("cross_runner_match") is not True
+                  or cross.get("independent_source_witness") is not False):
+              raise SystemExit("RUST-017 cross-environment receipt mismatch")
           report = {
+              "cross_runner_reproducible": True,
+              "cross_runner_wasm_sha256": cross["wasm_sha256"],
               "reproduction_wasm_sha256": reproduction["isolated_wasm_sha256"],
               "reproducible_build": True,
               "replay_sha256": replay["replay_sha256"],
@@ -119,6 +155,8 @@ jobs:
             rust/tests/.rust015-public-evidence.json
             assets/rust013-release.json
             assets/rust016-reproduction.json
+            assets/rust017-cross-environment.json
+            rust/tests/.rust017-cross-build.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
