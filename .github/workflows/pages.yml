@@ -84,3 +84,7 @@ jobs:
           path: .
       - id: deploy
         uses: actions/deploy-pages@v4
+      - name: RUST-014 verify deployed Pages manifest and public combat witness
+        env:
+          RUST014_PAGES_URL: ${{ steps.deploy.outputs.page_url }}
+        run: python3 rust/tests/verify_live_pages.py
