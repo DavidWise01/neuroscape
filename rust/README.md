@@ -617,3 +617,35 @@ Pages deployment or authenticated anti-rollback.
 [Pages Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-025 — External highwater witness and anti-replay boundary
+
+`rust/tests/highwater_rust025.py` defines the canonical signed
+`HIGHWATER_CANDIDATE` containing epoch, sequence, source commit,
+release entry SHA-256, and predecessor highwater fingerprint.
+
+It requires an Ed25519 signature on the exact candidate JSON and a
+public-key SPKI SHA-256 fingerprint **pinned outside the GitHub repository**.
+A successor comparison rejects a forked predecessor fingerprint, replayed
+or skipped sequences, epoch rollback, duplicated source revision, reused
+release entries and altered candidate bytes.
+
+A valid signature proves only that the pinned key signed **that
+historical checkpoint**. Without an independently obtained, authenticated
+**latest** checkpoint, signed old history could be replayed. Hence
+`SIGNED_HIGHWATER_OBSERVED` explicitly keeps
+`external_latest_checkpoint_confirmed: false`,
+`global_anti_rollback_certified: false`, and
+`release_authorized: false`.
+
+CI runs the anti-fork regression tests **before** Pages publication.
+Without off-repository witness material it later archives
+`HOLD_EXTERNAL_HIGHWATER` as a run-scoped Actions artifact, not as a
+qualified release. The arcade and live game state remain unchanged.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[Neon RUST-025 observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust025-highwater.html) ·
+[Recovery observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust024-recovery.html) ·
+[Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
