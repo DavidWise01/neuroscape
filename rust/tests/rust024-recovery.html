@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-024 · Recovery Epoch Quarantine</title>
+<style>
+:root{color-scheme:dark}body{margin:0;color:#f5f6ff;background:radial-gradient(ellipse at 50% 5%,#3b2353,#0b101e 75%);font:15px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:26px}h1{color:#ffb36b;text-shadow:0 0 23px #ff6b28;font-size:clamp(25px,4vw,42px);letter-spacing:.07em}
+.panel{background:#141b32;border:1px solid #9955fb;border-radius:18px;padding:24px;box-shadow:0 0 30px #8958ff44}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:23px 0}
+.cell{border:1px solid #33c8d0;border-radius:12px;padding:18px;min-height:124px;box-shadow:inset 0 0 18px #22c5d420}
+.cell:nth-child(2){border-color:#ffa460}.cell:nth-child(3){border-color:#ac83ff}
+b{display:block;margin-bottom:10px}.status{color:#ffbd75;font-size:21px;font-weight:800}p,small{color:#b8c7d9;line-height:1.5}a{color:#91f7e6}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-024 · RECOVERY EPOCHS</h1>
+<p>Quarantine · external highwater · dual signatures · no invented authority.</p>
+<div class="panel">
+<div class="status">HOLD · No authenticated external epoch checkpoint</div>
+<div class="grid">
+<div class="cell"><b>PAST · QUARANTINE</b><small>Previously revoked keys remain in the denylist. Their signatures must not reenter future epochs.</small></div>
+<div class="cell"><b>PRESENT · HIGHWATER</b><small>Exact retained checkpoint, sequence and epoch must match an externally held record.</small></div>
+<div class="cell"><b>FUTURE · RECOVERY</b><small>Separate recovery and new custodian signatures can qualify a proposal, not automatically resume authority.</small></div>
+</div>
+<p id="evidence">The required off-repository highwater and custody signatures are not available to this public static page.</p>
+</div>
+<p><a href="../../index.html">Neuroscape Arcade</a> · <a href="rust023-revocation.html">Revocation</a> · <a href="rust022-rotation.html">Rotation</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">Actions verification</a></p>
+<small>.dlw · A self-reported release manifest is not external custody. The existing game remains JavaScript-owned.</small>
+<script>
+(async()=>{
+try{
+const response=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+if(!response.ok)throw Error("No published release manifest");
+const manifest=await response.json();
+if(!/^[0-9a-f]{40}$/.test(manifest.source_commit)||manifest.live_gameplay_authority!==false)
+ throw Error("invalid release identity");
+document.getElementById("evidence").textContent="Observed source "+manifest.source_commit+". A frozen recovery epoch cannot be promoted by this page: external monotonic highwater, historical revocation proof, and signed custody remain HOLD.";
+}catch(e){document.getElementById("evidence").textContent="HOLD · "+String(e.message||e);}
+})();
+</script></main></html>
