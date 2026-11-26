@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-034 · Highwater Equivocation Observatory</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 4%,#352351,#09101d 78%);color:#f6f5ff;font:15px system-ui,sans-serif}main{max-width:1100px;margin:auto;padding:28px}h1{font-size:clamp(24px,4vw,42px);color:#ffbb80;text-shadow:0 0 22px #ff7635;letter-spacing:.05em}
+.panel{background:#141a30;border:1px solid #a27afa;border-radius:20px;padding:24px;box-shadow:0 0 35px #955afa48}
+.status{font-size:21px;font-weight:800;color:#ffc57d}.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:22px 0}
+.card{border:1px solid #30d1c9;border-radius:12px;min-height:124px;padding:18px;box-shadow:inset 0 0 18px #2fcfcb22}.card:nth-child(2){border-color:#ffa162}.card:nth-child(3){border-color:#b78bff}
+b{display:block;margin-bottom:10px}p,small{line-height:1.5;color:#b9c7d8}a{color:#8fffe8}
+svg{width:100%;height:auto;max-height:230px}@media(max-width:650px){.cards{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-034 · RETAINED HIGHWATER</h1>
+<p>Three witnessed histories · same-epoch conflict detection · no majority override.</p>
+<div class="panel">
+<div class="status">HOLD · No independently retained signed histories</div>
+<svg viewBox="0 0 600 189" role="img" aria-label="Three signed checkpoint history branches, retaining a conflict between two same-epoch hashes">
+<g fill="none" stroke-width="2"><path d="M100 64 V92 L300 123" stroke="#2dd3cc"/><path d="M300 64 V123" stroke="#ffa769"/><path d="M500 64 V92 L300 123" stroke="#b48aff"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="43" y="15" width="114" height="49" rx="9" fill="#132c37" stroke="#2dd3cc"/><text x="100" y="34" font-size="13" fill="#c2ffff">FF · EPOCH N</text><text x="100" y="50" font-size="10" fill="#99eae4">LEDGER A</text>
+<rect x="243" y="15" width="114" height="49" rx="9" fill="#352638" stroke="#ffa769"/><text x="300" y="34" font-size="13" fill="#ffe0bf">CF · EPOCH N</text><text x="300" y="50" font-size="10" fill="#ffcfaf">LEDGER A</text>
+<rect x="443" y="15" width="114" height="49" rx="9" fill="#2c2640" stroke="#b48aff"/><text x="500" y="34" font-size="13" fill="#e8d7ff">RR · EPOCH N</text><text x="500" y="50" font-size="10" fill="#d7beff">LEDGER B</text>
+<rect x="143" y="123" width="314" height="48" rx="9" fill="#29213a" stroke="#ffbd74"/><text x="300" y="144" fill="#ffe2a6" font-size="13">EQUIVOCATION EXAMPLE</text><text x="300" y="161" fill="#e4cfda" font-size="10">A ≠ B · retain all signed claims · HOLD</text>
+</g></svg>
+<div class="cards">
+<div class="card"><b>PAST · RETAIN</b><small>Each signer’s ordered epoch observations, signatures, and ledger fingerprints remain visible</small></div>
+<div class="card"><b>PRESENT · COMPARE</b><small>Check same-epoch ledger disagreement, gap/replay, and repeated identical signatures</small></div>
+<div class="card"><b>FUTURE · RESERVE</b><small>No vote may erase evidence or claim latest highwater without external custody</small></div>
+</div>
+<p id="detail">The diagram illustrates a fork; it does not assert that any such externally authenticated fork has actually occurred.</p>
+</div>
+<p><a href="../../index.html">Neuroscape Arcade</a> · <a href="rust033-session-highwater.html">Signed session highwater</a> · <a href="rust032-session-freshness.html">Session freshness</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Three keys are not automatically three custody roots. Repository and Pages are one source ancestry.</small>
+<script>
+(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("Release manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("Invalid source manifest");document.getElementById("detail").textContent="Observed repository source "+m.source_commit+". No independent retained histories were supplied here, so real-world equivocation and latest checkpoint authority remain unverified.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();
+</script></main></html>
