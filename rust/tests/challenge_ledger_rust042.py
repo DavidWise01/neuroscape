@@ -48,7 +48,7 @@ def checked_upstream(receipt):
 
 def checked_history(history):
     require(isinstance(history,dict) and history.get("phase")=="RUST-042" and
-            history.get("status")=="HOLD_EXTERNAL_LEDGER_UNVERIFIED",
+            history.get("status") in ("HOLD_EXTERNAL_LEDGER_UNVERIFIED",\n                                          "HOLD_ATTESTOR_IDENTITY_SUBSTITUTION"),
             "RUST-042 predecessor ledger missing")
     require(history.get("release_authorized") is False,
             "historical release promotion")
@@ -170,7 +170,7 @@ def audit(upstream,history,retained_floor=None):
         "epoch":epoch,"entries":entries,"prefix_heads":heads,
         "head_sha256":heads[-1],
         "new_epoch_entries":new,
-        "attestor_continuity_conflicts":collisions,
+        "attestor_continuity_conflicts":\n            history.get("attestor_continuity_conflicts",[])+collisions,
         "upstream_rust041_receipt_sha256":upstream["receipt_sha256"],
         "retained_floor_compared":retained_floor is not None,
         "retained_floor_claim_sha256":digest(retained_floor) if retained_floor is not None else None,
