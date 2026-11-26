@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-046 · Recovery Quarantine & Graduation Review</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 1%,#422451,#09111f 76%);color:#f8f7ff;font:15px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:27px}h1{font-size:clamp(26px,4vw,42px);letter-spacing:.055em;color:#ffc28b;text-shadow:0 0 25px #ff7537}.panel{background:#151c30;border:1px solid #b18afb;border-radius:20px;padding:23px;box-shadow:0 0 35px #9c66f74c}.status{font-size:21px;font-weight:800;color:#ffc487}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:23px 0}.cell{border:1px solid #33d0ce;border-radius:12px;padding:19px;min-height:124px;box-shadow:inset 0 0 20px #30d2cb1e}.cell:nth-child(2){border-color:#ffac69}.cell:nth-child(3){border-color:#b890ff}b{display:block;margin-bottom:10px}p,small{color:#becadd;line-height:1.55}a{color:#9bffea}svg{display:block;width:100%;height:auto;max-height:231px}@media(max-width:700px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-046 · QUARANTINE PERSISTENCE</h1>
+<p>Immutable recovery receipt → successor epoch → three signed review claims → graduation HOLD.</p>
+<div class="panel"><div class="status">HOLD · No independent custody graduation authorized</div>
+<svg viewBox="0 0 600 190" role="img" aria-label="Prior recovery quarantine continues into a new challenge epoch and three witnesses, with all output still HOLD">
+<g fill="none" stroke-width="2"><path d="M165 48 H226 M373 48 H436" stroke="#bf9ff7"/><path d="M300 89 V121" stroke="#ffbd7d"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="22" y="12" width="143" height="77" rx="10" stroke="#32d5ce" fill="#163139"/><text x="94" y="33" fill="#d2fffb" font-size="12">PAST</text><text x="94" y="50" fill="#b8eee9" font-size="11">REVOKED KEY</text><text x="94" y="66" fill="#b8eee9" font-size="10">RECOVERY QUARANTINED</text>
+<rect x="226" y="12" width="147" height="77" rx="10" stroke="#ffab66" fill="#37283a"/><text x="300" y="33" fill="#ffe7d0" font-size="12">PRESENT</text><text x="300" y="50" fill="#ffd2b0" font-size="11">NEXT EPOCH</text><text x="300" y="66" fill="#ffd2b0" font-size="10">EXACT HISTORY PREFIX</text>
+<rect x="436" y="12" width="143" height="77" rx="10" stroke="#b88dfe" fill="#302743"/><text x="508" y="33" fill="#efe2ff" font-size="12">FUTURE</text><text x="508" y="50" fill="#dec9ff" font-size="11">FF / CF / RR</text><text x="508" y="66" fill="#dec9ff" font-size="10">THREE REVIEW CLAIMS</text>
+<rect x="145" y="121" width="310" height="50" rx="10" stroke="#ffc185" fill="#2b233b"/><text x="300" y="141" fill="#ffe8c5" font-size="13">GRADUATION REVIEW</text><text x="300" y="157" fill="#ffc78f" font-size="11">EXTERNAL OWNERSHIP UNVERIFIED · HOLD</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>RUST-045 recovery stays immutable, with old revocations, revoked-key fingerprints and earlier signed challenges retained</small></div>
+<div class="cell"><b>PRESENT · DESERVES</b><small>Exact successor-ledger prefixes, current full revocation floor and a fresh witnessed challenge for the replacement key</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Three distinct signed review claims cannot by themselves authenticate independent control or graduate a custodian</small></div>
+</div>
+<p id="detail">Illustrative containment: cryptographic signatures do not prove real-world operator independence.</p>
+</div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust045-custodian-recovery.html">Custodian recovery</a> · <a href="rust044-attestor-revocation.html">Revocation ancestry</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Independent ancestry remains unqualified. One emulator, three minds, protected arena and card deck remain unchanged.</small>
+<script>(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("source manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("invalid source manifest");document.getElementById("detail").textContent="Repository source "+m.source_commit+". No external latest highwater, independent operator custody or graduation authorization is established. HOLD.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();</script></main></html>
