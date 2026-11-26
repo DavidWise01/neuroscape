@@ -1014,3 +1014,47 @@ Neuroscape 5×2 arena remain unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-035 — Cross-epoch custodian continuity and rotation evidence
+
+`rust/tests/custodian_continuity_rust035.py` consumes an intact
+RUST-034 signed-highwater evidence receipt. For each witness
+(`ff`, `cf`, `rr`), it orders observed checkpoints by epoch and
+inspects the signing-key fingerprints. When the key changes across
+successive epochs, the verifier requires a domain-separated transition
+message binding the RUST-034 receipt, old and new checkpoint hashes,
+epoch pair, role and both SPKI SHA-256 pins. **Both** predecessor and
+successor Ed25519 keys must sign the identical canonical transition
+message. Missing, extra, misbound or invalid signatures stop
+adjudication.
+
+The engine retains per-role final history heads, every examined
+dual-signature transition and cross-epoch contradictions. Existing
+RUST-034 signed equivocation is never overridden by a key rotation or
+majority vote. Repeated epochs with incompatible ledgers or signer
+fingerprints, rollback and epoch gaps are retained as conflicting
+evidence. All results remain either
+`HOLD_CROSS_EPOCH_CONTRADICTION` or
+`HOLD_CUSTODIAN_CONTINUITY_UNPROVEN`.
+
+**Compatibility limitation:** The RUST-034 audit pins one key per
+role for its entire supplied history. It therefore cannot by itself
+generate a historically verified per-epoch rotated-key chain.
+RUST-035 can check supplied transition evidence but cannot elevate
+that evidence to independent custody or prove that the operator
+controlled either key in an external organization. The assertions
+`independent_custody_continuity_verified`, `fork_resolved` and
+`release_authorized` always remain false.
+
+GitHub Actions runs ten negative and structural tests before the
+Pages publication stage and archives
+`HOLD_MISSING_CUSTODIAN_CONTINUITY` when real external evidence is
+absent. The Rust WASM replay engine, 256-card catalog and existing
+5×2 arena are unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-035 neon continuity observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust035-custodian-continuity.html) ·
+[RUST-034 highwater histories](https://davidwise01.github.io/neuroscape/rust/tests/rust034-highwater-retention.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
