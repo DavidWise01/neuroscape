@@ -895,3 +895,42 @@ Rust WASM combat behavior were altered.
 [Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-032 — Retrieval-session challenge freshness and replay ledger
+
+`rust/tests/session_freshness_rust032.py` binds three signed issuer
+challenges (`ff/cf/rr`) to an intact RUST-031 retrieval receipt. Each
+canonical challenge includes epoch, previous ledger SHA-256, source
+receipt, session and endpoint SHA-256, retrieved archive SHA-256, and
+nonce. The script verifies Ed25519 issuer signatures using separately
+supplied `RUST032_ISSUER_PIN_FF/CF/RR` key fingerprints.
+
+Before appending an observation, it rejects reused nonces and
+retrieval-session identifiers appearing anywhere in the supplied
+historical entries, duplicates within the current batch, shared issuer
+keys, changed retrieval endpoints, and tampered ledger hashes.
+Entries from old epochs are carried forward in order, with a new
+SHA-256 ledger fingerprint. Previous entries are never silently
+overwritten or removed from the newly produced receipt.
+
+The `genesis_history()` helper is for local deterministic tests; it is
+**not** independently witnessed genesis. A locally self-consistent
+ledger can miss prior challenges if earlier history has been withheld,
+and an Ed25519 key does not prove an independent issuer or freshness.
+Accordingly `external_latest_ledger_confirmed`,
+`independent_issuer_custody_verified`,
+`global_anti_rollback_certified`, `fork_resolved` and
+`release_authorized` remain **false**.
+
+Automatic GitHub Actions runs ten structural and negative regression
+tests before Pages publication and archives
+`HOLD_MISSING_EXTERNAL_SESSION_LEDGER` without pretending the
+repository can authenticate off-repository custody. It does not change
+the existing arena, 256 cards, or Rust WASM combat behavior.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-032 neon freshness observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust032-session-freshness.html) ·
+[RUST-031 operator-control page](https://davidwise01.github.io/neuroscape/rust/tests/rust031-operator-control.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
