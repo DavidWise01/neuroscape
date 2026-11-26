@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-052 · Fork Witness Challenge Ledger</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0%,#44225a,#09121f 78%);color:#f6f8ff;font:15px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:27px}h1{font-size:clamp(25px,4vw,43px);letter-spacing:.05em;color:#ffc78b;text-shadow:0 0 25px #fe763c}.panel{background:#151c30;border:1px solid #b68eff;border-radius:20px;padding:25px;box-shadow:0 0 40px #a462f64a}.status{color:#ffc687;font-size:21px;font-weight:800}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:23px 0}.cell{border:1px solid #35d6ce;border-radius:12px;padding:19px;min-height:119px;box-shadow:inset 0 0 20px #32d2ca1b}.cell:nth-child(2){border-color:#ffb06a}.cell:nth-child(3){border-color:#b992ff}b{display:block;margin-bottom:9px}p,small{color:#becddd;line-height:1.55}a{color:#9bffeb}svg{width:100%;height:auto;max-height:245px}@media(max-width:700px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-052 · FORK WITNESS CHALLENGES</h1>
+<p>Historical fork → nonce-bound ff / cf / rr signatures → immutable replay ledger → HOLD.</p>
+<div class="panel"><div class="status">HOLD · Source ancestry and independent custody not authenticated</div>
+<svg viewBox="0 0 600 210" role="img" aria-label="Unresolved historical fork bound to three separately signed witness challenges and an immutable hash-chain ledger">
+<g stroke-width="2.3" fill="none"><path d="M300 44 L100 92 M300 44 V92 M300 44 L500 92" stroke="#bb92fe"/><path d="M100 142 L300 175 M300 142 V175 M500 142 L300 175" stroke="#ffbc7b"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="188" y="4" width="224" height="40" rx="10" stroke="#ffa971" fill="#332837"/><text x="300" y="29" font-size="13" fill="#ffdfbf">HISTORICAL FORK · BOTH BRANCHES</text>
+<rect x="22" y="92" width="156" height="50" rx="10" stroke="#31d7cc" fill="#143439"/><text x="100" y="114" font-size="13" fill="#d1fff9">FF WITNESS</text><text x="100" y="130" font-size="10" fill="#b7f1e8">KEY + NONCE + ROOT</text>
+<rect x="222" y="92" width="156" height="50" rx="10" stroke="#ffac71" fill="#3d2938"/><text x="300" y="114" font-size="13" fill="#ffe6ca">CF WITNESS</text><text x="300" y="130" font-size="10" fill="#ffd5b6">KEY + NONCE + ROOT</text>
+<rect x="422" y="92" width="156" height="50" rx="10" stroke="#b991ff" fill="#322842"/><text x="500" y="114" font-size="13" fill="#f1e5ff">RR WITNESS</text><text x="500" y="130" font-size="10" fill="#dccaff">KEY + NONCE + ROOT</text>
+<rect x="170" y="174" width="260" height="31" rx="10" stroke="#ffc188" fill="#30243d"/><text x="300" y="194" font-size="12" fill="#ffe7c3">APPEND-ONLY CHALLENGE LEDGER · HOLD</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Preserve every earlier fork, both branch hashes, signed review assertions and past challenge receipts</small></div>
+<div class="cell"><b>PRESENT · CHECKS</b><small>Verify three nonce-bound challenge signatures per fork; reject replayed nonces, repeated claims and substituted ledger heads</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Carry suspected shared custody and signer-ancestry changes into the next epoch without removing any HOLD</small></div>
+</div><p>Different signatures are not evidence of different controlling operators. This diagram illustrates the protocol; it does not report authenticated external witness activity.</p>
+</div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust051-fork-continuity.html">Fork continuity review</a> · <a href="rust050-fork-registry.html">Persistent fork registry</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · One engine, protected 5×2 arena, 256 cards. Signatures checked; independent custody HOLD.</small>
+</main></html>
