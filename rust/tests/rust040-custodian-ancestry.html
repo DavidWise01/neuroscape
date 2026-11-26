@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-040 · Custodian Identity Ancestry</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;color:#f7f7ff;background:radial-gradient(ellipse at 48% 2%,#3b2454,#08101d 76%);font:15px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:27px}h1{font-size:clamp(25px,4vw,43px);letter-spacing:.06em;color:#ffbe85;text-shadow:0 0 22px #fb7035}
+.panel{background:#151a2d;border:1px solid #aa80f9;border-radius:20px;padding:24px;box-shadow:0 0 37px #a469fa45}
+.status{font-size:21px;color:#ffc188;font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:22px 0}
+.cell{border:1px solid #2cd2cb;box-shadow:inset 0 0 20px #2cd2cb20;border-radius:12px;padding:18px;min-height:121px}
+.cell:nth-child(2){border-color:#ffa861}.cell:nth-child(3){border-color:#b88bfb}
+b{display:block;margin-bottom:10px}p,small{color:#bbcad9;line-height:1.5}a{color:#93ffeb}svg{display:block;width:100%;height:auto;max-height:230px}
+@media(max-width:660px){.grid{grid-template-columns:1fr}}
+</style><main>
+<h1>RUST-040 · CUSTODIAN ANCESTRY</h1>
+<p>Source-root fingerprints · operator aliases · acquisition paths · common-control suspicion.</p>
+<div class="panel"><div class="status">HOLD · External ownership cannot be inferred from aliases</div>
+<svg viewBox="0 0 600 188" role="img" aria-label="Three witness identities with different labels converge on a common source root in an illustrative conflict">
+<g fill="none" stroke-width="2"><path d="M96 66 L300 127 M300 66 V127 M504 66 L300 127" stroke="#aa86ec"/>
+<path d="M96 66 L300 127" stroke="#2cd6ce" stroke-dasharray="5 4"/><path d="M504 66 L300 127" stroke="#ffac6e" stroke-dasharray="5 4"/></g>
+<g text-anchor="middle" font-family="system-ui">
+<rect x="36" y="13" width="120" height="53" rx="10" fill="#173039" stroke="#2cd6ce"/><text x="96" y="34" fill="#d5ffff" font-size="13">FF · ALIAS A</text><text x="96" y="50" fill="#9febea" font-size="10">KEY 1</text>
+<rect x="240" y="13" width="120" height="53" rx="10" fill="#38283a" stroke="#ffac6e"/><text x="300" y="34" fill="#ffe6d0" font-size="13">CF · ALIAS B</text><text x="300" y="50" fill="#ffd6b5" font-size="10">KEY 2</text>
+<rect x="444" y="13" width="120" height="53" rx="10" fill="#2e2842" stroke="#b68eff"/><text x="504" y="34" fill="#e9dcff" font-size="13">RR · ALIAS C</text><text x="504" y="50" fill="#d7c6ff" font-size="10">KEY 3</text>
+<rect x="140" y="127" width="320" height="44" rx="11" fill="#2b233b" stroke="#ffbc80"/>
+<text x="300" y="146" fill="#ffe3b9" font-size="13">POSSIBLE COMMON SOURCE</text>
+<text x="300" y="160" fill="#ffc891" font-size="10">PRESERVE ALL CLAIMS · NO FALSE INDEPENDENCE</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · ROOT</b><small>Carry inherited revoked keys and upstream acquisition or custody fingerprints without resetting ancestry</small></div>
+<div class="cell"><b>PRESENT · COMPARE</b><small>Detect repeated aliases, source roots, controller fingerprints, registries and acquisition paths</small></div>
+<div class="cell"><b>FUTURE · RESERVE</b><small>Record suspected replacement keys without accepting claimed distinct ownership as established fact</small></div>
+</div>
+<p id="detail">This diagram is an illustrative shared-origin conflict; no external custodian ownership was authenticated in the browser.</p>
+</div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust039-revocation-persistence.html">Cross-epoch revocation</a> · <a href="rust038-revocation-ancestry.html">Revocation chain</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Three names, signatures or URLs do not establish three independent witness roots.</small>
+<script>(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("Release manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("Invalid source report");document.getElementById("detail").textContent="Observed repository source "+m.source_commit+". Custodian control and external latest checkpoint remain unverified; release authority stays HOLD.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();</script>
+</main></html>
