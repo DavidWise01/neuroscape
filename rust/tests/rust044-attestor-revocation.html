@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-044 · Compromised Attestor Revocation</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0%,#41264e,#0a111e 75%);color:#f7f7ff;font:15px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:28px}h1{font-size:clamp(25px,4vw,42px);letter-spacing:.06em;color:#ffc18b;text-shadow:0 0 25px #ff7341}
+.panel{background:#151b2e;border:1px solid #b188ff;border-radius:20px;padding:25px;box-shadow:0 0 35px #9c61f64a}
+.status{color:#ffc481;font-size:21px;font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:24px 0}
+.cell{padding:19px;border:1px solid #35d5cd;min-height:120px;border-radius:12px;box-shadow:inset 0 0 18px #2ed2c820}
+.cell:nth-child(2){border-color:#ffae63}.cell:nth-child(3){border-color:#b88bfc}
+b{display:block;margin-bottom:9px}p,small{line-height:1.5;color:#bbc9d9}a{color:#a5ffee}svg{display:block;width:100%;height:auto;max-height:220px}
+@media(max-width:670px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-044 · ATTESTOR REVOCATION FENCE</h1>
+<p>Revoked key · authority signature · retained historical prefix · successor-key ancestry.</p>
+<div class="panel">
+<div class="status">HOLD · Revocation custody and independent control not authenticated</div>
+<svg viewBox="0 0 600 185" role="img" aria-label="A compromised attestor signing key remains fenced across rotation while a replacement key and external highwater remain under review">
+<g fill="none" stroke-width="2"><path d="M164 53 H228 M371 53 H435" stroke="#bfa1f6"/><path d="M300 87 V121" stroke="#ffa766"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="25" y="13" width="140" height="74" rx="11" fill="#173139" stroke="#32d6cf"/>
+<text x="95" y="34" fill="#d5fffb" font-size="13">KEY A · REVOKED</text><text x="95" y="52" fill="#b3efe8" font-size="11">EFFECTIVE EPOCH</text><text x="95" y="69" fill="#a0e8e2" font-size="10">NO FUTURE SIGNING</text>
+<rect x="228" y="13" width="144" height="74" rx="11" fill="#372a3a" stroke="#ffac6a"/>
+<text x="300" y="34" fill="#ffe8c9" font-size="13">REVOCATION</text><text x="300" y="52" fill="#ffcfab" font-size="11">AUTHORITY SIGNED</text><text x="300" y="69" fill="#ffc89b" font-size="10">APPEND-ONLY HASH</text>
+<rect x="435" y="13" width="140" height="74" rx="11" fill="#302741" stroke="#b88dfb"/>
+<text x="505" y="34" fill="#f3e4ff" font-size="13">KEY B · REVIEW</text><text x="505" y="52" fill="#d8c2fe" font-size="11">SHARED ROOT?</text><text x="505" y="69" fill="#d4bafa" font-size="10">NO FALSE CLEARANCE</text>
+<rect x="141" y="121" width="318" height="49" rx="11" fill="#2c233c" stroke="#ffc287"/>
+<text x="300" y="141" font-size="13" fill="#ffeac2">HISTORICAL REVOCATION FENCE</text>
+<text x="300" y="156" font-size="11" fill="#ffc78b">INDEPENDENT CUSTODY · HOLD</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Preserve every signed attestor challenge, predecessor link and effective revocation epoch</small></div>
+<div class="cell"><b>PRESENT · FENCES</b><small>Reject revoked signing keys and verify authority-signed revocation ancestry against the presented floor</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Flag successor keys associated with the same claimed control root, without inferring real-world ownership</small></div>
+</div>
+<p id="detail">This is a static illustration. It does not imply a real key compromise or an authenticated revocation occurred.</p></div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust043-attestor-rotation.html">Signed attestor rotation</a> · <a href="rust042-challenge-ledger.html">Challenge ledger</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Fencing revocation history does not authenticate external latest highwater or operator independence.</small>
+<script>(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("deployment manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("invalid manifest");document.getElementById("detail").textContent="Repository source "+m.source_commit+". Independent revocation authority and latest external highwater are not authenticated. HOLD.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();</script></main></html>
