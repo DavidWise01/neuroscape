@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-030 · Independent Acquisition Laboratory</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;font:15px system-ui,sans-serif;color:#f5f6ff;background:radial-gradient(ellipse at 45% 4%,#36254d,#0a101e 78%)}
+main{max-width:1120px;margin:auto;padding:26px}h1{font-size:clamp(24px,4vw,42px);letter-spacing:.06em;color:#ffc28c;text-shadow:0 0 23px #f16b35}
+.panel{background:#151b30;border:1px solid #a07af8;box-shadow:0 0 33px #9454ef48;border-radius:20px;padding:25px}
+.status{font-size:21px;font-weight:800;color:#ffc083}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:22px 0}
+.cell{border:1px solid #37cfd2;border-radius:12px;min-height:122px;padding:17px;box-shadow:inset 0 0 18px #29c5d522}
+.cell:nth-child(2){border-color:#ffa15a}.cell:nth-child(3){border-color:#b789fb}b{display:block;margin-bottom:10px}p,small{color:#bdcad8;line-height:1.5}a{color:#92f7e7}
+svg{display:block;width:100%;height:auto;max-height:225px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-030 · ACQUISITION CHALLENGE</h1>
+<p>Original archive bytes · nonce-derived byte windows · independently pinned signatures · shared source paths.</p>
+<div class="panel">
+<div class="status">HOLD · No independent acquisition challenge completed</div>
+<svg viewBox="0 0 600 183" role="img" aria-label="Three archives supply challenge-bound byte windows to one audit preserving shared ancestry">
+<g stroke-width="2" fill="none"><path d="M100 63 V100 L300 127" stroke="#2ed2cd"/><path d="M300 63 V127" stroke="#ffa75e"/><path d="M500 63 V100 L300 127" stroke="#bb8bf7"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="44" y="12" width="112" height="51" rx="9" stroke="#2ed2cd" fill="#18303a"/>
+<text x="100" y="32" font-size="13" fill="#c9ffff">FF · ARCHIVE</text><text x="100" y="49" font-size="10" fill="#ace2dd">BYTE SAMPLE</text>
+<rect x="244" y="12" width="112" height="51" rx="9" stroke="#ffa75e" fill="#382637"/>
+<text x="300" y="32" font-size="13" fill="#ffdcc1">CF · ARCHIVE</text><text x="300" y="49" font-size="10" fill="#ffccaa">BYTE SAMPLE</text>
+<rect x="444" y="12" width="112" height="51" rx="9" stroke="#bb8bf7" fill="#2c2642"/>
+<text x="500" y="32" font-size="13" fill="#e6d8ff">RR · ARCHIVE</text><text x="500" y="49" font-size="10" fill="#d1bcfa">BYTE SAMPLE</text>
+<rect x="164" y="127" width="272" height="41" rx="9" stroke="#ad83ff" fill="#222038"/>
+<text x="300" y="146" font-size="13" fill="#f9eaff">CUSTODY CONTROL · UNVERIFIED</text>
+<text x="300" y="160" font-size="10" fill="#c7c1dc">No automatic source independence or fork resolution</text>
+</g>
+</svg>
+<div class="grid">
+<div class="cell"><b>PAST · ACQUIRE</b><small>Check exact archive SHA-256 and derive a byte window using an externally supplied challenge</small></div>
+<div class="cell"><b>PRESENT · SIGN</b><small>Verify the Ed25519 signature over the archived response with a separate pinned key</small></div>
+<div class="cell"><b>FUTURE · HOLD</b><small>Retain repeated operators, byte ancestry, and acquisition-path collisions as evidence</small></div>
+</div>
+<p id="detail">An archive-possession sample proves possession of particular bytes, not independent archive administration.</p>
+</div>
+<p><a href="../../index.html">Neuroscape Arcade</a> · <a href="rust029-custody-roots.html">Custody roots</a> · <a href="rust028-source-ancestry.html">Source ancestry</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · GitHub and GitHub Pages share one source ancestry. The observation layer does not alter gameplay.</small>
+<script>
+(async()=>{
+try{
+const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+if(!r.ok)throw Error("No public release manifest");
+const m=await r.json();
+if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("Invalid source record");
+document.getElementById("detail").textContent="Repository-observed source "+m.source_commit+". External challenge issuance and independently owned archives have not been established: RUST-030 remains HOLD.";
+}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}
+})();
+</script></main></html>
