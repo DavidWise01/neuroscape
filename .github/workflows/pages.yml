@@ -197,6 +197,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_graduation_denial_rust047.py' -v
       - name: RUST-048 reject forged denial highwater and rollback
         run: python3 -m unittest discover -s rust/tests -p 'test_denial_highwater_rust048.py' -v
+      - name: RUST-049 preserve cross-custody highwater forks and HOLD
+        run: python3 -m unittest discover -s rust/tests -p 'test_cross_custody_highwater_rust049.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -384,6 +386,11 @@ jobs:
           python3 rust/tests/denial_highwater_rust048.py \
             --output rust/tests/.rust048-denial-highwater.json \
             --allow-hold-record
+      - name: RUST-049 archive missing cross-custody highwater HOLD
+        run: |
+          python3 rust/tests/cross_custody_highwater_rust049.py \
+            --output rust/tests/.rust049-cross-custody-highwater.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -426,6 +433,7 @@ jobs:
             rust/tests/.rust046-recovery-quarantine.json
             rust/tests/.rust047-graduation-denial.json
             rust/tests/.rust048-denial-highwater.json
+            rust/tests/.rust049-cross-custody-highwater.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
