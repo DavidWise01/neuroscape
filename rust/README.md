@@ -1799,3 +1799,47 @@ material is absent. This phase changes no Rust WASM combat,
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-052 — Immutable fork continuity ledger and witness challenge replay
+
+\`rust/tests/fork_challenge_ledger_rust052.py\` anchors every
+RUST-051 cross-epoch continuity review to a new append-only ledger.
+Each event binds the exact RUST-051 receipt digest, a named historic
+fork and its two historical branch fingerprints, and three ordered
+\`ff/cf/rr\` signer challenges. Each separately supplied key pin
+verifies an Ed25519 signature over a canonical, domain-separated
+message containing the reviewed fork ancestry, declared witness
+source root, acquisition path, operator controller, and fresh nonce.
+
+Each predecessor RUST-052 record is revalidated from genesis through
+every SHA-256 predecessor hash. Historic nonce and message
+fingerprints are retained so a later review cannot replay an old
+signed assertion. If the same signing pin declares different
+custody ancestry in a subsequent epoch, the discrepancy becomes a
+persistent \`PIN_SOURCE_ANCESTRY_CHANGED\` alert. Shared claimed
+source roots, acquisition paths or operator controllers within a
+three-witness group are preserved as
+\`SHARED_CLAIMED_WITNESS_ANCESTRY\`; they never create a quorum
+or authorize a fork winner.
+
+An optional externally supplied RUST-052 retention floor must
+match the exact previously recorded chain head at its entry count.
+This only detects rollback relative to a provided reference: it
+does **not** establish that an independent third party holds it.
+A valid signature proves possession of a key matching its pinned
+SPKI fingerprint, not genuine source independence or real-world
+operator custody. Previous forks, quarantine and governance remain
+on HOLD.
+
+The source includes fourteen negative/structural regression
+cases in the predeployment GitHub Actions gate and a run-scoped
+default archive \`HOLD_MISSING_EXTERNAL_WITNESS_CHALLENGES\`
+when no external evidence exists. The 5×2 arena, 256-card catalog,
+Rust WASM combat core and gameplay have not changed.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-052 neon challenge ledger](https://davidwise01.github.io/neuroscape/rust/tests/rust052-fork-challenge-ledger.html) ·
+[RUST-051 continuity](https://davidwise01.github.io/neuroscape/rust/tests/rust051-fork-continuity.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
