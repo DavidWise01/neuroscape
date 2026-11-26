@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RUST-035 | Custodian Continuity</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0%,#3b2757,#0b101f 77%);color:#f4f7ff;font:15px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:26px}h1{font-size:clamp(25px,4vw,43px);color:#ffbb84;letter-spacing:.06em;text-shadow:0 0 24px #ff6b32}
+.panel{background:#151b30;border:1px solid #a37bf8;border-radius:20px;padding:24px;box-shadow:0 0 32px #9258ff45}.status{font-size:21px;font-weight:800;color:#ffc383}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:23px 0}.cell{border:1px solid #2bcfd0;border-radius:12px;padding:18px;min-height:115px;box-shadow:inset 0 0 20px #2bcfd01e}
+.cell:nth-child(2){border-color:#ffa45e}.cell:nth-child(3){border-color:#bb8dfa}
+b{display:block;margin-bottom:10px}p,small{color:#b9c6d7;line-height:1.5}a{color:#98ffe7}svg{width:100%;height:auto;max-height:245px}@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-035 · CUSTODIAN CONTINUITY</h1>
+<p>Epoch transition · dual signatures · source ancestry · preserve contradictions.</p>
+<div class="panel"><div class="status">HOLD · Independent custodian continuity not authenticated</div>
+<svg viewBox="0 0 600 188" role="img" aria-label="Three witness custody paths crossing two epochs, with a possible signer rotation held for verification">
+<g fill="none" stroke-width="2">
+<path d="M92 46 V122 M300 46 V122 M508 46 V122" stroke="#8264b9"/>
+<path d="M92 81 L140 99 L92 122" stroke="#31d0ca"/><path d="M300 81 L348 99 L300 122" stroke="#ffa860"/><path d="M508 81 L556 99 L508 122" stroke="#b990ff"/>
+</g>
+<g font-family="system-ui" text-anchor="middle"><rect x="39" y="12" width="106" height="34" rx="8" fill="#162a35" stroke="#31d0ca"/><text x="92" y="33" fill="#c7ffff" font-size="13">FF · OLD KEY</text>
+<rect x="247" y="12" width="106" height="34" rx="8" fill="#342837" stroke="#ffa860"/><text x="300" y="33" fill="#ffe0c0" font-size="13">CF · OLD KEY</text>
+<rect x="455" y="12" width="106" height="34" rx="8" fill="#302741" stroke="#b990ff"/><text x="508" y="33" fill="#eadbff" font-size="13">RR · OLD KEY</text>
+<rect x="37" y="122" width="110" height="32" rx="8" fill="#162a35" stroke="#31d0ca"/><text x="92" y="142" fill="#c7ffff" font-size="11">NEXT EPOCH</text>
+<rect x="245" y="122" width="110" height="32" rx="8" fill="#342837" stroke="#ffa860"/><text x="300" y="142" fill="#ffe0c0" font-size="11">NEXT EPOCH</text>
+<rect x="453" y="122" width="110" height="32" rx="8" fill="#302741" stroke="#b990ff"/><text x="508" y="142" fill="#eadbff" font-size="11">NEXT EPOCH</text>
+<text x="300" y="178" fill="#ffc68d" font-size="12">ROTATION AUTHORITY · HOLD</text></g>
+</svg>
+<div class="grid">
+<div class="cell"><b>PAST · OLD KEY</b><small>Retain the predecessor checkpoint and its signing-key fingerprint</small></div>
+<div class="cell"><b>PRESENT · BOTH SIGN</b><small>Old and successor keys must authenticate the same transition bytes</small></div>
+<div class="cell"><b>FUTURE · PRESERVE</b><small>Keep every cross-epoch contradiction; no key replacement can erase a fork</small></div>
+</div>
+<p id="note">RUST-034's single pinned key per role does not yet establish real multi-key rotation ancestry. Demonstration of two signatures is not proof of independent custody.</p>
+</div>
+<p><a href="../../index.html">Neuroscape Arcade</a> · <a href="rust034-highwater-retention.html">Retained highwater</a> · <a href="rust033-session-highwater.html">Session checkpoint</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Same signature is not a second witness. Read-only observations cannot promote release or gameplay authority.</small>
+<script>(async()=>{try{const response=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!response.ok)throw Error("manifest unavailable");const x=await response.json();if(!/^[a-f0-9]{40}$/.test(x.source_commit)||x.live_gameplay_authority!==false)throw Error("invalid manifest");document.getElementById("note").textContent="Repository source "+x.source_commit+". Custodian rotations and external latest-state ownership remain unverified. RUST-035 release authority stays HOLD.";}catch(e){document.getElementById("note").textContent="HOLD · "+String(e.message||e);}})();</script>
+</main></html>
