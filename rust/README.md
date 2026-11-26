@@ -1100,3 +1100,43 @@ Rust WASM combat engine, 5×2 arena and 256-card deck are unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-037 — External registry highwater and revocation retention floor
+
+`rust/tests/registry_highwater_rust037.py` binds an intact,
+hash-checked RUST-036 per-epoch registry receipt to a signed
+`SIGNED_REGISTRY_HIGHWATER` checkpoint. The exact canonical message
+contains the RUST-036 receipt digest, maximum observed epoch, complete
+ordered key-claim digest and count, all rotation digests and count,
+and the complete revocation history digest and count. It is verified
+with an Ed25519 witness key pinned **outside** the bundle using
+`RUST037_ANCHOR_WITNESS_SPKI_SHA256`.
+
+A separately supplied retention floor can reject a registry epoch
+older than an externally recorded one, an altered registry at the same
+epoch, a reduced revocation count, or a different revocation digest
+at an unchanged count. A signed checkpoint with missing revocations
+cannot match the full RUST-036 evidence from which the original
+checkpoint was derived.
+
+**Boundary:** `--floor` imports a declared highwater reference but
+does not authenticate who retained it. A newer epoch with an increased
+revocation count also does not establish that old revocations are
+still present unless separately verified through a retained
+append-only history. The key registry and signature witness are not
+by themselves independent source ancestries. All receipts remain
+`HOLD_EXTERNAL_LATEST_REGISTRY_UNVERIFIED` or
+`HOLD_REGISTRY_EQUIVOCATION`; release and fork resolution stay false.
+
+GitHub Actions includes eleven negative/structural tests before
+Pages publication and archives
+`HOLD_MISSING_EXTERNAL_REGISTRY_HIGHWATER` when no out-of-band
+anchor is supplied. No gameplay, 5×2 arena, 256-card catalog, or
+Rust WASM combat engine behavior is changed.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-037 neon registry highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust037-registry-highwater.html) ·
+[RUST-036 epoch registry](https://davidwise01.github.io/neuroscape/rust/tests/rust036-epoch-key-registry.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
