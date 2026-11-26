@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-037 · External Registry Highwater</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 48% 4%,#34234e,#09111f 79%);color:#f5f7ff;font:15px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:28px}h1{font-size:clamp(25px,4vw,42px);letter-spacing:.06em;color:#ffbd86;text-shadow:0 0 22px #f66c32}
+.panel{background:#141b31;border:1px solid #ab7bf7;border-radius:20px;padding:24px;box-shadow:0 0 33px #985cf746}
+.status{color:#ffc37b;font-size:22px;font-weight:800}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:23px 0}
+.cell{border:1px solid #34d4cc;border-radius:12px;min-height:118px;padding:18px;box-shadow:inset 0 0 19px #31d6cc22}
+.cell:nth-child(2){border-color:#ffac62}.cell:nth-child(3){border-color:#ba90fc}
+b{display:block;margin-bottom:10px}p,small{color:#bac8d9;line-height:1.5}a{color:#9bffe9}svg{width:100%;height:auto;max-height:226px}@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-037 · REGISTRY HIGHWATER</h1>
+<p>Epoch keys · dual-signed rotations · revoked fingerprints · signed external checkpoint.</p>
+<div class="panel"><div class="status">HOLD · Independently retained registry highwater unavailable</div>
+<svg viewBox="0 0 600 186" role="img" aria-label="The epoch key registry, revocation history and witness signature converge into a retained highwater gate">
+<g fill="none" stroke-width="2">
+<path d="M100 61 V93 L300 119" stroke="#31d6ce"/><path d="M300 61 V119" stroke="#ffa462"/><path d="M500 61 V93 L300 119" stroke="#b78df7"/>
+</g><g font-family="system-ui" text-anchor="middle">
+<rect x="36" y="13" width="128" height="48" rx="10" fill="#152d36" stroke="#31d6ce"/>
+<text x="100" y="34" fill="#c6ffff" font-size="12">EPOCH KEY HISTORY</text><text x="100" y="49" fill="#a9ece9" font-size="10">OLD / NEW / SIGNED</text>
+<rect x="236" y="13" width="128" height="48" rx="10" fill="#342839" stroke="#ffa462"/>
+<text x="300" y="34" fill="#ffe6ca" font-size="12">REVOCATIONS</text><text x="300" y="49" fill="#ffd0b6" font-size="10">COMPLETE FINGERPRINT</text>
+<rect x="436" y="13" width="128" height="48" rx="10" fill="#302641" stroke="#b78df7"/>
+<text x="500" y="34" fill="#eee2ff" font-size="12">EXTERNAL ANCHOR</text><text x="500" y="49" fill="#dbcbfc" font-size="10">PINNED SIGNATURE</text>
+<rect x="145" y="119" width="310" height="49" rx="11" fill="#29213b" stroke="#ffc184"/>
+<text x="300" y="139" fill="#ffe2aa" font-size="13">LATEST RETAINED REGISTRY</text>
+<text x="300" y="155" fill="#ffc184" font-size="11">INDEPENDENCE UNVERIFIED · HOLD</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · RETAIN</b><small>Preserve old signing keys, rotation signatures, and every observed revocation event</small></div>
+<div class="cell"><b>PRESENT · VERIFY</b><small>Match complete registry and revocation digests to the signed external checkpoint</small></div>
+<div class="cell"><b>FUTURE · RESERVE</b><small>Reject stale registry floors and withheld revocations without declaring global freshness</small></div>
+</div>
+<p id="evidence">A correctly signed checkpoint may still be old. This static page does not possess authenticated external custody material.</p>
+</div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust036-epoch-key-registry.html">Epoch key registry</a> · <a href="rust035-custodian-continuity.html">Custodian continuity</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · One signature is not one independent custodian. GitHub and public Pages share a single repository ancestry.</small>
+<script>(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("release manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("invalid source receipt");document.getElementById("evidence").textContent="Repository source "+m.source_commit+". External latest registry and independently preserved revocation history remain unverified. HOLD.";}catch(e){document.getElementById("evidence").textContent="HOLD · "+String(e.message||e);}})();</script>
+</main></html>
