@@ -1506,3 +1506,54 @@ catalog and neon gameplay are not modified.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-046 — Recovery quarantine persistence and graduation review
+
+\`rust/tests/recovery_quarantine_rust046.py\` keeps each RUST-045
+quarantined recovery candidate under HOLD across later RUST-042
+challenge epochs and RUST-044 revocation ancestry. It checks an
+unaltered original RUST-045 receipt, authenticates the predecessor
+and current receipts for structural integrity, requires the original
+challenge ledger to be a byte-for-byte logical prefix of the
+successor, and ensures old revocations and chain heads remain an
+exact prefix of the new revocation history. The separately supplied
+RUST-044 floor must cover **all** known revocations in the current
+epoch, not just the predecessor highwater.
+
+Each candidate's old key must remain revoked. The replacement
+key must be unrevoked, be the latest signing key in that witness
+role's successor challenge history, and not claim a revoked
+custodian-control root. For each candidate, three ordered
+\`ff/cf/rr\` review witnesses sign the same domain-separated
+recovery-review fact with separate externally supplied SPKI key
+pins and fresh nonce fingerprints. The review binds the
+original RUST-045 recovery-proposal digest, current RUST-044
+receipt, latest successor challenge, observer root and acquisition
+fingerprints. Claimed root or acquisition collisions, identical
+witness keys, nonce replay and self-issued or revoked witness keys
+are rejected.
+
+**Graduation is not claimed.** Three structurally distinct signed
+review assertions are insufficient to establish independent
+real-world source ancestry. The verifier records a
+\`HOLD_GRADUATION_NOT_AUTHORIZED\` assessment with
+\`graduation_approved: false\` for every candidate. Old
+revocations, evidence of root-equivalent replacement, and
+unresolved historical conflicts remain visible. No function
+promotes \`release_authorized\`, \`fork_resolved\`,
+\`independent_operator_custody_verified\`, or
+\`live_gameplay_authority\`.
+
+Thirteen structural and adversarial unit tests are committed to
+the GitHub Actions predeployment gate. Without complete external
+evidence, the workflow archives a default
+\`HOLD_MISSING_GRADUATION_CUSTODY\` record. The 5×2 card arena,
+256-card catalog, neon gameplay and existing Rust WASM combat
+engine have not been changed.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-046 neon quarantine graduation review](https://davidwise01.github.io/neuroscape/rust/tests/rust046-recovery-quarantine.html) ·
+[RUST-045 custodian recovery](https://davidwise01.github.io/neuroscape/rust/tests/rust045-custodian-recovery.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
