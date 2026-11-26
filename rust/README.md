@@ -1188,3 +1188,46 @@ neon gameplay and Rust WASM engine remain unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-039 — Revocation persistence across registry epochs
+
+`rust/tests/revocation_persistence_rust039.py` compares two complete
+RUST-036 epoch-key registry receipts with the corresponding integrity-
+checked RUST-038 revocation-chain receipts. Each chain is rebuilt from
+the exact revocation events; the complete retained predecessor chain
+head **must equal the successor chain head at the predecessor's event
+count**. The earlier revocation objects, epoch-key claim lists and
+rotation history must remain exact prefixes of the new histories.
+This rejects a reordering, substitution, truncation or deletion even
+if the newer record has a valid self-computed hash.
+
+A revoked key's fingerprint is denied at or beyond its revocation's
+effective epoch across all successor claims. A registry that reuses
+that fingerprint to sign a newer epoch fails closed. An optional
+list of key-to-custodian identifiers records potential continuity
+between a previously revoked key and a successor key, including across
+different witness roles. Identical *claimed* custodian identities are
+preserved under `HOLD_SHARED_CUSTODY_LINEAGE`; different identities
+do not demonstrate true independence.
+
+The input is five JSON documents: `--previous-registry`,
+`--current-registry`, `--previous-chain`, `--current-chain`
+and `--controllers`. The ordinary workflow lacks these external
+records and archives `HOLD_MISSING_CROSS_EPOCH_CUSTODY`.
+GitHub Actions includes eleven adversarial/structural tests before
+Pages deployment.
+
+**Custody boundary:** Neither separately supplied controller
+descriptions nor digest-valid JSON receipts establish independent
+custodian control, globally latest highwater or original external
+signature provenance. The verifier leaves
+`external_custodian_identity_verified`, `fork_resolved`,
+`global_anti_rollback_certified`, and `release_authorized` false
+even after complete prefix agreement.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-039 neon persistence observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust039-revocation-persistence.html) ·
+[RUST-038 revocation ancestry](https://davidwise01.github.io/neuroscape/rust/tests/rust038-revocation-ancestry.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
