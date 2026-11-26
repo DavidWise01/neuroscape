@@ -1557,3 +1557,54 @@ engine have not been changed.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-047 — Independent recovery witness ancestry and graduation-denial ledger
+
+\`rust/tests/graduation_denial_rust047.py\` records each structurally
+checked RUST-046 graduation review as an append-only
+\`GRADUATION_DENIAL_ENTRY\`. An entry binds its original RUST-046
+receipt digest, recovery proposal, replacement key, complete
+ordered \`ff/cf/rr\` witness statements, original claim signatures
+and nonces, and previous SHA-256 entry hash. Every denial keeps
+\`graduation_approved: false\` and \`quarantine_persists: true\`.
+
+The verifier checks that RUST-046 preserves all earlier challenge
+and revocation ancestry and that none of its review candidates
+were promoted. Predecessor denial ledgers are independently
+recomputed entry-by-entry, including each historical witness-claim
+digest and ordered prefix head. When a separately presented
+retention floor is available, its exact count-specific prefix head
+must agree with the current ledger. Replaying the same review
+receipt, its earlier witness nonces, or the same signed review
+message after another epoch fails closed.
+
+For later attempts that present the **same witness signing-key pin**
+with a different claimed source-root or acquisition-path
+fingerprint, RUST-047 records an ancestry conflict and carries it
+forward. Earlier attestor disputes and compromised-origin
+replacement claims remain visible. It does not majority-vote
+conflicts away. Distinct signature keys or claimed source-root
+hashes cannot independently prove distinct real-world operators.
+
+**Authority boundary:** This is an immutable denial audit and
+source-comparison mechanism, not an automatic graduation pathway.
+The externally supplied floor is not proven to have independent
+custody, and current external highwater is not authenticated.
+\`review_source_ancestry_authenticated\`,
+\`independent_external_retention_verified\`, \`fork_resolved\`,
+\`release_authorized\` and \`live_gameplay_authority\` remain false.
+Each completed review becomes
+\`HOLD_GRADUATION_DENIAL_LEDGER\`; missing external history
+produces \`HOLD_MISSING_INDEPENDENT_DENIAL_LEDGER\`.
+
+GitHub Actions runs thirteen adversarial/structural tests before
+Pages deployment and archives a default missing-evidence HOLD
+receipt. The Rust WASM engine, 5×2 card arena, 256-card catalog
+and existing neon gameplay remain unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-047 neon graduation-denial ledger](https://davidwise01.github.io/neuroscape/rust/tests/rust047-graduation-denial.html) ·
+[RUST-046 recovery quarantine](https://davidwise01.github.io/neuroscape/rust/tests/rust046-recovery-quarantine.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
