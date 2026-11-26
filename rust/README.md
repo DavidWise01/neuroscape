@@ -767,3 +767,44 @@ or organizational control behind an external witness.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-029 — Custody-root challenge and archive-acquisition independence
+
+`rust/tests/custody_roots_rust029.py` takes the **unaltered, hash-checked
+RUST-028 ancestry ledger** and three separately signed custody-root
+assertions for `ff`, `cf`, `rr`. Each challenge message binds the
+RUST-028 receipt, witness head, source root and family, original capture
+SHA-256, archive origin/operator, acquisition path/controller, and
+operator registry fingerprint.
+
+Three externally supplied Ed25519 SPKI SHA-256 pins
+(`RUST029_PIN_FF/CF/RR`) and distinct challenge nonces
+(`RUST029_NONCE_FF/CF/RR`) must be provided outside the assertion
+bundle. This detects a reused key/nonce in the supplied set, but the
+verifier does **not** establish that a nonce was freshly and independently
+issued; the operator must verify that provenance.
+
+Pairwise shared source families, archive operators, operator registry
+fingerprints, capture digests, acquisition paths and capture controllers
+are retained as collision evidence. A source mirror with a separate
+signature is still one acquisition ancestry. Even if no declared fields
+collide, signed operator declarations alone cannot authenticate
+real-world archive control or organizational independence.
+
+Every result remains either
+`HOLD_SHARED_CUSTODY_OR_ACQUISITION`,
+`HOLD_CUSTODY_CONTROL_UNPROVEN`, or
+`HOLD_MISSING_EXTERNAL_CUSTODY_ROOTS`.
+`independent_source_roots_certified`, `fork_resolved` and
+`release_authorized` are always **false**.
+
+GitHub Actions adds negative tests **before** Pages deployment and
+archives the missing-custody HOLD receipt with the existing run-scoped
+artifacts. The core Rust WASM parity and original game are untouched.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-029 neon custody observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust029-custody-roots.html) ·
+[Ancestry audit](https://davidwise01.github.io/neuroscape/rust/tests/rust028-source-ancestry.html) ·
+[Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
