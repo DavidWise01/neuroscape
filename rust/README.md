@@ -974,3 +974,43 @@ WASM replay behavior are unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-034 — Independent highwater retention and equivocation evidence
+
+`rust/tests/highwater_retention_rust034.py` takes three ordered
+`ff/cf/rr` retained histories. Each supplied snapshot contains the
+complete canonical RUST-033 signed checkpoint, its public key and
+signature. Signatures are checked against separately provided SPKI
+SHA-256 pins (`RUST034_PIN_FF/CF/RR`), which must come from external
+custody rather than the signed-history bundle itself.
+
+The verifier retains every signed observation, epoch, ledger hash,
+entry count, signer fingerprint, signature digest and checkpoint
+digest. A mismatch of ledger hashes **at the same epoch** is preserved
+as `HOLD_SIGNED_EQUIVOCATION`, with all conflicting claims and both
+fingerprints. A two-to-one majority does not erase the contradictory
+third source. It also rejects duplicate signing keys, reordered or
+skipped epochs within a supplied history, replay of an identical
+signed checkpoint, malformed checkpoints and failed signatures.
+
+When all supplied signatures and epochs agree, the result is merely
+`HOLD_LATEST_CUSTODY_UNVERIFIED`: three signing keys do **not** prove
+three independent custodians or that no later epochs have been
+withheld. The code cannot authenticate external storage,
+organizational control, or the globally latest checkpoint. It never
+sets `release_authorized`, `fork_resolved`,
+`independent_witness_ownership_verified` or
+`global_anti_rollback_certified` to true.
+
+GitHub Actions runs ten structural and negative tests before Pages
+deployment. Without real externally retained signed histories, the
+normal workflow archives `HOLD_MISSING_RETAINED_HIGHWATER` as a
+run-scoped evidence artifact. Existing Rust WASM gameplay and the
+Neuroscape 5×2 arena remain unchanged.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-034 neon observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust034-highwater-retention.html) ·
+[RUST-033 session highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust033-session-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
