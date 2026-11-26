@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-036 · Per-Epoch Witness Key Registry</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 49% 3%,#3c2558,#08111e 78%);font:15px system-ui,sans-serif;color:#f5f6ff}
+main{max-width:1080px;margin:0 auto;padding:28px}h1{color:#ffbc83;text-shadow:0 0 21px #f76d30;letter-spacing:.06em;font-size:clamp(24px,4vw,42px)}
+.panel{border:1px solid #a981f9;border-radius:20px;padding:24px;background:#141a30;box-shadow:0 0 36px #9859fa3d}
+.hold{font-size:21px;font-weight:800;color:#ffbf7d}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:22px 0}.cell{border:1px solid #34d1cc;border-radius:12px;padding:18px;min-height:120px;box-shadow:inset 0 0 19px #31cdc922}.cell:nth-child(2){border-color:#ffac66}.cell:nth-child(3){border-color:#b990ff}
+b{display:block;margin-bottom:10px}p,small{line-height:1.5;color:#bbc7d8}a{color:#93ffe9}svg{display:block;width:100%;height:auto;max-height:220px}@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-036 · EPOCH KEY REGISTRY</h1>
+<p>Each epoch has an explicit signing-key fingerprint. Rotation is dual signed; revocation remains visible.</p>
+<div class="panel"><div class="hold">HOLD · External key-registry custody not authenticated</div>
+<svg viewBox="0 0 600 192" role="img" aria-label="Three witness roots and an example dual-signed epoch key rotation">
+<g fill="none" stroke-width="2">
+<path d="M100 62 V120 M300 62 V120 M500 62 V120" stroke="#775b9f"/>
+<path d="M100 95 L145 107 L100 120" stroke="#35cfc7"/>
+<path d="M300 95 L345 107 L300 120" stroke="#ffab67"/>
+<path d="M500 95 L545 107 L500 120" stroke="#bd91fb"/>
+</g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="42" y="13" width="116" height="49" rx="9" fill="#17313c" stroke="#35cfc7"/>
+<text x="100" y="33" fill="#bffff5" font-size="13">FF · KEY A</text><text x="100" y="49" fill="#b7e9e1" font-size="10">EPOCH N</text>
+<rect x="242" y="13" width="116" height="49" rx="9" fill="#382638" stroke="#ffab67"/>
+<text x="300" y="33" fill="#ffe5bc" font-size="13">CF · KEY B</text><text x="300" y="49" fill="#ffd4b0" font-size="10">EPOCH N</text>
+<rect x="442" y="13" width="116" height="49" rx="9" fill="#302741" stroke="#bd91fb"/>
+<text x="500" y="33" fill="#f0dcff" font-size="13">RR · KEY C</text><text x="500" y="49" fill="#e0c7ff" font-size="10">EPOCH N</text>
+<rect x="37" y="120" width="126" height="38" rx="9" fill="#17313c" stroke="#35cfc7"/>
+<text x="100" y="143" fill="#bffff5" font-size="12">NEXT KEY</text>
+<rect x="237" y="120" width="126" height="38" rx="9" fill="#382638" stroke="#ffab67"/>
+<text x="300" y="143" fill="#ffe5bc" font-size="12">NEXT KEY</text>
+<rect x="437" y="120" width="126" height="38" rx="9" fill="#302741" stroke="#bd91fb"/>
+<text x="500" y="143" fill="#f0dcff" font-size="12">NEXT KEY</text>
+<text x="300" y="181" fill="#ffc780" font-size="12">HISTORICAL FINGERPRINTS RETAINED · HOLD</text>
+</g>
+</svg>
+<div class="grid">
+<div class="cell"><b>PAST · PRESERVE</b><small>Keep every epoch checkpoint, signing-key fingerprint, and previous signature</small></div>
+<div class="cell"><b>PRESENT · ROTATE</b><small>Require old and new keys to sign the same transition; record independently signed revocation claims</small></div>
+<div class="cell"><b>FUTURE · RESERVE</b><small>Reject revived old keys, cross-role key reuse, and equivocation; never self-certify custody</small></div>
+</div>
+<p id="detail">Different epoch pins are structurally supported, but a JSON registry is not proof of independent key ownership.</p>
+</div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust035-custodian-continuity.html">Custodian continuity</a> · <a href="rust034-highwater-retention.html">Retained highwater</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Every prior signed observation remains evidence; no key promotion alters the game or authorizes release.</small>
+<script>(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("release manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("invalid source");document.getElementById("detail").textContent="Repository source "+m.source_commit+". Per-epoch externally pinned registry, custody independence, and latest-highwater authority remain unverified.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();</script></main></html>
