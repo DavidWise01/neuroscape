@@ -1362,3 +1362,54 @@ existing five-by-two arena, 256-card catalog or game mechanics.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-043 — Signed challenge highwater and attestor rotation authorization
+
+`rust/tests/attestor_rotation_rust043.py` compares two adjacent
+digest-checked RUST-042 challenge epochs. Every prior entry and prefix
+head must be an exact prefix of the newer epoch. The previous,
+nonempty ledger is committed to a domain-separated
+`SIGNED_CHALLENGE_HIGHWATER` message that includes its epoch, entry
+count, complete ordered history digest, last chain head, and RUST-042
+receipt SHA-256. An Ed25519 witness signature is verified against
+`RUST043_HIGHWATER_WITNESS_SPKI_SHA256`, a separately supplied SPKI
+fingerprint.
+
+The supplied retained floor must match the exact historical prefix
+head and cover the entire prior epoch. Any change in a witness's
+attestor fingerprint or declared source root requires a rotation
+record for that role. The rotation message binds both adjacent
+challenge receipt hashes, both attestor pins and claimed roots, and
+the exact predecessor and successor challenge-entry hashes.
+The old and new attestor keys must sign identical canonical bytes.
+A source-root change with an unchanged signing pin is not accepted as
+a valid rotation.
+
+RUST-043 preserves RUST-042's unresolved substitutions; it does not
+discard them because valid signatures or a new epoch have appeared.
+The inherited RUST-042 source was also repaired so an earlier
+attestor substitution stays marked on later epochs and its JSON
+output newline is serialized correctly.
+
+**Evidence limit:** The source of the retained floor and witness
+SPKI pin is not independently authenticated by this module.
+Correct signatures demonstrate signing-key possession, not
+independent organizational custody, globally latest highwater or
+real-world control. Every outcome remains
+`HOLD_ATTESTOR_ROTATION_IDENTITY_UNVERIFIED` or
+`HOLD_EXTERNAL_HIGHWATER_UNVERIFIED`, with release, gameplay
+authority and fork resolution false. No live attestor rotation is
+asserted.
+
+GitHub Actions includes eleven negative/structural tests before
+Pages publication, then archives the explicit default
+`HOLD_MISSING_SIGNED_CHALLENGE_HIGHWATER` receipt in its run-scoped
+artifact when no external evidence is provided. The Rust WASM combat
+engine, original 5×2 arena, 256 cards and gameplay are unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-043 neon rotation highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust043-attestor-rotation.html) ·
+[RUST-042 challenge ledger](https://davidwise01.github.io/neuroscape/rust/tests/rust042-challenge-ledger.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
