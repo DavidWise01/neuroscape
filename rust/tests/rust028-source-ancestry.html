@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-028 · Source Ancestry & Fork Gate</title>
+<style>
+:root{color-scheme:dark}body{margin:0;background:radial-gradient(ellipse at 50% 5%,#3a254f,#0a101e 76%);font:15px system-ui,sans-serif;color:#f5f7ff}
+main{max-width:1080px;margin:auto;padding:26px}h1{font-size:clamp(25px,4vw,40px);letter-spacing:.07em;color:#ffb375;text-shadow:0 0 22px #ff6f31}
+.panel{border:1px solid #a276fc;border-radius:19px;padding:25px;background:#151a2f;box-shadow:0 0 30px #9056ef40}.status{color:#ffbc77;font-size:21px;font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:23px 0}
+.cell{border:1px solid #3bced2;border-radius:12px;padding:18px;min-height:116px;box-shadow:inset 0 0 20px #22cbd022}
+.cell:nth-child(2){border-color:#ffa55f}.cell:nth-child(3){border-color:#bb8afa}
+b{display:block;margin-bottom:10px}p,small{color:#bbc6d9;line-height:1.5}a{color:#88ffe9}svg{max-width:100%}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-028 · SOURCE ANCESTRY AUDIT</h1>
+<p>Separate signatures do not automatically mean separate origins.</p>
+<div class="panel">
+<div class="status">HOLD · No externally authenticated provenance families</div>
+<svg viewBox="0 0 600 160" aria-label="Three declared witness routes converge on one common source family" role="img">
+<g fill="none" stroke-width="2">
+<path d="M100 57 V92 H300 V112" stroke="#3ed0d0"/>
+<path d="M300 57 V112" stroke="#ff9f5b"/>
+<path d="M500 57 V92 H300 V112" stroke="#bb85ff"/>
+</g>
+<g font-family="system-ui" font-size="13" text-anchor="middle">
+<rect x="48" y="10" width="104" height="47" rx="9" fill="#142b34" stroke="#3ed0d0"/><text x="100" y="39" fill="#c5ffff">FF · SIGNED</text>
+<rect x="248" y="10" width="104" height="47" rx="9" fill="#302436" stroke="#ff9f5b"/><text x="300" y="39" fill="#ffdbbf">CF · SIGNED</text>
+<rect x="448" y="10" width="104" height="47" rx="9" fill="#292039" stroke="#bb85ff"/><text x="500" y="39" fill="#e7d5ff">RR · SIGNED</text>
+<rect x="195" y="112" width="210" height="40" rx="9" fill="#241d37" stroke="#c397ff"/>
+<text x="300" y="137" fill="#f1e7ff">SOURCE ROOT : UNKNOWN</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · ROOTS</b><small>Record the actual source family, capture fingerprint and custodian controller for each observation</small></div>
+<div class="cell"><b>PRESENT · AUDIT</b><small>Detect mirrored repositories, shared acquisition ancestry and repeated captures</small></div>
+<div class="cell"><b>FUTURE · HOLD</b><small>Preserve every contradictory head until external ancestry can be authenticated</small></div>
+</div>
+<p id="detail">No self-declared source family, independently keyed signature, or 2:1 majority can authorize a fork resolution.</p>
+</div>
+<p><a href="../../index.html">Neuroscape Arcade</a> · <a href="rust027-fork-lineage.html">Fork lineage</a> · <a href="rust026-multiwitness.html">Three witnesses</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">Actions evidence</a></p>
+<small>.dlw · Source GitHub and its public Pages mirrors are one ancestry, not two independent origins. Read-only gameplay authority is preserved.</small>
+<script>
+(async()=>{
+try{
+const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+if(!r.ok)throw Error("No public release manifest");
+const m=await r.json();
+if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("Invalid manifest");
+document.getElementById("detail").textContent="Repository-supplied source commit: "+m.source_commit+". This static report has no verified external source-root attestations or independent custody chains. Fork-resolution authority remains HOLD.";
+}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}
+})();
+</script>
+</main></html>
