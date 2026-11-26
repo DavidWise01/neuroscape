@@ -855,3 +855,43 @@ mechanics, the Rust WASM replay engine or the five-by-two arena.
 [Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-031 — Independent retrieval and operator-control challenge
+
+`rust/tests/operator_control_rust031.py` extends the hash-checked
+RUST-030 acquisition record with three retrieval files and three
+operator-control challenge responses. For each FF/CF/RR witness it reads
+the entire retrieved archive, validates its SHA-256 against the
+inherited capture, and binds its digest, size, retrieval session,
+retrieval endpoint, operator account, registry fingerprint and
+custody/acquisition controllers into a canonical message. An Ed25519
+signature is checked against a separately supplied SPKI SHA-256 pin.
+
+The caller must supply externally maintained keys and nonces as
+`RUST031_PIN_FF/CF/RR` and `RUST031_NONCE_FF/CF/RR`. Inputs must not
+be treated as trustworthy merely because the repository, an agent, or
+a signed JSON record declares them independent. Identical retrieval
+sessions, endpoints, operator accounts, archive hashes or controller
+identifiers are retained as pairwise collision evidence.
+
+Byte agreement and signed challenge response establish a narrower
+observation than real-world independence: retrieved files may be
+copied from one common source; operator identifiers may be claimed by
+the signer; the challenge's independent issuance and latest freshness
+have not been authenticated. For this reason every RUST-031 report
+is HOLD; `independent_archive_custody_verified`,
+`nonce_freshness_independently_verified`, `fork_resolved` and
+`release_authorized` remain false.
+
+The workflow runs eight negative/structural regression tests before
+Pages deployment and archives the default
+`HOLD_MISSING_OPERATOR_CONTROL_EVIDENCE` result in its finite-retention
+run artifact. No user-facing gameplay controls, cards, 5×2 arena or
+Rust WASM combat behavior were altered.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[Neon RUST-031 observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust031-operator-control.html) ·
+[Acquisition observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust030-acquisition.html) ·
+[Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
