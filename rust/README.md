@@ -1272,3 +1272,49 @@ gameplay are unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-041 — Custodian challenge and attestor ancestry
+
+`rust/tests/custody_challenge_rust041.py` checks the exact SHA-256
+receipt from RUST-040, then binds three ordered `ff/cf/rr` claimed
+custodian roots to externally supplied challenge nonces, archive
+fingerprints, retrieval-session identifiers, acquisition paths and
+controller/operator-registry fingerprints. The same canonical
+domain-separated challenge is authenticated by the inherited
+custodian signing key **and** a separately pinned Ed25519
+attestor key (`RUST041_ATTESTOR_PIN_FF/CF/RR`).
+Nonce fingerprints are supplied via `RUST041_NONCE_FF/CF/RR`.
+
+The verifier rejects reused attestor keys, custodian self-attestation,
+role swaps, changed ancestral fingerprints, reused nonces within the
+batch, and replay against the **supplied** previous nonce list.
+It compares claimed attestor roots, acquisition paths, source roots,
+controller and operator-registry hashes and retrieval sessions
+pairwise. Shared claims are retained in
+`HOLD_SHARED_ATTESTATION_ANCESTRY`, never majority-voted away.
+Inherited RUST-040 conflicts and proposed replacement lineages remain
+visible. The extended nonce history is represented by an output
+digest; it is not silently stored as an authoritative external ledger.
+
+**Authority limitation:** Two signed responses prove only possession
+of the corresponding private keys. They cannot prove that signers
+have distinct real-world controlling entities, that a challenge nonce
+was freshly issued outside the same operator, or that an external
+archive retrieval is genuine. Even a clean three-key observation
+retains `HOLD_INDEPENDENT_CONTROL_UNVERIFIED`.
+`real_world_operator_control_verified`,
+`independent_source_ancestry_verified`, `fork_resolved` and
+`release_authorized` are always false.
+
+GitHub Actions runs eleven adversarial/structural tests before Pages
+publication and archives
+`HOLD_MISSING_EXTERNAL_CONTROL_CHALLENGES` when trusted external
+inputs are absent. The 5×2 arena, 256-card catalog and Rust WASM
+gameplay have not been modified.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-041 neon challenge observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust041-custody-challenge.html) ·
+[RUST-040 source ancestry](https://davidwise01.github.io/neuroscape/rust/tests/rust040-custodian-ancestry.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
