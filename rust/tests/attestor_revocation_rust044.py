@@ -122,8 +122,8 @@ def audit(ledger, rotation, revocations, authority_pins,
     suspected_replacements = []
     for revoked in appended:
         for entry in entries:
-            if entry["role"] != revoked["role"] or
-                    entry["epoch"] < revoked["effective_epoch"]:
+            if (entry["role"] != revoked["role"] or
+                    entry["epoch"] < revoked["effective_epoch"]):
                 continue
             if entry["attestor_key_spki_sha256"] == revoked["revoked_attestor_spki_sha256"]:
                 violations.append({
