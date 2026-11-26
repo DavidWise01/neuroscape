@@ -8,15 +8,15 @@ PINS=["1"*64,"2"*64,"3"*64]
 ATTESTORS=["4"*64,"5"*64,"6"*64]
 NONCES=["7"*64,"8"*64,"9"*64]
 
-def parent(common=False):
+def h(n):\n    return format(n%16,"x")*64\n\ndef parent(common=False):
     rows=[]
     for i,(role,pin) in enumerate(zip(ROLES,PINS)):
         rows.append({
             "role":role,"key_spki_sha256":pin,
-            "source_root_sha256":("a"*64 if common else str(i+10)*64),
-            "acquisition_path_sha256":str(i+13)*64,
-            "custody_controller_sha256":str(i+16)*64,
-            "operator_registry_sha256":str(i+19)*64,
+            "source_root_sha256":("a"*64 if common else h(i+10)),
+            "acquisition_path_sha256":h(i+13),
+            "custody_controller_sha256":h(i+16),
+            "operator_registry_sha256":h(i+19),
         })
     value={
         "phase":"RUST-040",
@@ -37,9 +37,9 @@ def challenges(source=None):
         "acquisition_path_sha256":row["acquisition_path_sha256"],
         "custody_controller_sha256":row["custody_controller_sha256"],
         "operator_registry_sha256":row["operator_registry_sha256"],
-        "retrieved_archive_sha256":str(i+22)*64,
-        "retrieval_session_sha256":str(i+25)*64,
-        "external_attestor_root_sha256":str(i+28)*64,
+        "retrieved_archive_sha256":h(i+22),
+        "retrieval_session_sha256":h(i+25),
+        "external_attestor_root_sha256":h(i+28),
         "custodian_public_key":role+".pem","custodian_signature":role+".sig",
         "attestor_public_key":role+"-attestor.pem",
         "attestor_signature":role+"-attestor.sig",
