@@ -161,6 +161,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_custody_roots_rust029.py' -v
       - name: RUST-030 challenge archive possession and reject replayed acquisition claims
         run: python3 -m unittest discover -s rust/tests -p 'test_acquisition_rust030.py' -v
+      - name: RUST-031 reject shared retrieval and unverified operator control
+        run: python3 -m unittest discover -s rust/tests -p 'test_operator_control_rust031.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -258,6 +260,11 @@ jobs:
           python3 rust/tests/acquisition_rust030.py \
             --output rust/tests/.rust030-acquisition.json \
             --allow-hold-record
+      - name: RUST-031 archive operator-control custody HOLD
+        run: |
+          python3 rust/tests/operator_control_rust031.py \
+            --output rust/tests/.rust031-operator-control.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -282,6 +289,7 @@ jobs:
             rust/tests/.rust028-source-ancestry.json
             rust/tests/.rust029-custody-roots.json
             rust/tests/.rust030-acquisition.json
+            rust/tests/.rust031-operator-control.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
