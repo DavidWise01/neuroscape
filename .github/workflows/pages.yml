@@ -171,6 +171,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_highwater_retention_rust034.py' -v
       - name: RUST-035 reject forged custodian rotations and cross-epoch equivocation
         run: python3 -m unittest discover -s rust/tests -p 'test_custodian_continuity_rust035.py' -v
+      - name: RUST-036 verify per-epoch witness keys, rotation and revocation tests
+        run: python3 -m unittest discover -s rust/tests -p 'test_epoch_key_registry_rust036.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -293,6 +295,11 @@ jobs:
           python3 rust/tests/custodian_continuity_rust035.py \
             --output rust/tests/.rust035-custodian-continuity.json \
             --allow-hold-record
+      - name: RUST-036 archive missing per-epoch witness registry HOLD
+        run: |
+          python3 rust/tests/epoch_key_registry_rust036.py \
+            --output rust/tests/.rust036-epoch-key-registry.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -322,6 +329,7 @@ jobs:
             rust/tests/.rust033-session-highwater.json
             rust/tests/.rust034-highwater-retention.json
             rust/tests/.rust035-custodian-continuity.json
+            rust/tests/.rust036-epoch-key-registry.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
