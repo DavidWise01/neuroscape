@@ -1756,3 +1756,46 @@ combat core remain unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-051 — Cross-epoch fork continuity and branch witnessing
+
+\`rust/tests/fork_continuity_rust051.py\` reviews a digest-checked
+RUST-050 persistent fork registry against a new RUST-049
+cross-custody highwater comparison. The former must have at least
+one historical observation; repeated incoming source receipts are
+rejected. It validates the entire hash-linked registry before
+classifying any new evidence.
+
+**Every unresolved historical fork receives a separate comparison
+for both original branches against both current branches.**
+Classification uses exact SHA-256 denial-history prefix heads:
+\`EXTENDS\`, \`SAME\`, \`WITHHELD\`, or \`CONTRADICTS\`.
+The per-historical-branch summary records
+\`EXTENDED\`, \`PRESENT_UNEXTENDED\`, \`WITHHELD\`, or
+\`CONTRADICTED\`. The original fork entry digest, source receipt
+and both historical branch fingerprints are preserved, including
+unfavorable outcomes. A purported new matching history cannot
+erase contradictory prior observations.
+
+A separately supplied RUST-051 floor may constrain the exact
+RUST-050 registry prefix and is rejected on changed or withheld
+entries. Comparisons additionally record whether a successor
+shares a claimed signer pin, controlling root, or acquisition
+fingerprint with a historical branch. None of those labels
+independently proves identity or independent custody.
+\`fork_resolved\`, \`release_authorized\`,
+\`independent_branch_witnessing_authenticated\` and
+\`live_gameplay_authority\` remain false.
+
+Fifteen regression cases are committed to the predeployment
+GitHub Actions gate. The workflow archives
+\`HOLD_MISSING_FORK_CONTINUITY\` if the external source
+material is absent. This phase changes no Rust WASM combat,
+5×2 arena, 256-card catalog or gameplay.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-051 neon fork continuity](https://davidwise01.github.io/neuroscape/rust/tests/rust051-fork-continuity.html) ·
+[RUST-050 immutable registry](https://davidwise01.github.io/neuroscape/rust/tests/rust050-fork-registry.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
