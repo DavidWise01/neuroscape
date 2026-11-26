@@ -808,3 +808,50 @@ artifacts. The core Rust WASM parity and original game are untouched.
 [Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-030 — Acquisition challenge and archive-byte possession
+
+`rust/tests/acquisition_rust030.py` extends the RUST-029 custody-root
+ledger with three byte-level archive challenges. The verifier reads the
+complete supplied archive, checks SHA-256 against its inherited original
+capture, derives a deterministic 32-byte window offset from a separately
+supplied challenge nonce and the archive fingerprint, and hashes that
+window. The exact compact challenge payload includes the RUST-029
+receipt fingerprint, role, archive digest/size, offset/window hash,
+source-custody controller, archive operator, acquisition path/controller
+and the nonce. Its Ed25519 signature is verified using an externally
+pinned public-key fingerprint. This is a byte-possession check, not
+independent verification of the archive's operator.
+
+The three pinned keys are provided through
+`RUST030_PIN_FF`, `RUST030_PIN_CF`, `RUST030_PIN_RR`, and the
+three challenge nonces through
+`RUST030_NONCE_FF`, `RUST030_NONCE_CF`, `RUST030_NONCE_RR`.
+The input sample bundle contains ordered `ff/cf/rr` objects with
+`archive_path`, `public_key`, and `signature` fields. Keys and nonces
+must not be generated from the sample bundle itself. Duplicate keys,
+duplicate nonces, original-capture mismatches, altered archive bytes,
+and incorrect role bindings are rejected.
+
+Identical archive digests, custody controllers, archive operators,
+acquisition controllers or acquisition-path fingerprints are retained
+as pairwise collision evidence. An attacker with copies of an archive
+can answer these challenges without controlling its true origin.
+Therefore `operator_control_independently_verified`,
+`nonce_freshness_independently_verified`,
+`independent_source_roots_certified`,
+`fork_resolved` and `release_authorized` remain **false** even after
+successful signatures and byte checks. Verifiable operator-control
+requires trusted out-of-band identity and custody evidence.
+
+The normal GitHub Actions workflow has no external archives or keys.
+It runs negative acquisition tests before Pages deployment and archives
+`HOLD_MISSING_EXTERNAL_ACQUISITION`. No changes are made to card
+mechanics, the Rust WASM replay engine or the five-by-two arena.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-030 neon acquisition lab](https://davidwise01.github.io/neuroscape/rust/tests/rust030-acquisition.html) ·
+[RUST-029 custody roots](https://davidwise01.github.io/neuroscape/rust/tests/rust029-custody-roots.html) ·
+[Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
