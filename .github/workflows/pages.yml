@@ -191,6 +191,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_attestor_revocation_rust044.py' -v
       - name: RUST-045 reject self-issued recovery and revocation resurrection
         run: python3 -m unittest discover -s rust/tests -p 'test_custodian_recovery_rust045.py' -v
+      - name: RUST-046 keep recovery quarantined across later epochs
+        run: python3 -m unittest discover -s rust/tests -p 'test_recovery_quarantine_rust046.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -363,6 +365,11 @@ jobs:
           python3 rust/tests/custodian_recovery_rust045.py \
             --output rust/tests/.rust045-custodian-recovery.json \
             --allow-hold-record
+      - name: RUST-046 archive independent-graduation HOLD
+        run: |
+          python3 rust/tests/recovery_quarantine_rust046.py \
+            --output rust/tests/.rust046-recovery-quarantine.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -402,6 +409,7 @@ jobs:
             rust/tests/.rust043-attestor-rotation.json
             rust/tests/.rust044-attestor-revocation.json
             rust/tests/.rust045-custodian-recovery.json
+            rust/tests/.rust046-recovery-quarantine.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
