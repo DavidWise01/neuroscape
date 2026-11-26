@@ -1608,3 +1608,47 @@ and existing neon gameplay remain unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-048 — Externally witnessed denial highwater and anti-rollback review
+
+\`rust/tests/denial_highwater_rust048.py\` consumes two fully
+verified RUST-047 append-only denial ledgers. It demands that the
+successor history extends the previous history, with identical
+historical entries and identical SHA-256 prefix heads. A prior
+nonempty ledger is bound into a domain-separated
+\`SIGNED_DENIAL_HIGHWATER_V1\` message containing its entry count,
+last head, full ordered denial-history digest, and immutable
+RUST-047 receipt fingerprint. The checkpoint must verify with
+Ed25519 against the separately supplied environment pin
+\`RUST048_DENIAL_HIGHWATER_SPKI_SHA256\`.
+
+An externally *presented* retained floor must carry an explicit
+denial count and exact corresponding history head. The proposed
+current ledger must include that complete prefix. Missing entries,
+older valid snapshots, competing same-count histories, and
+modified past denials fail closed. The signed preceding checkpoint
+and the retained floor may be from different counts; both must be
+compatible with the full successor history.
+
+**Limit:** A valid signature proves a pinned private key signed the
+checkpoint, not that the witness is independent, or that the floor
+was retained outside the repository or is globally latest.
+Therefore \`external_floor_custody_authenticated\`,
+\`globally_latest_denial_highwater_verified\`,
+\`global_anti_rollback_certified\`, \`fork_resolved\`,
+\`release_authorized\`, and \`live_gameplay_authority\` remain false.
+A valid structural audit returns
+\`HOLD_EXTERNAL_DENIAL_HIGHWATER_CUSTODY_UNVERIFIED\`, with source
+ancestry disputes preserved. The default CI artifact records
+\`HOLD_MISSING_SIGNED_DENIAL_HIGHWATER\` without external evidence.
+
+Thirteen adversarial and structural tests are wired before GitHub
+Pages deployment. Existing Rust WASM combat, 5×2 arena, 256 cards,
+neon visual gameplay and prior evidence freezes are unchanged.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-048 neon denial highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust048-denial-highwater.html) ·
+[RUST-047 denial ledger](https://davidwise01.github.io/neuroscape/rust/tests/rust047-graduation-denial.html) ·
+[Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
