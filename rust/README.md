@@ -1413,3 +1413,49 @@ engine, original 5×2 arena, 256 cards and gameplay are unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-044 — Compromised attestor revocation and historical trust fencing
+
+\`rust/tests/attestor_revocation_rust044.py\` builds on intact,
+digest-checked RUST-042 challenge history and an RUST-043 signed
+highwater/attestor transition receipt. A separately supplied
+revocation authority key pin verifies each canonical RUST-044
+revocation payload with Ed25519. The revocation binds a witness role,
+old attestor key SPKI fingerprint, claimed controlling source root,
+effective epoch, and evidence digest.
+
+Every revocation becomes an append-only SHA-256-linked entry with an
+explicit domain-separated genesis. The verifier checks the precise
+historical chain prefix against an optionally supplied retained floor
+and rejects duplicate revocations or attempts to let a compromised
+key self-issue its own revocation.
+
+**Historical fence:** The complete RUST-042 challenge ledger is
+examined, not just the newest epoch. Any challenge signed by a
+revoked attestor key at or after its revocation's effective epoch is
+a hard error. If a distinct successor key at a later epoch claims the
+same controlling attestor root, the observation is preserved under
+\`HOLD_POTENTIAL_COMPROMISED_CONTROL\`. Matching claimed root hashes
+do not independently prove shared organizational control.
+
+**Authority boundary:** A separately supplied revocation key pin
+and retention-floor JSON do not establish the real custodian's
+identity, independent control, or that every real-world revocation
+was made available. A valid signature is necessary cryptographic
+evidence, not clearance for independent custody or release. The
+fields \`independent_revocation_custody_verified\`,
+\`real_world_control_verified\`, \`fork_resolved\` and
+\`release_authorized\` remain false.
+
+GitHub Actions runs twelve adversarial/structural tests before Pages
+publication and archives a default
+\`HOLD_MISSING_ATTESTOR_REVOCATION_CUSTODY\` record when no external
+materials are supplied. The existing Rust WASM combat engine,
+5×2 arena, 256-card catalog and neon gameplay are unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-044 neon attestor revocation](https://davidwise01.github.io/neuroscape/rust/tests/rust044-attestor-revocation.html) ·
+[RUST-043 signed rotation](https://davidwise01.github.io/neuroscape/rust/tests/rust043-attestor-rotation.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
