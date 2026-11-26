@@ -183,6 +183,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_custodian_ancestry_rust040.py' -v
       - name: RUST-041 reject forged custody challenges and shared attestor ancestry
         run: python3 -m unittest discover -s rust/tests -p 'test_custody_challenge_rust041.py' -v
+      - name: RUST-042 reject replayed challenges and stale attestor continuity
+        run: python3 -m unittest discover -s rust/tests -p 'test_challenge_ledger_rust042.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -335,6 +337,11 @@ jobs:
           python3 rust/tests/custody_challenge_rust041.py \
             --output rust/tests/.rust041-custody-challenge.json \
             --allow-hold-record
+      - name: RUST-042 archive retained challenge-ledger custody HOLD
+        run: |
+          python3 rust/tests/challenge_ledger_rust042.py \
+            --output rust/tests/.rust042-challenge-ledger.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -370,6 +377,7 @@ jobs:
             rust/tests/.rust039-revocation-persistence.json
             rust/tests/.rust040-custodian-ancestry.json
             rust/tests/.rust041-custody-challenge.json
+            rust/tests/.rust042-challenge-ledger.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
