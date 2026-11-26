@@ -175,6 +175,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_epoch_key_registry_rust036.py' -v
       - name: RUST-037 reject registry substitution, withheld revocations and rollback
         run: python3 -m unittest discover -s rust/tests -p 'test_registry_highwater_rust037.py' -v
+      - name: RUST-038 reject rewritten revocation prefixes and superseded keys
+        run: python3 -m unittest discover -s rust/tests -p 'test_revocation_ancestry_rust038.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -307,6 +309,11 @@ jobs:
           python3 rust/tests/registry_highwater_rust037.py \
             --output rust/tests/.rust037-registry-highwater.json \
             --allow-hold-record
+      - name: RUST-038 archive missing retained revocation ancestry HOLD
+        run: |
+          python3 rust/tests/revocation_ancestry_rust038.py \
+            --output rust/tests/.rust038-revocation-ancestry.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -338,6 +345,7 @@ jobs:
             rust/tests/.rust035-custodian-continuity.json
             rust/tests/.rust036-epoch-key-registry.json
             rust/tests/.rust037-registry-highwater.json
+            rust/tests/.rust038-revocation-ancestry.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
