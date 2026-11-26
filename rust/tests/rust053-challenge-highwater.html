@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-053 · Signed Challenge Highwater & Session Fence</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0%,#482659,#091320 77%);color:#f6f8ff;font:15px system-ui,sans-serif}main{max-width:1120px;margin:auto;padding:28px}h1{font-size:clamp(25px,4vw,43px);color:#ffc58d;letter-spacing:.06em;text-shadow:0 0 26px #ff783d}.panel{padding:24px;border-radius:20px;background:#141d2f;border:1px solid #b58dff;box-shadow:0 0 38px #9658f64d}.status{color:#ffc582;font-size:21px;font-weight:800}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:24px 0}.cell{padding:18px;border:1px solid #32d3ca;border-radius:12px;min-height:120px;box-shadow:inset 0 0 20px #35d8cb1b}.cell:nth-child(2){border-color:#ffaa65}.cell:nth-child(3){border-color:#b88eff}b{display:block;margin-bottom:9px}p,small{line-height:1.55;color:#bdcddd}a{color:#a2ffef}svg{display:block;width:100%;height:auto;max-height:233px}@media(max-width:680px){.grid{grid-template-columns:1fr}}</style>
+<main><h1>RUST-053 · SIGNED CHALLENGE HIGHWATER</h1><p>Signed previous epoch → exact retained floor → fresh session signatures → custody HOLD.</p>
+<div class="panel"><div class="status">HOLD · Latest external highwater not independently authenticated</div>
+<svg viewBox="0 0 600 205" role="img" aria-label="A signed previous challenge history and retained highwater feed a successor session with nonce replay guards, while custody remains hold">
+<g fill="none" stroke-width="2"><path d="M165 56 H226 M375 56 H437 M300 95 V136" stroke="#bd91ff"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="20" y="12" width="145" height="83" rx="10" stroke="#34d8ce" fill="#15363d"/><text x="93" y="36" fill="#d8fffa" font-size="12">SIGNED PAST</text><text x="93" y="54" fill="#b5f4e8" font-size="10">COUNT + HEAD</text><text x="93" y="70" fill="#b5f4e8" font-size="10">COMPLETE HISTORY</text>
+<rect x="226" y="12" width="149" height="83" rx="10" stroke="#ffac6d" fill="#3b293a"/><text x="300" y="36" fill="#ffe6c9" font-size="12">RETAINED FLOOR</text><text x="300" y="54" fill="#ffdbb8" font-size="10">PREFIX MATCH</text><text x="300" y="70" fill="#ffdbb8" font-size="10">ROLLBACK FENCE</text>
+<rect x="437" y="12" width="143" height="83" rx="10" stroke="#b58dff" fill="#332740"/><text x="508" y="36" fill="#f3e9ff" font-size="12">NEW SESSION</text><text x="508" y="54" fill="#ddc6ff" font-size="10">FRESH NONCE</text><text x="508" y="70" fill="#ddc6ff" font-size="10">SIGNED ORIGIN</text>
+<rect x="146" y="136" width="308" height="45" rx="10" stroke="#ffc48b" fill="#2e233c"/><text x="300" y="154" fill="#ffe5c4" font-size="13">SESSION REPLAY FENCE</text><text x="300" y="172" fill="#ffc388" font-size="11">INDEPENDENT CUSTODY · HOLD</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Retain original RUST-052 witness challenges, previous nonces and hash-chain prefixes without rewriting</small></div>
+<div class="cell"><b>PRESENT · CHECKS</b><small>Verify signed highwater, exact retained floor, fresh session nonce and declared acquisition and operator ancestry</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Reject stale snapshots and repeated sessions; document changed signing-key ancestry but never grant authority</small></div>
+</div><p>This is an illustrative protocol display. No external latest custody or live witness session is established by the diagram.</p></div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust052-fork-challenge-ledger.html">Previous witness ledger</a> · <a href="rust051-fork-continuity.html">Fork continuity</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Signed does not imply independently controlled. Original arena, deck and Rust WASM gameplay protected.</small>
+</main></html>
