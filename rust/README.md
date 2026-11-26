@@ -1318,3 +1318,47 @@ gameplay have not been modified.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-042 — Externally retained challenge ledger and attestor continuity
+
+`rust/tests/challenge_ledger_rust042.py` adds an append-only record of
+RUST-041 dual-signed challenge observations. Each `ff/cf/rr` entry
+binds its epoch, ordinal, preceding event digest, upstream receipt,
+full observation fingerprint, challenge nonce, retrieval session, two
+signature fingerprints, attestor key fingerprint and claimed attestor
+root. A domain-separated genesis head establishes the local initial
+condition. All prior entries and their exact prefix heads are carried
+into the next epoch without rewriting.
+
+A digest-checked previous ledger is validated entry by entry:
+complete three-role epochs, continuous ordinals, matching predecessor
+hashes, exact prefix heads, and unique nonces and retrieval sessions.
+A newly supplied RUST-041 receipt must match its own three ordered
+nonce references; replay of any retained nonce or retrieval session
+is rejected. Changes to a witness's last attestor key or claimed root
+remain visible as `HOLD_ATTESTOR_IDENTITY_SUBSTITUTION` and are
+preserved through later epochs. The optional `--floor` reference
+checks the exact externally declared head at its retained entry
+count, exposing withheld or substituted historical entries relative
+to that reference.
+
+**Authority limit:** Neither the local challenge ledger nor a
+caller-supplied floor proves an external observer retained the
+correct or globally latest history. An unverified attestor key
+rotation is evidence to preserve, not authority to infer
+continuity. No result grants `external_custody_verified`,
+`global_anti_rollback_certified`, `fork_resolved` or
+`release_authorized`.
+
+GitHub Actions runs eleven structural and negative unit tests before
+Pages publication and archives
+`HOLD_MISSING_RETAINED_CHALLENGE_LEDGER` if external evidence
+is absent. This module does not change the Rust WASM engine,
+existing five-by-two arena, 256-card catalog or game mechanics.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-042 neon challenge ledger](https://davidwise01.github.io/neuroscape/rust/tests/rust042-challenge-ledger.html) ·
+[RUST-041 custody challenges](https://davidwise01.github.io/neuroscape/rust/tests/rust041-custody-challenge.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
