@@ -1058,3 +1058,45 @@ absent. The Rust WASM replay engine, 256-card catalog and existing
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-036 — Per-epoch witness key registry, dual-signed rotations, revocation
+
+`rust/tests/epoch_key_registry_rust036.py` introduces an explicit
+per-epoch registry for the three `ff/cf/rr` witness positions instead
+of assuming that one RUST-034 key remains unchanged throughout the
+history. Each historical checkpoint is verified with the SPKI SHA-256
+fingerprint specified for its exact epoch; adjacent epochs must be
+contiguous and an obsolete key cannot reappear after a successor has
+been introduced.
+
+Every key change requires two Ed25519 signatures over the same
+domain-separated canonical transition record, binding role, old/new
+epochs, old/new key pins and both checkpoint fingerprints. Separate
+authority-signed revocations bind an evidence SHA-256, key fingerprint,
+and effective epoch. Any signature from a revoked key at or after its
+effective epoch is rejected. All prior checkpoint signatures, rotation
+signatures and revocation claims are retained as observational evidence.
+Shared signing keys across witness roles and different ledger hashes
+at one epoch are recorded explicitly, not majority-voted away.
+
+**Security boundary:** `registries` is a separately supplied JSON
+input but this module does not authenticate its off-repository custody
+or prove its pins were independently established. The revocation
+authority is also only pinned *by that supplied registry*. Consequently
+`external_key_registry_ancestry_verified`,
+`independent_custodian_control_verified`,
+`external_latest_highwater_verified`, `fork_resolved` and
+`release_authorized` remain **false**, including after every successful
+cryptographic signature check.
+
+GitHub Actions includes eleven structural and adversarial unit tests
+before Pages publication. Without external histories and key registry,
+the workflow archives `HOLD_MISSING_EPOCH_KEY_REGISTRY`. The original
+Rust WASM combat engine, 5×2 arena and 256-card deck are unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-036 neon epoch-key observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust036-epoch-key-registry.html) ·
+[RUST-035 continuity](https://davidwise01.github.io/neuroscape/rust/tests/rust035-custodian-continuity.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
