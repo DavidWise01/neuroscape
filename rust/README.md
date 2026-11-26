@@ -1652,3 +1652,55 @@ neon visual gameplay and prior evidence freezes are unchanged.
 [Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-049 — Independent highwater custody exchange and denial fork detection
+
+\`rust/tests/cross_custody_highwater_rust049.py\` compares two complete
+RUST-047 denial histories and their matching RUST-048 signed-highwater
+checkpoint payloads. The module independently validates each
+ledger's chained entries, terminal head, immutable receipt and
+checkpoint binding, and verifies Ed25519 signatures relative to
+two separately provided SPKI pins.
+
+The branch comparison computes the exact common-prefix length and
+checks the SHA-256 head at the shorter branch's denial count.
+If the head differs at that count, a
+\`HOLD_CONFLICTING_DENIAL_HIGHWATERS\` report preserves **both**
+signed branches and the concrete divergence evidence, with
+\`winner_selected: false\`. A valid longer extension of the
+shorter branch is distinguished from a fork. Shared claimed
+custodian-root or acquisition-path fingerprints are also retained
+and never interpreted as independent operators.
+
+An optional separately presented RUST-049 retained floor carries
+a denial count and SHA-256 history head. Both presented branches
+must include the floor's count. If neither branch agrees with the
+floor at that prefix, the audit fails closed. If only one matches,
+the difference remains explicit in \`floor_match_by_branch\`;
+the verifier does not silently discard the incompatible branch
+or claim the matching branch is authoritative.
+
+**Authority limit:** Different signing-key pins and signatures
+cannot prove that source operators, acquisition chains, or actual
+external custodians are independent. The externally supplied floor
+does not demonstrate that an independent witness retained it or
+that its count is globally latest. Even with matching valid
+highwaters, the status remains
+\`HOLD_EXTERNAL_CUSTODY_UNVERIFIED\`. Fork evidence is kept,
+not adjudicated. All reports retain false
+\`independent_custodian_control_verified\`,
+\`globally_latest_highwater_verified\`, \`fork_resolved\`,
+\`release_authorized\`, and \`live_gameplay_authority\`.
+
+The GitHub Pages workflow adds fourteen structural and adversarial
+tests before deployment and archives the default
+\`HOLD_MISSING_CROSS_CUSTODY_HIGHWATER\` record when no external
+materials exist. Previous phases, Rust WASM gameplay, 5×2 arena,
+256-card catalog and neon UI remain unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-049 neon highwater fork lab](https://davidwise01.github.io/neuroscape/rust/tests/rust049-cross-custody-highwater.html) ·
+[RUST-048 signed denial highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust048-denial-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
