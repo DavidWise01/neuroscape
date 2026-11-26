@@ -934,3 +934,43 @@ the existing arena, 256 cards, or Rust WASM combat behavior.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-033 — Signed session highwater and withheld-history detection
+
+`rust/tests/session_highwater_rust033.py` binds an intact RUST-032
+session ledger to an externally signed **exact checkpoint** containing
+the ledger SHA-256, epoch, entry count, ordered entries SHA-256 and
+last-entry SHA-256. It checks epoch-by-epoch `ff/cf/rr` ordering,
+three entries per completed epoch, and the absence of duplicate nonce
+or session identifiers across the **supplied** history.
+
+The Ed25519 witness public key must match an externally maintained
+DER-SPKI SHA-256 fingerprint supplied through
+`RUST033_HIGHWATER_WITNESS_SPKI_SHA256`. A signed checkpoint that
+commits to all entries detects a truncated or substituted ledger,
+even if an attacker recalculates the shortened ledger's own hash.
+An optional `compare_with_retained_floor` function rejects rollback
+below an externally maintained epoch or a mismatching ledger at the
+same epoch. The caller must authenticate that floor outside this
+repository; this function does not authenticate its custody.
+
+**Important boundary:** A valid signature on a historical checkpoint
+does not prove it is the latest or that a witness operates an
+independent archive. Every resulting observation remains
+`HOLD_LATEST_HIGHWATER_UNCONFIRMED`, with
+`latest_highwater_independently_verified: false`,
+`global_anti_rollback_certified: false` and
+`release_authorized: false`.
+
+The deployment workflow runs ten structural/negative tests before
+Pages publication and archives
+`HOLD_MISSING_SIGNED_SESSION_HIGHWATER` when external witness
+material is absent. Existing gameplay, card catalog, arena and Rust
+WASM replay behavior are unchanged.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-033 Neon Highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust033-session-highwater.html) ·
+[RUST-032 Freshness](https://davidwise01.github.io/neuroscape/rust/tests/rust032-session-freshness.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
