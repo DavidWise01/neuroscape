@@ -215,8 +215,7 @@ def main():
     out.parent.mkdir(parents=True,exist_ok=True)
     with out.open("x",encoding="utf-8") as stream:
         json.dump(result,stream,indent=2,sort_keys=True)
-        stream.write("
-")
+        stream.write("\n")
     print(json.dumps(result,sort_keys=True))
     if not a.allow_hold_record:
         raise SystemExit("RUST-042 HOLD: independent challenge custody not authenticated")
