@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-043 · Attestor Rotation & Signed Challenge Highwater</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;color:#f4f7ff;background:radial-gradient(ellipse at 49% 0%,#402656,#0a1220 77%);font:15px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:27px}h1{color:#ffc38e;text-shadow:0 0 23px #ff783c;letter-spacing:.05em;font-size:clamp(25px,4vw,42px)}.panel{border:1px solid #af83fa;background:#141c2e;border-radius:20px;padding:23px;box-shadow:0 0 36px #9658fa47}.status{font-size:21px;font-weight:800;color:#ffc580}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin:24px 0}.cell{padding:18px;border:1px solid #2cd0ca;border-radius:12px;min-height:124px;box-shadow:inset 0 0 21px #2ccfc921}.cell:nth-child(2){border-color:#ffa45f}.cell:nth-child(3){border-color:#b890fc}b{display:block;margin-bottom:10px}p,small{line-height:1.55;color:#b8cadb}a{color:#97ffec}svg{width:100%;height:auto;max-height:230px}@media(max-width:680px){.grid{grid-template-columns:1fr}}
+</style><main>
+<h1>RUST-043 · ATTESTOR ROTATION</h1><p>Prior challenge epoch → retained highwater → dual-signed key transition → exact successor history.</p>
+<div class="panel"><div class="status">HOLD · Latest external highwater remains unverified</div>
+<svg viewBox="0 0 600 191" role="img" aria-label="Old attestor, dual-signed handoff, new attestor, and externally retained highwater checkpoint">
+<g fill="none" stroke-width="2"><path d="M167 49 H223 M378 49 H431" stroke="#d2acff"/><path d="M300 84 V113" stroke="#ffc17e"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="25" y="11" width="142" height="73" rx="10" stroke="#2ed2cb" fill="#14323b"/><text x="96" y="33" font-size="13" fill="#c7ffff">OLD ATTESTOR</text><text x="96" y="50" font-size="10" fill="#adeae6">EPOCH N · KEY A</text><text x="96" y="65" font-size="10" fill="#adeae6">SIGNED HISTORY</text>
+<rect x="223" y="11" width="155" height="73" rx="10" stroke="#ffa760" fill="#3b273c"/><text x="300" y="33" font-size="13" fill="#ffe5c6">DUAL SIGNATURE</text><text x="300" y="50" font-size="10" fill="#ffd2b4">OLD KEY + NEW KEY</text><text x="300" y="65" font-size="10" fill="#ffd2b4">EXACT TRANSITION</text>
+<rect x="431" y="11" width="144" height="73" rx="10" stroke="#b38cff" fill="#2c2741"/><text x="503" y="33" font-size="13" fill="#e9deff">NEW ATTESTOR</text><text x="503" y="50" font-size="10" fill="#d4c2ff">EPOCH N+1 · KEY B</text><text x="503" y="65" font-size="10" fill="#d4c2ff">PRESERVE PRIOR</text>
+<rect x="141" y="113" width="318" height="54" rx="10" stroke="#ffbd85" fill="#29213a"/><text x="300" y="134" font-size="13" fill="#ffe4bd">SIGNED PRIOR HIGHWATER</text><text x="300" y="151" font-size="11" fill="#ffc692">RETENTION + CONTROL UNVERIFIED · HOLD</text></g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Bind the full prior challenge ledger to a signed epoch checkpoint and exact retained head</small></div>
+<div class="cell"><b>PRESENT · AUTHENTICATES</b><small>Old and new attestor keys sign identical canonical transition bytes across adjacent epochs</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Preserve all historical substitutions, reject rewritten prefixes and never infer independent source control</small></div>
+</div><p id="detail">A signed historical highwater may be genuine yet stale. This illustration is not a claim of independent external custody.</p></div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust042-challenge-ledger.html">Challenge ledger</a> · <a href="rust041-custody-challenge.html">Custodian challenges</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · One highwater signature and two rotation signatures do not establish distinct real-world operators. Original arena unchanged.</small>
+<script>(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("release manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("invalid source");document.getElementById("detail").textContent="Repository source "+m.source_commit+". External retained highwater and real-world attestor control have not been independently authenticated. Release HOLD.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();</script>
+</main></html>
