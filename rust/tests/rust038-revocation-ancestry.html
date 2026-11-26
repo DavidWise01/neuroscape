@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-038 · Immutable Revocation Ancestry</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 49% 3%,#3a2153,#0a111f 78%);font:15px system-ui,sans-serif;color:#f5f7ff}
+main{max-width:1100px;margin:auto;padding:26px}h1{font-size:clamp(24px,4vw,42px);color:#ffc08b;letter-spacing:.055em;text-shadow:0 0 22px #f77734}
+.panel{border:1px solid #a782f9;background:#151b30;border-radius:19px;padding:24px;box-shadow:0 0 34px #965af63d}
+.status{font-size:21px;font-weight:800;color:#ffc282}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:22px 0}
+.cell{border:1px solid #35cfc9;border-radius:12px;padding:18px;min-height:115px;box-shadow:inset 0 0 17px #35cfc922}.cell:nth-child(2){border-color:#ffaa64}.cell:nth-child(3){border-color:#ba91fd}
+b{display:block;margin-bottom:10px}p,small{line-height:1.5;color:#b9c8d8}a{color:#92ffea}svg{width:100%;height:auto;max-height:224px}@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-038 · REVOCATION ANCESTRY</h1>
+<p>Exact previous-event hash · retained prefix · signed registry highwater · no resurrected keys.</p>
+<div class="panel">
+<div class="status">HOLD · Independent revocation custody not authenticated</div>
+<svg viewBox="0 0 600 187" role="img" aria-label="Three chained revocation events committed to an externally supplied prefix highwater">
+<g fill="none" stroke-width="2"><path d="M172 56 H231 M367 56 H426" stroke="#c3a4ff"/><path d="M300 90 V123" stroke="#ffae6b"/></g>
+<g text-anchor="middle" font-family="system-ui">
+<rect x="30" y="15" width="142" height="76" rx="10" stroke="#35cfc9" fill="#172d38"/><text x="101" y="39" font-size="13" fill="#cafffb">REVOCATION 1</text><text x="101" y="56" font-size="10" fill="#acf0e9">PREDECESSOR HASH</text><text x="101" y="71" font-size="10" fill="#acf0e9">PRESERVED</text>
+<rect x="229" y="15" width="142" height="76" rx="10" stroke="#ffad67" fill="#37273b"/><text x="300" y="39" font-size="13" fill="#ffe1c2">REVOCATION 2</text><text x="300" y="56" font-size="10" fill="#ffd0b3">SIGNED RECORD</text><text x="300" y="71" font-size="10" fill="#ffd0b3">APPEND ONLY</text>
+<rect x="428" y="15" width="142" height="76" rx="10" stroke="#b992ff" fill="#302640"/><text x="499" y="39" font-size="13" fill="#f0e0ff">REVOCATION N</text><text x="499" y="56" font-size="10" fill="#d9c5fe">EXACT PREFIX</text><text x="499" y="71" font-size="10" fill="#d9c5fe">NO REWRITE</text>
+<rect x="157" y="123" width="286" height="44" rx="9" stroke="#ffbd79" fill="#29213b"/>
+<text x="300" y="141" font-size="13" fill="#ffe4bc">RETAINED HIGHWATER</text><text x="300" y="156" font-size="10" fill="#ffc48c">INDEPENDENT CUSTODY · HOLD</text>
+</g>
+</svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Each witnessed revocation retains its full content hash, ordinal and predecessor link</small></div>
+<div class="cell"><b>PRESENT · DESERVES</b><small>Match the whole signed registry and reverify its anchor before comparing historical prefixes</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Append new revocations without rewriting any prior key suspension or lifting HOLD</small></div>
+</div>
+<p id="detail">An internally consistent hash chain does not prove the floor was independently retained, nor that all real-world revocations were supplied.</p>
+</div>
+<p><a href="../../index.html">Neuroscape Arcade</a> · <a href="rust037-registry-highwater.html">Registry highwater</a> · <a href="rust036-epoch-key-registry.html">Epoch-key registry</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Source ancestry is preserved. GitHub and its Pages mirror remain a single origin.</small>
+<script>(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("invalid manifest");document.getElementById("detail").textContent="Repository source "+m.source_commit+". Off-repository retained revocation history, independent custody and external latest highwater remain unverified. HOLD.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();</script></main></html>
