@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-041 · Custody Challenge Authentication</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;color:#f7f7ff;background:radial-gradient(ellipse at 50% 2%,#382450,#09111f 76%);font:15px system-ui,sans-serif}main{max-width:1100px;margin:auto;padding:28px}h1{font-size:clamp(25px,4vw,43px);color:#ffc188;text-shadow:0 0 24px #ff7637;letter-spacing:.05em}.panel{background:#151c30;border:1px solid #b28bfa;border-radius:20px;padding:24px;box-shadow:0 0 36px #9a65ee42}.status{font-size:21px;color:#ffc787;font-weight:800}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin:24px 0}.cell{border:1px solid #35d3ce;border-radius:12px;min-height:125px;padding:19px;box-shadow:inset 0 0 16px #28d3c821}.cell:nth-child(2){border-color:#ffa967}.cell:nth-child(3){border-color:#ba91fc}b{display:block;margin-bottom:10px}p,small{color:#bbc9d9;line-height:1.5}a{color:#97ffec}svg{width:100%;height:auto;max-height:220px}@media(max-width:680px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-041 · CUSTODY CHALLENGE</h1><p>Root fingerprint → externally issued nonce → custodian signature → attestor signature → ancestry review.</p>
+<div class="panel"><div class="status">HOLD · Independent custodian ownership unverified</div>
+<svg viewBox="0 0 600 184" role="img" aria-label="Three witness branches, each with a custodian signature and attestor signature, arriving at a HOLD ancestry gate">
+<g fill="none" stroke-width="2"><path d="M101 60 V92 L300 129" stroke="#35d5ce"/><path d="M300 60 V129" stroke="#ffa76b"/><path d="M499 60 V92 L300 129" stroke="#bd94fa"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="31" y="12" width="140" height="48" rx="9" fill="#152e39" stroke="#35d5ce"/><text x="101" y="33" fill="#c8fffc" font-size="13">FF · CHALLENGE</text><text x="101" y="49" fill="#b1efed" font-size="10">CUSTODIAN + ATTESTOR</text>
+<rect x="230" y="12" width="140" height="48" rx="9" fill="#39283b" stroke="#ffa76b"/><text x="300" y="33" fill="#ffe6cd" font-size="13">CF · CHALLENGE</text><text x="300" y="49" fill="#ffd2b4" font-size="10">CUSTODIAN + ATTESTOR</text>
+<rect x="429" y="12" width="140" height="48" rx="9" fill="#302742" stroke="#bd94fa"/><text x="499" y="33" fill="#f1dfff" font-size="13">RR · CHALLENGE</text><text x="499" y="49" fill="#d5c3fd" font-size="10">CUSTODIAN + ATTESTOR</text>
+<rect x="146" y="129" width="308" height="43" rx="9" fill="#2a223b" stroke="#ffbe80"/><text x="300" y="147" font-size="13" fill="#ffe6c2">INDEPENDENT SOURCE ANCESTRY</text><text x="300" y="163" font-size="11" fill="#ffc68c">EXTERNAL CONTROL · HOLD</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · SOURCE</b><small>Preserve RUST-040 custodian roots, acquisition paths, controller fingerprints and unresolved collisions</small></div>
+<div class="cell"><b>PRESENT · CHALLENGE</b><small>Verify the same nonce-bound canonical assertion with custodian and separately pinned attestor keys</small></div>
+<div class="cell"><b>FUTURE · RESERVE</b><small>Detect replay and shared attestor ancestry, but never infer independent ownership from two valid signatures</small></div>
+</div><p id="detail">A valid signature confirms use of a private key, not which organization controlled the signer or whether the nonce was issued independently.</p></div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust040-custodian-ancestry.html">Custodian ancestry</a> · <a href="rust039-revocation-persistence.html">Revocation persistence</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Three witness roles are not three authenticated custody roots. Repository and Pages share one ancestry.</small>
+<script>(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("invalid source report");document.getElementById("detail").textContent="Repository source "+m.source_commit+". No independently authenticated issuer custody, latest nonce history, or real-world control is demonstrated; release stays HOLD.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();</script>
+</main></html>
