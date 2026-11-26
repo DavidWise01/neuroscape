@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-048 · Signed Denial Highwater</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0%,#412856,#091320 77%);color:#f6f7ff;font:15px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:28px}h1{font-size:clamp(25px,4vw,43px);letter-spacing:.055em;color:#ffc389;text-shadow:0 0 23px #ff7840}
+.panel{padding:24px;border:1px solid #af86fa;background:#141c2e;border-radius:19px;box-shadow:0 0 36px #9c5ff94a}.status{color:#ffc487;font-size:21px;font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:23px 0}
+.cell{border:1px solid #31d1c8;border-radius:12px;padding:18px;min-height:120px;box-shadow:inset 0 0 19px #31d1c823}
+.cell:nth-child(2){border-color:#ffae6e}.cell:nth-child(3){border-color:#b992ff}
+b{display:block;margin-bottom:10px}p,small{color:#b8cbdc;line-height:1.55}a{color:#9fffee}svg{display:block;width:100%;height:auto;max-height:230px}
+@media(max-width:690px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-048 · SIGNED DENIAL HIGHWATER</h1>
+<p>Signed prior checkpoint → retained exact-prefix floor → monotone successor denial count → HOLD.</p>
+<div class="panel"><div class="status">HOLD · External latest custody not established</div>
+<svg viewBox="0 0 600 182" role="img" aria-label="Prior signed denial checkpoint, exact retained prefix, and current ledger head bound together under hold">
+<g fill="none" stroke-width="2"><path d="M163 51 H226 M375 51 H438" stroke="#be9ef3"/><path d="M300 89 V120" stroke="#ffba7e"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="21" y="12" width="142" height="77" rx="10" stroke="#34d5ce" fill="#163239"/><text x="92" y="35" font-size="12" fill="#d1fffb">DENIAL HIGHWATER</text><text x="92" y="53" font-size="11" fill="#b4f1e8">PRIOR COUNT + HASH</text><text x="92" y="69" font-size="10" fill="#b4f1e8">ED25519 SIGNED</text>
+<rect x="226" y="12" width="149" height="77" rx="10" stroke="#ffab70" fill="#38293b"/><text x="300" y="35" font-size="12" fill="#ffe5cf">RETAINED FLOOR</text><text x="300" y="53" font-size="11" fill="#ffd6b5">EXACT PREFIX</text><text x="300" y="69" font-size="10" fill="#ffd6b5">NO HISTORY RESET</text>
+<rect x="438" y="12" width="142" height="77" rx="10" stroke="#b58fff" fill="#322840"/><text x="509" y="35" font-size="12" fill="#f1e3ff">NEW DENIAL HEAD</text><text x="509" y="53" font-size="11" fill="#ddc8ff">MONOTONIC COUNT</text><text x="509" y="69" font-size="10" fill="#ddc8ff">ALL DENIALS KEPT</text>
+<rect x="144" y="120" width="312" height="49" rx="10" stroke="#ffbe82" fill="#2a233c"/><text x="300" y="141" fill="#ffe6c5" font-size="13">ANTI-ROLLBACK REVIEW</text><text x="300" y="156" fill="#ffc88f" font-size="11">INDEPENDENT CUSTODY · HOLD</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Bind prior ledger receipt, entry count, full denial history and exact chain head to a signed checkpoint</small></div>
+<div class="cell"><b>PRESENT · COMPARES</b><small>Reject older snapshots, missing denials, substituted heads and competing histories at the same count</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>New denials extend the prefix but cannot erase quarantine or authenticate real-world external custody</small></div>
+</div>
+<p id="detail">This visualization shows the signed-prefix verification method, not evidence that a third party retained the latest history.</p>
+</div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust047-graduation-denial.html">Graduation denial ledger</a> · <a href="rust046-recovery-quarantine.html">Recovery quarantine</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Repository and Pages remain one ancestry; a signed floor may still be stale or self-issued.</small>
+<script>(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("manifest invalid");document.getElementById("detail").textContent="Repository source "+m.source_commit+". External independent retention, latest denial highwater and graduation authority remain unverified. HOLD.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();</script>
+</main></html>
