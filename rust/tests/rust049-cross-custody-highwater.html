@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-049 · Independent Highwater Custody & Fork Evidence</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0%,#412653,#091221 77%);color:#f7f8ff;font:15px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:27px}h1{font-size:clamp(25px,4vw,43px);color:#ffc38e;letter-spacing:.06em;text-shadow:0 0 25px #ff7937}
+.panel{border:1px solid #ad85fa;background:#151d30;border-radius:20px;padding:24px;box-shadow:0 0 37px #9a63f54a}
+.status{color:#ffc88b;font-weight:800;font-size:21px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:23px 0}
+.cell{padding:19px;border:1px solid #31d2c9;min-height:120px;border-radius:12px;box-shadow:inset 0 0 19px #31d2c81d}
+.cell:nth-child(2){border-color:#ffa96d}.cell:nth-child(3){border-color:#be94ff}
+b{display:block;margin-bottom:9px}p,small{color:#bdd0df;line-height:1.55}a{color:#a1ffeb}svg{display:block;width:100%;height:auto;max-height:240px}@media(max-width:680px){.grid{grid-template-columns:1fr}}
+</style>
+<main>
+<h1>RUST-049 · DENIAL HIGHWATER FORK LAB</h1>
+<p>Two claimed external custodians · dual signed checkpoint verification · incompatible branch preservation.</p>
+<div class="panel"><div class="status">HOLD · Neither branch is independently authorized</div>
+<svg viewBox="0 0 600 208" role="img" aria-label="A prior common denial history splits into two divergent signed highwater branches, neither chosen as winner">
+<g stroke-width="2.5" fill="none"><path d="M300 190 V117" stroke="#ffbd82"/><path d="M300 117 L130 75" stroke="#36d8d0"/><path d="M300 117 L470 75" stroke="#bb92fc"/><path d="M170 40 H430" stroke="#f0ad73" stroke-dasharray="6 8" opacity=".7"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="37" y="12" width="186" height="65" rx="11" fill="#14343e" stroke="#32d6ce"/><text x="130" y="34" font-size="13" fill="#d7fffc">CUSTODIAN A</text><text x="130" y="51" font-size="11" fill="#b2f7ec">SIGNED HIGHWATER A</text><text x="130" y="65" font-size="10" fill="#b2f7ec">BRANCH RETAINED</text>
+<rect x="377" y="12" width="186" height="65" rx="11" fill="#332743" stroke="#be94ff"/><text x="470" y="34" font-size="13" fill="#f1e3ff">CUSTODIAN B</text><text x="470" y="51" font-size="11" fill="#e2ceff">SIGNED HIGHWATER B</text><text x="470" y="65" font-size="10" fill="#e2ceff">BRANCH RETAINED</text>
+<rect x="194" y="111" width="212" height="35" rx="8" fill="#392938" stroke="#ffae71"/><text x="300" y="133" fill="#ffe6c8" font-size="12">COMMON PREFIX?</text>
+<rect x="177" y="163" width="246" height="36" rx="9" fill="#2d233b" stroke="#ffc186"/><text x="300" y="186" fill="#ffe9c3" font-size="12">FORK EVIDENCE → HOLD</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Verify all denial entries, checkpoint signatures, and common SHA-256 prefixes for both branches</small></div>
+<div class="cell"><b>PRESENT · COMPARES</b><small>Record divergent same-count histories, shared roots, and acquisition paths without choosing a winner</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Check independently presented retained floors and preserve each incompatible ancestry for later adjudication</small></div>
+</div>
+<p id="detail">This is a static conceptual fork visualization. No real custodian independence or external retention has been authenticated.</p>
+</div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust048-denial-highwater.html">Signed denial highwater</a> · <a href="rust047-graduation-denial.html">Denial ancestry ledger</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Two signatures, two repos or two URLs may still share one custodial origin. Arena and gameplay remain unchanged.</small>
+<script>(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("source manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("source report invalid");document.getElementById("detail").textContent="Repository source "+m.source_commit+". Independent control and globally latest external highwater are not proven. Both branches remain HOLD.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();</script>
+</main></html>
