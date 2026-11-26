@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-033 · External Session Highwater</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;color:#f5f7ff;background:radial-gradient(ellipse at 48% 6%,#3b2555,#09111f 76%);font:15px system-ui,sans-serif}
+main{max-width:1100px;margin:auto;padding:27px}h1{font-size:clamp(25px,4vw,42px);color:#ffba84;text-shadow:0 0 21px #ff7330;letter-spacing:.07em}
+.panel{padding:25px;background:#141b2e;border:1px solid #a77af9;border-radius:19px;box-shadow:0 0 33px #935bf43c}.status{color:#ffbd79;font-size:22px;font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:22px 0}
+.cell{padding:18px;min-height:123px;border:1px solid #32cec9;border-radius:12px;box-shadow:inset 0 0 17px #2cd4d122}
+.cell:nth-child(2){border-color:#ffa35e}.cell:nth-child(3){border-color:#b58dfb}
+strong{display:block;margin-bottom:9px}p,small{color:#b9c8d9;line-height:1.5}a{color:#91ffe9}
+svg{width:100%;height:auto;max-height:225px}@media(max-width:680px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-033 · SESSION HIGHWATER</h1>
+<p>Exact history · signed epoch · entry count · external retention · no false freshness.</p>
+<div class="panel">
+<div class="status">HOLD · Latest externally retained session checkpoint unavailable</div>
+<svg viewBox="0 0 600 176" role="img" aria-label="History entries, complete ledger fingerprint, and signed highwater witness">
+<g fill="none" stroke-width="2">
+<path d="M100 54 V94 H300 V113" stroke="#2fd2c7"/><path d="M300 54 V113" stroke="#ffa362"/><path d="M500 54 V94 H300 V113" stroke="#b993ff"/>
+</g>
+<g text-anchor="middle" font-family="system-ui">
+<rect x="42" y="11" width="116" height="43" rx="9" fill="#172d34" stroke="#2fd2c7"/><text x="100" y="30" fill="#e0ffff" font-size="12">EPOCH</text><text x="100" y="44" fill="#afeeee" font-size="10">NONCE HISTORY</text>
+<rect x="240" y="11" width="120" height="43" rx="9" fill="#322737" stroke="#ffa362"/><text x="300" y="30" fill="#ffe7c7" font-size="12">LEDGER SHA</text><text x="300" y="44" fill="#f9cda3" font-size="10">ENTRY COUNT</text>
+<rect x="442" y="11" width="116" height="43" rx="9" fill="#2b2740" stroke="#b993ff"/><text x="500" y="30" fill="#eddcff" font-size="12">SIGNATURE</text><text x="500" y="44" fill="#d6c5fc" font-size="10">PINNED WITNESS</text>
+<rect x="161" y="113" width="278" height="43" rx="9" fill="#252138" stroke="#b993ff"/>
+<text x="300" y="131" fill="#f0e7ff" font-size="13">LATEST EXTERNAL HIGHWATER</text>
+<text x="300" y="146" fill="#ffc587" font-size="11">HOLD · NOT AUTHENTICATED</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><strong>PAST · OBSERVE</strong><small>Retain all prior nonce signatures, session IDs, ordered epochs and exact entry digests</small></div>
+<div class="cell"><strong>PRESENT · COMPARE</strong><small>Reject an altered or shortened ledger even when its replacement hash is self-consistent</small></div>
+<div class="cell"><strong>FUTURE · RESERVE</strong><small>A historical signed checkpoint is not proof of the latest externally retained state</small></div>
+</div>
+<p id="evidence">This static page does not possess an independent witness key or a trusted latest-session ledger. No release authorization is inferred.</p>
+</div>
+<p><a href="../../index.html">Neuroscape Arcade</a> · <a href="rust032-session-freshness.html">Session freshness</a> · <a href="rust031-operator-control.html">Operator custody</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">Actions Gate</a></p>
+<small>.dlw · A signed old checkpoint can be authentic and stale. Repository and Pages are one source ancestry.</small>
+<script>
+(async()=>{try{
+const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+if(!r.ok)throw Error("Release manifest not present");
+const m=await r.json();
+if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("Invalid source report");
+document.getElementById("evidence").textContent="Repository source "+m.source_commit+". Latest-session highwater remains unverified by any independent external witness. Release authorization remains HOLD.";
+}catch(e){document.getElementById("evidence").textContent="HOLD · "+String(e.message||e);}
+})();
+</script>
+</main></html>
