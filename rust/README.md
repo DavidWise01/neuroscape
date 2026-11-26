@@ -1231,3 +1231,44 @@ even after complete prefix agreement.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-040 — Custodian identity ancestry and replacement-key substitution
+
+`rust/tests/custodian_ancestry_rust040.py` consumes a complete
+digest-checked RUST-039 receipt and source-root declarations for
+every claimed signing-key lineage in that receipt. Every claim
+binds its `ff/cf/rr` role, signing-key SPKI fingerprint, source-root
+SHA-256, acquisition-path SHA-256, custody-controller SHA-256,
+operator-registry SHA-256 and one or more explicitly retained aliases.
+A role/key with a missing ancestry claim causes a hard failure.
+
+Pairwise graph comparisons retain shared source roots, acquisition
+paths, controller fingerprints, registry fingerprints and overlapping
+aliases, including aliases that connect two supposedly separate
+source roots. Revoked-key descendants are flagged when a new key
+has matching controller ancestry, path, source root or alias. Existing
+RUST-039 custody suspicions and upstream equivocation are preserved
+without treating a majority of witness labels as proof of independence.
+
+**Critical boundary:** This is a comparison of *declared* identity and
+custody fingerprints, not independently authenticated operator
+ownership or direct acquisition evidence. A provider can forge
+different identifiers for one controlled origin; a clean comparison
+cannot establish independence. Consequently the observation always
+remains `HOLD_POTENTIAL_COMMON_CONTROL` or
+`HOLD_IDENTITY_ANCESTRY_UNPROVEN`, with
+`independent_custodian_roots_verified`, `fork_resolved` and
+`release_authorized` all false.
+
+The Actions workflow runs eleven structural/adversarial regression
+tests before the Pages deployment step and archives the no-external-
+material report `HOLD_MISSING_CUSTODIAN_ANCESTRY` in its run artifact.
+The Rust WASM engine, 256-card catalog, five-by-two arena and neon
+gameplay are unchanged.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-040 neon custodian ancestry](https://davidwise01.github.io/neuroscape/rust/tests/rust040-custodian-ancestry.html) ·
+[RUST-039 revoked-key persistence](https://davidwise01.github.io/neuroscape/rust/tests/rust039-revocation-persistence.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
