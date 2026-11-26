@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RUST-032 — Session Freshness Observatory</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 49% 7%,#3b2253,#08101d 75%);font:15px system-ui,sans-serif;color:#f6f6ff}
+main{max-width:1060px;margin:0 auto;padding:28px}h1{font-size:clamp(25px,4vw,42px);color:#ffc08c;text-shadow:0 0 24px #fd7031;letter-spacing:.07em}
+.panel{border:1px solid #ac7ff8;background:#151a2f;border-radius:20px;padding:24px;box-shadow:0 0 34px #9b5ef444}.status{font-size:21px;font-weight:800;color:#ffc380}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:24px 0}
+.card{border:1px solid #2bcbd1;box-shadow:inset 0 0 18px #2bcbd122;border-radius:12px;padding:19px;min-height:121px}
+.card:nth-child(2){border-color:#ffa05c}.card:nth-child(3){border-color:#bd8fff}
+b{display:block;margin-bottom:9px}p,small{color:#bbc9d9;line-height:1.55}a{color:#94ffec}
+svg{width:100%;height:auto;max-height:220px}@media(max-width:650px){.cards{grid-template-columns:1fr}}
+</style>
+<main>
+<h1>RUST-032 · SESSION FRESHNESS</h1>
+<p>Independent challenge claims · replay-fenced session IDs · append-only observed history.</p>
+<section class="panel">
+<div class="status">HOLD · External latest session ledger not authenticated</div>
+<svg viewBox="0 0 600 176" role="img" aria-label="Three independently keyed session claims linked to a common hold ledger">
+<g stroke-width="2" fill="none"><path d="M100 60 V91 L300 126" stroke="#2bd2cf"/><path d="M300 60 V126" stroke="#ffa45f"/><path d="M500 60 V91 L300 126" stroke="#bd8afb"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="43" y="11" width="114" height="49" rx="10" fill="#172d38" stroke="#2bd2cf"/>
+<text x="100" y="31" fill="#c9ffff" font-size="13">FF · SESSION</text><text x="100" y="48" fill="#b5edee" font-size="10">NONCE / SIGNATURE</text>
+<rect x="243" y="11" width="114" height="49" rx="10" fill="#342739" stroke="#ffa45f"/>
+<text x="300" y="31" fill="#ffe0c3" font-size="13">CF · SESSION</text><text x="300" y="48" fill="#ffe0c3" font-size="10">NONCE / SIGNATURE</text>
+<rect x="443" y="11" width="114" height="49" rx="10" fill="#2d2640" stroke="#bd8afb"/>
+<text x="500" y="31" fill="#edddff" font-size="13">RR · SESSION</text><text x="500" y="48" fill="#edddff" font-size="10">NONCE / SIGNATURE</text>
+<rect x="157" y="126" width="286" height="41" rx="9" fill="#242039" stroke="#b68cff"/>
+<text x="300" y="150" fill="#f4e6ff" font-size="13">HISTORY / HIGHWATER : HOLD</text>
+</g>
+</svg>
+<div class="cards">
+<div class="card"><b>PAST · RETAIN</b><small>Every previously observed nonce, retrieval session, and signed challenge stays in the record</small></div>
+<div class="card"><b>PRESENT · COMPARE</b><small>Reject duplicate nonces, repeated sessions, altered endpoints, and reused issuer keys</small></div>
+<div class="card"><b>FUTURE · RESERVE</b><small>Advance only from an independently authenticated latest ledger; never infer one locally</small></div>
+</div>
+<p id="detail">A locally hash-linked session ledger can reject recorded replays, not replays from history withheld from the verifier.</p>
+</section>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust031-operator-control.html">Operator control</a> · <a href="rust030-acquisition.html">Archive acquisition</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · The repository and its public Pages are one shared source ancestry. Observation does not authorize gameplay.</small>
+<script>
+(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("Release manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("Invalid manifest");document.getElementById("detail").textContent="Observed repository source "+m.source_commit+". Off-repository challenge freshness and latest session history remain unverified, so RUST-032 remains HOLD.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();
+</script>
+</main></html>
