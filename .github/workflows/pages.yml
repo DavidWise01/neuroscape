@@ -187,6 +187,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_challenge_ledger_rust042.py' -v
       - name: RUST-043 reject unanchored attestor rotations and challenge highwater forks
         run: python3 -m unittest discover -s rust/tests -p 'test_attestor_rotation_rust043.py' -v
+      - name: RUST-044 reject compromised attestor keys and rewritten revocation ancestry
+        run: python3 -m unittest discover -s rust/tests -p 'test_attestor_revocation_rust044.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -349,6 +351,11 @@ jobs:
           python3 rust/tests/attestor_rotation_rust043.py \
             --output rust/tests/.rust043-attestor-rotation.json \
             --allow-hold-record
+      - name: RUST-044 archive attestor revocation custody HOLD
+        run: |
+          python3 rust/tests/attestor_revocation_rust044.py \
+            --output rust/tests/.rust044-attestor-revocation.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -386,6 +393,7 @@ jobs:
             rust/tests/.rust041-custody-challenge.json
             rust/tests/.rust042-challenge-ledger.json
             rust/tests/.rust043-attestor-rotation.json
+            rust/tests/.rust044-attestor-revocation.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
