@@ -727,3 +727,43 @@ available in the normal workflow, it archives an append-only
 [Pages Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-028 — Source-ancestry classification and fork resolution HOLD
+
+`rust/tests/source_ancestry_rust028.py` analyzes the preserved
+RUST-027 fork ledger using **three separately signed provenance
+assertions**. Each declaration binds one witness role and observed head
+fingerprint to its source root, source family, custody-controller
+declaration and original capture SHA-256. Signatures require individually
+pinned Ed25519 public-key SPKI hashes supplied **outside** the bundle
+through `RUST028_PIN_FF`, `RUST028_PIN_CF`, `RUST028_PIN_RR`.
+
+Shared roots, families, controllers or capture hashes are recorded as
+explicit ancestry collisions. A mirror of one GitHub repository (including
+its public Pages view) is a single source family, not an independent origin.
+Even three nonmatching signed declarations cannot prove organizational
+or data-acquisition independence: distinct keys may be under common
+custody. Reports therefore retain
+`independent_source_roots_certified: false`,
+`independent_custody_ancestries_verified: false`,
+`fork_resolved: false`, and `release_authorized: false`.
+No 2:1 fork can be selected by quorum.
+
+The source-verifier checks prior RUST-027 record integrity and role
+alignment, preserves its full fork-head set and observed common ancestor,
+then appends provenance assertions and collision findings without
+altering the earlier ledger. GitHub Actions runs the negative regression
+tests before publication. Because no genuinely external provenance
+records are provided, the default workflow archives
+`HOLD_NO_EXTERNAL_PROVENANCE` only.
+
+This stage audits *assertions* about source ancestry; it does not
+authenticate the independent acquisition history, storage location
+or organizational control behind an external witness.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[Neon source ancestry display](https://davidwise01.github.io/neuroscape/rust/tests/rust028-source-ancestry.html) ·
+[Fork reconstruction](https://davidwise01.github.io/neuroscape/rust/tests/rust027-fork-lineage.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
