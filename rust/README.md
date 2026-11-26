@@ -1140,3 +1140,51 @@ Rust WASM combat engine behavior is changed.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 `.dlw`
+
+## RUST-038 — Append-only revocation ancestry and superseded-key fencing
+
+`rust/tests/revocation_ancestry_rust038.py` extends RUST-037's
+signed registry highwater with an **ordered, predecessor-linked SHA-256
+chain** covering every RUST-036 revocation. Each chain entry binds its
+ordinal, previous entry fingerprint, complete source revocation digest,
+revoked key pin, effective epoch, role and revocation authority pin.
+A domain-separated RUST-038 genesis digest anchors the empty prefix.
+
+The verifier checks the original RUST-036 receipt and exact RUST-037
+signed anchor, re-verifies that Ed25519 anchor signature against a
+separately provided SPKI fingerprint
+(`RUST038_ANCHOR_WITNESS_SPKI_SHA256`), and requires the signature
+fingerprint to match the hash recorded in the original RUST-037
+receipt. Duplicate revocations of the same role and key are rejected.
+
+For a separately retained prefix floor containing `phase:
+RUST-038`, `entry_count` and `head_sha256`, the verifier
+requires the computed chain head **at exactly that count** to match
+the retained value. Rewriting, deleting, inserting before, or
+reordering an earlier revocation causes prefix mismatch even if
+new records increase the total count. Successful comparison records
+the floor's digest while preserving all upstream RUST-037
+equivocation evidence.
+
+**Limit:** A floor supplied through JSON is still a *claim* about
+external custody, not proof that it was independently acquired or is
+the latest. A malicious provider can withhold both an old floor and
+later revocations. The chain protects integrity relative to the
+presented independently established reference; it does not solve
+real-world acquisition or global anti-rollback. The fields
+`external_floor_custody_authenticated`,
+`global_anti_rollback_certified`, `fork_resolved` and
+`release_authorized` remain false.
+
+GitHub Actions runs eleven negative and structural tests before
+Pages deployment, then archives
+`HOLD_MISSING_EXTERNAL_REVOCATION_ANCESTRY` when no external chain
+materials are supplied. The existing 5×2 arena, 256-card catalog,
+neon gameplay and Rust WASM engine remain unchanged.
+
+[Arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-038 neon revocation ancestry](https://davidwise01.github.io/neuroscape/rust/tests/rust038-revocation-ancestry.html) ·
+[RUST-037 registry highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust037-registry-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+`.dlw`
