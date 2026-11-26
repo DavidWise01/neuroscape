@@ -1459,3 +1459,50 @@ materials are supplied. The existing Rust WASM combat engine,
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-045 — Quarantined compromised-custodian recovery
+
+\`rust/tests/custodian_recovery_rust045.py\` adds a recovery-candidate
+mechanism without restoring trust. It consumes an intact, SHA-256
+receipt-checked RUST-042 challenge ledger and an exactly matched
+RUST-044 revocation receipt. Every revocation-chain entry and
+predecessor hash is independently recalculated. Recovery cannot
+proceed if a separately supplied retained floor does not cover
+**all** known revocations at exactly the current head hash.
+
+A recovery proposal binds its compromised key fingerprint, role,
+effective revocation epoch, revocation-entry hash, replacement
+attestor fingerprint, successor challenge entry and epoch, declared
+old/new controller roots, externally declared recovery authority
+root, acquisition fingerprint, challenge nonce and both upstream
+receipts. The identical domain-separated recovery message must be
+signed by a separately pinned recovery authority **and** the new
+successor attestor key. The module denies attempts to recover using
+a revoked key, a successor key that is itself revoked, a self-issued
+recovery authority, a reused old control root, or a nonce already in
+the signed challenge ledger. The new key must have real challenge
+evidence within the supplied history at or after the effective epoch.
+
+This proves **structural and cryptographic consistency only**.
+Claimed distinct root hashes are not independently authenticated
+control identities. No local JSON or GitHub Actions artifact proves
+an off-repository witness controls an actual entity. Even after two
+valid signatures, the status stays
+\`HOLD_QUARANTINED_RECOVERY_CANDIDATES\`; the compromised key remains
+revoked, all historical challenges and RUST-044 suspicions are
+retained, and \`release_authorized\`, \`fork_resolved\`,
+\`real_world_independent_recovery_verified\` and
+\`live_gameplay_authority\` remain false.
+
+Thirteen adversarial/structural tests run as a predeployment GitHub
+Actions step. Without external recovery material the workflow
+archives \`HOLD_MISSING_INDEPENDENT_RECOVERY\` in the run-scoped
+artifact. The Rust WASM combat core, existing 5×2 arena, 256-card
+catalog and neon gameplay are not modified.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-045 neon custody recovery](https://davidwise01.github.io/neuroscape/rust/tests/rust045-custodian-recovery.html) ·
+[RUST-044 attestor revocation](https://davidwise01.github.io/neuroscape/rust/tests/rust044-attestor-revocation.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
