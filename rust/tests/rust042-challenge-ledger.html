@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-042 · Retained Challenge Ledger</title>
+<style>:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;color:#f5f7ff;background:radial-gradient(ellipse at 51% 2%,#3e2455,#08111e 77%);font:15px system-ui,sans-serif}main{max-width:1100px;margin:auto;padding:27px}h1{color:#ffc28a;text-shadow:0 0 25px #ff7839;letter-spacing:.055em;font-size:clamp(24px,4vw,42px)}.panel{background:#141b2f;border:1px solid #aa83fc;border-radius:20px;padding:24px;box-shadow:0 0 36px #a361fa42}.status{color:#ffc280;font-size:21px;font-weight:800}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:23px 0}.cell{padding:19px;border:1px solid #35d4ce;border-radius:12px;min-height:119px;box-shadow:inset 0 0 18px #35d4ce1b}.cell:nth-child(2){border-color:#ffab68}.cell:nth-child(3){border-color:#bc90fe}b{display:block;margin-bottom:10px}p,small{line-height:1.55;color:#b9c9d9}a{color:#a2ffee}svg{width:100%;height:auto;max-height:218px}@media(max-width:660px){.grid{grid-template-columns:1fr}}</style>
+<main><h1>RUST-042 · CHALLENGE LEDGER</h1>
+<p>Ordered nonce history · attestor continuity · independently retained prefix check.</p>
+<div class="panel"><div class="status">HOLD · Latest external challenge ledger not authenticated</div>
+<svg viewBox="0 0 600 177" role="img" aria-label="Three challenge signatures in an append-only chain leading to an external highwater gate">
+<g fill="none" stroke-width="2"><path d="M155 52 H224 M376 52 H445" stroke="#a784e9"/><path d="M300 88 V113" stroke="#ffb36b"/></g>
+<g text-anchor="middle" font-family="system-ui">
+<rect x="20" y="10" width="135" height="79" rx="10" stroke="#33d5cd" fill="#153139"/><text x="87" y="32" font-size="12" fill="#d0ffff">FF · NONCE</text><text x="87" y="49" font-size="10" fill="#b8efec">SIGNATURE + SESSION</text><text x="87" y="65" font-size="10" fill="#adf1ea">EPOCH N</text>
+<rect x="223" y="10" width="154" height="79" rx="10" stroke="#ffa86d" fill="#37273c"/><text x="300" y="32" font-size="12" fill="#ffebd4">CF · CHALLENGE</text><text x="300" y="49" font-size="10" fill="#ffcfad">CHAINED ENTRY HASH</text><text x="300" y="65" font-size="10" fill="#ffcfad">EPOCH N</text>
+<rect x="445" y="10" width="135" height="79" rx="10" stroke="#b68cff" fill="#302840"/><text x="512" y="32" font-size="12" fill="#f0dcff">RR · NONCE</text><text x="512" y="49" font-size="10" fill="#dfc9ff">ATTESTOR ROOT</text><text x="512" y="65" font-size="10" fill="#dfc9ff">EPOCH N</text>
+<rect x="146" y="113" width="308" height="51" rx="10" stroke="#ffc183" fill="#29213b"/><text x="300" y="134" font-size="13" fill="#ffe5bf">EXTERNAL RETAINED PREFIX</text><text x="300" y="151" font-size="11" fill="#ffca95">NO GLOBAL FRESHNESS · HOLD</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Preserve every signed challenge digest, nonce, retrieval session and historical attestor fingerprint</small></div>
+<div class="cell"><b>PRESENT · COMPARES</b><small>Reject reused challenges, missing epochs and changed retained prefix fingerprints</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Carry unresolved attestor substitutions into all later epochs without lifting custody HOLD</small></div>
+</div>
+<p id="detail">This visualization shows the verification architecture, not live external custody evidence.</p></div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust041-custody-challenge.html">Custody challenge</a> · <a href="rust040-custodian-ancestry.html">Custodian ancestry</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Signatures and in-repository ledger heads do not establish independent ownership. Arena gameplay remains unchanged.</small>
+<script>(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("release manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("invalid source");document.getElementById("detail").textContent="Observed repository source "+m.source_commit+". External ledger highwater and independent attestor custody remain unverified. HOLD.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();</script>
+</main></html>
