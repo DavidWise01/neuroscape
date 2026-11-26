@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-031 · Independent Retrieval & Operator Control</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 48% 0%,#35234e,#09111f 73%);color:#f4f8ff;font:15px system-ui,sans-serif}
+main{max-width:1080px;margin:auto;padding:26px}h1{font-size:clamp(24px,4vw,43px);color:#ffb17b;text-shadow:0 0 23px #ff7634;letter-spacing:.07em}
+.panel{background:#141a2d;border:1px solid #ab7ef9;border-radius:18px;padding:24px;box-shadow:0 0 35px #a35dff40}.hold{color:#ffc482;font-size:22px;font-weight:800}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:24px 0}.cell{padding:18px;border:1px solid #2cd3d0;min-height:122px;border-radius:12px;box-shadow:inset 0 0 18px #2dd3d025}.cell:nth-child(2){border-color:#ffa360}.cell:nth-child(3){border-color:#b68afa}
+strong{display:block;margin-bottom:11px}p,small{color:#bac7d9;line-height:1.5}a{color:#95ffe8}svg{width:100%;height:auto}
+@media(max-width:660px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-031 · INDEPENDENT RETRIEVAL</h1>
+<p>Archive bytes → retrieval transcript → operator signature → ancestry audit.</p>
+<div class="panel"><div class="hold">HOLD · Operator custody not independently authenticated</div>
+<svg viewBox="0 0 600 177" role="img" aria-label="Three retrieval paths converging into an independent operator-control test">
+<g fill="none" stroke-width="2"><path d="M100 64 V95 L300 128" stroke="#31d4d1"/><path d="M300 64 V128" stroke="#ffab59"/><path d="M500 64 V95 L300 128" stroke="#b38afa"/></g>
+<g font-family="system-ui" text-anchor="middle"><rect x="40" y="15" width="120" height="49" rx="9" fill="#153039" stroke="#31d4d1"/><text x="100" y="34" font-size="13" fill="#c6ffff">FF · RETRIEVE</text><text x="100" y="50" font-size="10" fill="#bcf0ed">Archive + nonce</text>
+<rect x="240" y="15" width="120" height="49" rx="9" fill="#342837" stroke="#ffab59"/><text x="300" y="34" font-size="13" fill="#ffe0c3">CF · RETRIEVE</text><text x="300" y="50" font-size="10" fill="#ffd3a5">Archive + nonce</text>
+<rect x="440" y="15" width="120" height="49" rx="9" fill="#302541" stroke="#b38afa"/><text x="500" y="34" font-size="13" fill="#ead7ff">RR · RETRIEVE</text><text x="500" y="50" font-size="10" fill="#ddc2fa">Archive + nonce</text>
+<rect x="155" y="128" width="290" height="39" rx="9" fill="#262139" stroke="#b58af9"/>
+<text x="300" y="151" font-size="13" fill="#f5e7ff">OPERATOR CONTROL : HOLD</text></g>
+</svg>
+<div class="grid">
+<div class="cell"><strong>PAST · SOURCE</strong><small>Exact retrieved archive bytes must match recorded acquisition fingerprints</small></div>
+<div class="cell"><strong>PRESENT · VERIFY</strong><small>Check a nonce-bound operator signature against a separately pinned public key</small></div>
+<div class="cell"><strong>FUTURE · RESERVE</strong><small>Keep repeated retrieval sessions and common operators visible; never self-approve independence</small></div>
+</div>
+<p id="detail">A signed operator assertion does not establish who owns a remote archive or whether the retrieval path is independent.</p>
+</div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust030-acquisition.html">Acquisition evidence</a> · <a href="rust029-custody-roots.html">Custody roots</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · 3 signatures are not 3 source ancestries. Read-only observations never authorize gameplay or release.</small>
+<script>(async()=>{try{const response=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!response.ok)throw Error("release manifest unavailable");const m=await response.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("source manifest invalid");document.getElementById("detail").textContent="Repository source "+m.source_commit+". No independently authenticated live retrieval, operator registry or externally issued challenge has been supplied; custody stays HOLD.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();</script>
+</main></html>
