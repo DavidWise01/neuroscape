@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-050 · Persistent Fork Registry</title>
+<style>:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;color:#f6f8ff;background:radial-gradient(ellipse at 49% 0%,#4a255a,#08111f 77%);font:15px system-ui,sans-serif}main{max-width:1130px;margin:auto;padding:28px}h1{color:#ffc48b;text-shadow:0 0 27px #ff7737;font-size:clamp(27px,4vw,43px);letter-spacing:.06em}.panel{padding:25px;border-radius:20px;background:#151d30;border:1px solid #b58bfc;box-shadow:0 0 42px #a15df947}.status{color:#ffc188;font-weight:800;font-size:21px}a{color:#9cffee}p,small{line-height:1.55;color:#bbcddd}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:25px 0}.cell{border:1px solid #35d6cd;border-radius:12px;padding:18px;min-height:119px;box-shadow:inset 0 0 20px #2cd4ca1c}.cell:nth-child(2){border-color:#ffad6c}.cell:nth-child(3){border-color:#bb90fe}b{display:block;margin-bottom:9px}svg{width:100%;height:auto;max-height:260px;display:block}@media(max-width:700px){.grid{grid-template-columns:1fr}}</style>
+<main>
+<h1>RUST-050 · IMMUTABLE FORK REGISTRY</h1>
+<p>Separate signed branches · permanent conflict ancestry · additive evidence · no vote and no release.</p>
+<div class="panel"><div class="status">HOLD · An unresolved fork cannot be erased by later agreement</div>
+<svg viewBox="0 0 600 235" role="img" aria-label="Two divergent branch histories feed an immutable fork event, followed by a new observation that cannot remove the original conflict">
+<g stroke-width="2.2" fill="none"><path d="M125 72 L300 129 L475 72" stroke="#bc8cfd"/><path d="M300 164 V190" stroke="#ffc38b"/><path d="M125 72 L300 129" stroke="#35d3ca" stroke-dasharray="5 5"/><path d="M475 72 L300 129" stroke="#ffae70" stroke-dasharray="5 5"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="23" y="12" width="204" height="60" rx="11" fill="#17363d" stroke="#32d9ce"/><text x="125" y="34" fill="#d5fffb" font-size="13">SIGNED BRANCH A</text><text x="125" y="52" fill="#b8ece8" font-size="11">HEAD + ORIGIN + PREFIX</text>
+<rect x="373" y="12" width="204" height="60" rx="11" fill="#31283e" stroke="#bd95fc"/><text x="475" y="34" fill="#eee3ff" font-size="13">SIGNED BRANCH B</text><text x="475" y="52" fill="#dfccff" font-size="11">HEAD + ORIGIN + PREFIX</text>
+<rect x="186" y="125" width="228" height="39" rx="10" fill="#3b2838" stroke="#ffb073"/><text x="300" y="149" fill="#ffe7c9" font-size="13">FORK REGISTERED</text>
+<rect x="137" y="190" width="326" height="37" rx="10" fill="#2b2338" stroke="#ffc58c"/><text x="300" y="214" fill="#ffe5be" font-size="13">FUTURE EPOCHS · OLD FORK RETAINED</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Verify earlier fork-register entries, both original branch fingerprints, their prefix heads and the full registry chain</small></div>
+<div class="cell"><b>PRESENT · COMPARES</b><small>Check new RUST-049 evidence for real divergence, shared claimed roots, competing paths or replayed source receipts</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Append fresh observations without removing any historical conflict; allow a retained-prefix check, never a false fork resolution</small></div>
+</div>
+<p id="detail">Visualization of a hypothetical fork. No actual external fork, independent custodian ownership, or current global highwater was authenticated in this browser.</p>
+</div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust049-cross-custody-highwater.html">RUST-049 fork comparison</a> · <a href="rust048-denial-highwater.html">RUST-048 signed highwater</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Two signatures can be one source ancestry. The full arena and Rust WASM game remain protected.</small>
+<script>(async()=>{try{const r=await fetch("../../assets/rust013-release.json",{cache:"no-store"});if(!r.ok)throw Error("source manifest unavailable");const m=await r.json();if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("manifest invalid");document.getElementById("detail").textContent="Repository source "+m.source_commit+". Independent witness custody, latest registry floor and fork adjudication remain unverified. HOLD.";}catch(e){document.getElementById("detail").textContent="HOLD · "+String(e.message||e);}})();</script>
+</main></html>
