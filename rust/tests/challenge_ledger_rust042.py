@@ -48,7 +48,8 @@ def checked_upstream(receipt):
 
 def checked_history(history):
     require(isinstance(history,dict) and history.get("phase")=="RUST-042" and
-            history.get("status") in ("HOLD_EXTERNAL_LEDGER_UNVERIFIED",\n                                          "HOLD_ATTESTOR_IDENTITY_SUBSTITUTION"),
+            history.get("status") in ("HOLD_EXTERNAL_LEDGER_UNVERIFIED",
+                                          "HOLD_ATTESTOR_IDENTITY_SUBSTITUTION"),
             "RUST-042 predecessor ledger missing")
     require(history.get("release_authorized") is False,
             "historical release promotion")
@@ -165,12 +166,14 @@ def audit(upstream,history,retained_floor=None):
     if retained_floor is not None:
         check_floor(retained_floor,heads)
     result={
-        "phase":"RUST-042","status":"HOLD_ATTESTOR_IDENTITY_SUBSTITUTION" if collisions
+        "phase":"RUST-042","status":"HOLD_ATTESTOR_IDENTITY_SUBSTITUTION" if collisions or
+            history.get("status")=="HOLD_ATTESTOR_IDENTITY_SUBSTITUTION"
             else "HOLD_EXTERNAL_LEDGER_UNVERIFIED",
         "epoch":epoch,"entries":entries,"prefix_heads":heads,
         "head_sha256":heads[-1],
         "new_epoch_entries":new,
-        "attestor_continuity_conflicts":\n            history.get("attestor_continuity_conflicts",[])+collisions,
+        "attestor_continuity_conflicts":
+            history.get("attestor_continuity_conflicts",[])+collisions,
         "upstream_rust041_receipt_sha256":upstream["receipt_sha256"],
         "retained_floor_compared":retained_floor is not None,
         "retained_floor_claim_sha256":digest(retained_floor) if retained_floor is not None else None,
@@ -212,7 +215,8 @@ def main():
     out.parent.mkdir(parents=True,exist_ok=True)
     with out.open("x",encoding="utf-8") as stream:
         json.dump(result,stream,indent=2,sort_keys=True)
-        stream.write("\n")
+        stream.write("
+")
     print(json.dumps(result,sort_keys=True))
     if not a.allow_hold_record:
         raise SystemExit("RUST-042 HOLD: independent challenge custody not authenticated")
