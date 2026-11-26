@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-029 | Custody Root Observatory</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;font:15px system-ui,sans-serif;color:#f6f6ff;background:radial-gradient(ellipse at 50% 4%,#392354,#0a101f 78%)}
+main{max-width:1120px;margin:auto;padding:27px}h1{font-size:clamp(24px,4vw,43px);letter-spacing:.06em;color:#ffc08d;text-shadow:0 0 23px #fa6128}
+.panel{border:1px solid #a87bf7;background:#151b30;border-radius:20px;padding:25px;box-shadow:0 0 34px #a266f333}
+.status{color:#ffc181;font-weight:800;font-size:21px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:21px 0}
+.cell{border:1px solid #31d0ce;border-radius:12px;min-height:128px;padding:17px;box-shadow:inset 0 0 19px #25cbd221}
+.cell:nth-child(2){border-color:#ffa85a}.cell:nth-child(3){border-color:#b68fff}strong{display:block;margin-bottom:9px}
+p,small{color:#bbc8d9;line-height:1.5}a{color:#90fce9}svg{width:100%;height:auto}
+@media(max-width:650px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-029 · CUSTODY ROOTS</h1><p>Distinct signatures · archive ownership · acquisition path ancestry · original source families.</p>
+<div class="panel">
+<div class="status">HOLD · Independent custody is not authenticated</div>
+<svg viewBox="0 0 600 184" role="img" aria-label="Three custody observations traced to independently unverified acquisition roots">
+<g fill="none" stroke-width="2"><path d="M100 50 V93 L190 124" stroke="#2cd1d2"/><path d="M300 50 V124" stroke="#ffa35e"/><path d="M500 50 V93 L410 124" stroke="#bd91fa"/></g>
+<g font-size="12" text-anchor="middle">
+<rect x="50" y="10" width="100" height="40" rx="9" fill="#162c38" stroke="#2cd1d2"/><text x="100" y="35" fill="#c9fbff">FF · CUSTODY</text>
+<rect x="250" y="10" width="100" height="40" rx="9" fill="#302736" stroke="#ffa35e"/><text x="300" y="35" fill="#ffe0bb">CF · CUSTODY</text>
+<rect x="450" y="10" width="100" height="40" rx="9" fill="#30263e" stroke="#bd91fa"/><text x="500" y="35" fill="#ead9ff">RR · CUSTODY</text>
+<rect x="90" y="124" width="420" height="44" rx="10" fill="#231d36" stroke="#b48af6"/>
+<text x="300" y="142" fill="#ffdecb">ROOT CONTROL : UNVERIFIED</text>
+<text x="300" y="159" fill="#d8d0eb" font-size="10">Compare operators, capture hashes, source families and acquisition paths</text>
+</g>
+</svg>
+<div class="grid">
+<div class="cell"><strong>PAST · SOURCE</strong><small>Preserve the source family and immutable capture digest, including shared mirrors</small></div>
+<div class="cell"><strong>PRESENT · CHALLENGE</strong><small>Bind separately supplied nonces and pinned Ed25519 keys to signed archive claims</small></div>
+<div class="cell"><strong>FUTURE · QUALIFY?</strong><small>Reject collisions and refuse release until independent custody evidence is established</small></div>
+</div>
+<p id="readback">No signed off-repository custody-root challenge responses have been authenticated by this page. A self-declared independent archive is not proof.</p>
+</div>
+<p><a href="../../index.html">Neuroscape Arcade</a> · <a href="rust028-source-ancestry.html">Source ancestry</a> · <a href="rust027-fork-lineage.html">Fork lineage</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">Actions workflow</a></p>
+<small>.dlw · GitHub and GitHub Pages remain one owned ancestry. No replica result controls gameplay or authorizes release.</small>
+<script>
+(async()=>{
+try{
+const response=await fetch("../../assets/rust013-release.json",{cache:"no-store"});
+if(!response.ok)throw Error("manifest unavailable");
+const m=await response.json();
+if(!/^[a-f0-9]{40}$/.test(m.source_commit)||m.live_gameplay_authority!==false)throw Error("invalid release assertion");
+document.getElementById("readback").textContent="Repository-observed source "+m.source_commit+". Custody controls, source independence and release authorization remain HOLD pending off-repository evidence.";
+}catch(error){document.getElementById("readback").textContent="HOLD · "+String(error.message||error);}
+})();
+</script></main></html>
