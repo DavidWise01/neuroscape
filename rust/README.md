@@ -1704,3 +1704,55 @@ materials exist. Previous phases, Rust WASM gameplay, 5×2 arena,
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-050 — Persistent fork registry and cross-custody evidence exchange
+
+\`rust/tests/fork_registry_rust050.py\` consumes a hash-checked
+RUST-049 cross-custody highwater receipt and extends an append-only
+registry of evidence exchanges. Each RUST-049 observation carries
+two source branches, their claimed control roots, acquisition paths,
+signer fingerprints, full denial prefix heads and any exact
+common-prefix fork evidence. RUST-050 recomputes the fork comparison
+from the two branch prefixes and rejects downgraded, missing or
+altered conflict records.
+
+Every registry event binds the source RUST-049 receipt, both
+branch snapshots, the precise fork evidence if present, any
+shared-ancestry alert, an ordinal and the preceding registry
+SHA-256 hash. RUST-050 checks its own predecessor registry entry
+by entry and demands that all historical fork events and claimed
+shared-control alerts remain present and in order. Replayed upstream
+receipts, rewritten prefixes, altered branch heads, inconsistent
+fork classifications and false authority flags fail closed.
+
+A new pair of matching highwater branches **does not cancel**
+an earlier divergent pair. The entire old fork record remains
+under \`fork_events\` in each successor. An optional
+\`--floor\` compares an externally *supplied* retained registry
+count and exact corresponding prefix head; the module does not
+claim that such material is genuinely held by an independent
+operator, or is the globally latest state.
+
+**Trust boundary:** RUST-050 verifies the cryptographic integrity
+and internal consistency of the reported RUST-049 receipt; it does
+not rerun the underlying Ed25519 signatures from original custody
+key files. The independent authenticity and real-world separation
+of external custody remain unverified. No winner is selected and
+\`fork_resolved\`, \`release_authorized\`, and
+\`live_gameplay_authority\` remain false. A valid structural
+observation yields \`HOLD_PERSISTENT_FORK_REGISTRY\`; missing
+external custody yields \`HOLD_MISSING_EXTERNAL_FORK_CUSTODY\`.
+
+Fourteen regression cases cover retained fork events, conflicting
+source ancestry, replay, altered history, missing evidence and
+authority escalation. GitHub Actions is configured to run them
+before Pages deployment, and to archive the default HOLD record.
+The 5×2 arena, 256-card catalog, neon gameplay and Rust WASM
+combat core remain unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-050 neon fork registry](https://davidwise01.github.io/neuroscape/rust/tests/rust050-fork-registry.html) ·
+[RUST-049 two-branch comparison](https://davidwise01.github.io/neuroscape/rust/tests/rust049-cross-custody-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
