@@ -1843,3 +1843,50 @@ Rust WASM combat core and gameplay have not changed.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-053 — Signed fork-challenge highwater and cross-session custody fencing
+
+\`rust/tests/challenge_highwater_rust053.py\` compares two complete
+RUST-052 witness-challenge ledgers, requiring exact preservation
+of all previous entries and SHA-256 prefix heads. A nonempty
+predecessor ledger is committed into a domain-separated
+\`FORK_CHALLENGE_HIGHWATER_V1\` message binding its entry count,
+terminal head, complete ordered history digest, and source
+RUST-052 receipt. An Ed25519 signature is verified against a
+separately provided SPKI pin.
+
+The externally *presented* highwater floor must cover at least
+the signed predecessor count and must exactly match the successor
+ledger at its claimed count. Older valid snapshots, withheld newer
+history, and incompatible prefix heads are rejected. Each new
+session must supply a domain-separated signed statement binding
+both RUST-052 receipts, both heads, fresh session nonce and claimed
+source root, acquisition and operator ancestry. Replayed nonces
+from either RUST-052 challenge ledger, repeated session messages
+and checkpoint-signer self-witnessing are rejected. Changes in
+claimed custody ancestry for a previously observed signer pin
+remain visible as conflict evidence.
+
+**Authority boundary:** A pinned signing key plus signed checkpoint
+does not authenticate independent external storage, the globally
+latest highwater, or the real-world identity of the operator.
+Every successful structural assessment remains
+\`HOLD_SIGNED_CHALLENGE_HIGHWATER_CUSTODY_UNVERIFIED\`, with
+\`independent_external_custody_verified\`,
+\`globally_latest_highwater_verified\`, \`fork_resolved\`,
+\`global_anti_rollback_certified\`, and \`release_authorized\`
+false. With no supplied external materials, GitHub Actions archives
+\`HOLD_MISSING_SIGNED_CHALLENGE_HIGHWATER\` instead of granting
+authority.
+
+Fourteen regression cases are wired as a predeployment gate in
+GitHub Actions. This phase adds Python evidence-verification code,
+not changes to the existing Rust WASM combat, 5×2 arena, 256 cards
+or neon gameplay.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-053 neon highwater observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust053-challenge-highwater.html) ·
+[RUST-052 fork challenge ledger](https://davidwise01.github.io/neuroscape/rust/tests/rust052-fork-challenge-ledger.html) ·
+[Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
