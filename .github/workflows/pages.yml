@@ -207,6 +207,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_fork_challenge_ledger_rust052.py' -v
       - name: RUST-053 reject stale signed fork-challenge highwaters and session replay
         run: python3 -m unittest discover -s rust/tests -p 'test_challenge_highwater_rust053.py' -v
+      - name: RUST-054 fence revoked witnesses and replacement-key ancestry
+        run: python3 -m unittest discover -s rust/tests -p 'test_witness_revocation_rust054.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -419,6 +421,11 @@ jobs:
           python3 rust/tests/challenge_highwater_rust053.py \
             --output rust/tests/.rust053-challenge-highwater.json \
             --allow-hold-record
+      - name: RUST-054 archive missing witness revocation custody HOLD
+        run: |
+          python3 rust/tests/witness_revocation_rust054.py \
+            --output rust/tests/.rust054-witness-revocation.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -466,6 +473,7 @@ jobs:
             rust/tests/.rust051-fork-continuity.json
             rust/tests/.rust052-fork-challenge-ledger.json
             rust/tests/.rust053-challenge-highwater.json
+            rust/tests/.rust054-witness-revocation.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
