@@ -259,6 +259,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_fork_branch_highwater_rust078.py' -v
       - name: RUST-079 preserve cross-epoch custodian ancestry and reject renamed-key evidence laundering
         run: python3 -m unittest discover -s rust/tests -p 'test_custodian_ancestry_rust079.py' -v
+      - name: RUST-080 preserve signed ancestry highwater and reject exclusion laundering
+        run: python3 -m unittest discover -s rust/tests -p 'test_ancestry_highwater_rust080.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -601,6 +603,11 @@ jobs:
           python3 rust/tests/custodian_ancestry_rust079.py \
             --output rust/tests/.rust079-custodian-ancestry.json \
             --allow-hold-record
+      - name: RUST-080 archive missing independent ancestry highwater HOLD
+        run: |
+          python3 rust/tests/ancestry_highwater_rust080.py \
+            --output rust/tests/.rust080-ancestry-highwater.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -674,6 +681,7 @@ jobs:
             rust/tests/.rust077-fork-branch-custody.json
             rust/tests/.rust078-fork-branch-highwater.json
             rust/tests/.rust079-custodian-ancestry.json
+            rust/tests/.rust080-ancestry-highwater.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
