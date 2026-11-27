@@ -2413,3 +2413,55 @@ WASM combat engine remain unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-065 — Witness rotation revocation and controller ancestry persistence
+
+\`rust/tests/witness_rotation_rust065.py\` reads a receipt-checked
+RUST-064 fork-registry highwater assessment, checks that it is
+bound to the current RUST-063 registry, and appends signed witness
+revocations to a separate SHA-256 predecessor-linked ledger. The
+domain-separated \`WITNESS_ROTATION_REVOCATION_V1\` binds the
+compromised witness pin, its exact previously observed controlling
+root, proposed successor pin, claimed successor controller/source/
+acquisition ancestry, incident digest, fresh nonce, highwater source
+receipt and previous revocation-registry head.
+
+An authority-pinned signature is required for each revocation
+claim. The compromised witness or its proposed successor cannot
+self-issue that signature. Already revoked keys cannot become
+replacement keys, and a compromised key cannot be revoked again.
+The entire prior revocation key list and claimed compromised
+controller-root list are immutable aggregate fields, with exact
+historical event hashes and predecessor heads rechecked on every
+append. A separately presented retained floor must match the exact
+earlier registry head at the claimed event count.
+
+Replacement keys claiming a revoked controlling root are flagged
+\`REPLACEMENT_REUSES_REVOKED_CONTROLLER\`; keys already seen in
+the RUST-063 custody witness history are flagged
+\`REPLACEMENT_KEY_ALREADY_OBSERVED\`. The output keeps all
+historic fork keys and custody conflicts and always marks the
+replacement as quarantined, even when it claims a new root.
+
+**Boundary:** Signing keys and claimed controller roots are
+observational evidence, not independently authenticated physical
+control. A cryptographically valid revocation does not reinstate
+its replacement. The only substantive result is
+\`HOLD_WITNESS_ROTATION_REVOCATION\`; missing independent material
+is recorded as \`HOLD_MISSING_WITNESS_REVOCATION_CUSTODY\`.
+\`independent_recovery_verified\`, \`fork_resolved\`,
+\`release_authorized\`, and \`live_gameplay_authority\` stay false.
+External custody and globally latest highwater remain unverified.
+
+Eighteen regression cases are committed to the GitHub Actions
+predeployment test gate, and the default missing-evidence HOLD
+receipt is archived. This phase adds verification-side Python
+files only; the original 5×2 arena, 256 cards, neon visuals and
+Rust WASM combat engine remain unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-065 neon witness rotation](https://davidwise01.github.io/neuroscape/rust/tests/rust065-witness-rotation.html) ·
+[RUST-064 fork highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust064-fork-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
