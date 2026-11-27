@@ -2616,3 +2616,60 @@ record. Gameplay files are untouched: the original 5×2 arena,
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-069 — Recovery custody challenge ledger and witness revocation persistence
+
+\`rust/tests/recovery_witness_revocation_rust069.py\` consumes a
+receipt-checked RUST-068 recovery highwater and the exact RUST-067
+recovery ledger to which that highwater is bound. A newly compromised
+recovery witness must match a witness pin actually recorded within
+the original quarantined recovery evidence. Its claimed controlling
+root and full recovery entry hash remain in an independent
+SHA-256-linked RUST-069 revocation ledger.
+
+Each revocation is authenticated by three domain-separated, ordered
+\`ff/cf/rr\` custody challenge signatures bound to a fresh revocation
+nonce, each new witness nonce, RUST-068 receipt, preceding RUST-069
+ledger head, compromised witness pin and original recovery event.
+Each claimant supplies declared controller, source-root and
+acquisition ancestry. Already recorded recovery witness keys,
+quarantined candidate keys, previously revoked recovery witnesses,
+and the RUST-068 highwater signer cannot serve as independent
+revocation attestors. A three-role cohort must use three distinct
+new signing pins and nonrepeating nonces.
+
+Shared proposed ancestry is never promoted to independence. Reuse
+of a compromised or already revoked controller produces
+\`ATTESTOR_REUSES_REVOKED_CONTROLLER\`. Reuse of an acquisition
+fingerprint previously claimed by a recovery witness produces
+\`ATTESTOR_REUSES_HISTORICAL_ACQUISITION\`. Multiple new attestors
+claiming the same controller, root or acquisition produce
+\`NEW_ATTESTORS_SHARE_CLAIMED_ANCESTRY\`.
+
+The complete RUST-069 event sequence, revoked pin list, revoked
+controller-root list and accumulated custody conflicts are rechecked
+on every append. An optional separately supplied highwater floor must
+agree with the exact earlier ledger prefix. Historical revocations
+and original quarantined candidates cannot be dropped by a new
+recovery observation.
+
+**Authority boundary:** Even valid signatures from three different
+signing pins do not establish distinct real-world controllers or
+independent physical custody. All structurally valid revocations
+remain \`HOLD_RECOVERY_WITNESS_REVOCATION\`; missing source/challenge
+evidence emits \`HOLD_MISSING_RECOVERY_CUSTODY_REVOCATION\`.
+\`independent_custody_verified\`, \`recovery_authorized\`,
+\`release_authorized\` and live gameplay authority stay false.
+
+Twenty-three adversarial regression cases are configured in the
+GitHub Actions predeployment gate. The default missing-evidence
+HOLD record is included in the Actions evidence archive. This
+phase adds no gameplay changes: the original 5×2 arena, 256 cards,
+neon visuals and Rust WASM combat core are preserved.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-069 neon witness revocation](https://davidwise01.github.io/neuroscape/rust/tests/rust069-witness-revocation.html) ·
+[RUST-068 recovery highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust068-recovery-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
