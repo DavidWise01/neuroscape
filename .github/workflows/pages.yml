@@ -223,6 +223,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_control_reconciliation_rust060.py' -v
       - name: RUST-061 retain unresolved external-control branches and reject erasure
         run: python3 -m unittest discover -s rust/tests -p 'test_reconciliation_retention_rust061.py' -v
+      - name: RUST-062 preserve every retained fork across independently claimed custodians
+        run: python3 -m unittest discover -s rust/tests -p 'test_retention_highwater_rust062.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -475,6 +477,11 @@ jobs:
           python3 rust/tests/reconciliation_retention_rust061.py \
             --output rust/tests/.rust061-reconciliation-retention.json \
             --allow-hold-record
+      - name: RUST-062 archive missing cross-custody retention highwater HOLD
+        run: |
+          python3 rust/tests/retention_highwater_rust062.py \
+            --output rust/tests/.rust062-retention-highwater.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -530,6 +537,7 @@ jobs:
             rust/tests/.rust059-external-control.json
             rust/tests/.rust060-control-reconciliation.json
             rust/tests/.rust061-reconciliation-retention.json
+            rust/tests/.rust062-retention-highwater.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
