@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RUST-059 · External Control Continuity</title>
+<style>:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0%,#462455,#091421 78%);color:#f5f8ff;font:15px system-ui,sans-serif}main{max-width:1120px;margin:auto;padding:27px}h1{color:#ffc88d;text-shadow:0 0 26px #ff7337;font-size:clamp(24px,4vw,42px)}.panel{background:#151e31;border:1px solid #b68eff;border-radius:20px;padding:25px;box-shadow:0 0 38px #985cf747}.status{color:#ffc68a;font-weight:800;font-size:21px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin:22px 0}.cell{padding:18px;border:1px solid #33d8ce;border-radius:12px;min-height:110px;box-shadow:inset 0 0 19px #31d3c91c}.cell:nth-child(2){border-color:#ffac6b}.cell:nth-child(3){border-color:#b891ff}b{display:block;margin-bottom:10px}p,small{color:#bfcddd;line-height:1.5}a{color:#9affec}svg{display:block;width:100%;height:auto;max-height:223px}@media(max-width:690px){.grid{grid-template-columns:1fr}}</style>
+<main><h1>RUST-059 · EXTERNAL CONTROL CHALLENGE</h1><p>Signed custodian identity → declared organization and acquisition ancestry → cross-epoch conflict register.</p>
+<div class="panel"><div class="status">HOLD · Independent external control not authenticated</div>
+<svg viewBox="0 0 600 196" role="img" aria-label="A pinned custodian signature and separately pinned authority signature enter an append-only control-ancestry challenge registry">
+<g fill="none" stroke-width="2.5"><path d="M134 70 L300 119 L466 70" stroke="#ad88fa"/><path d="M300 119 V148" stroke="#ffb77f"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="17" y="10" width="234" height="60" rx="10" fill="#16343c" stroke="#31d6cc"/><text x="134" y="35" font-size="13" fill="#e0fffc">CUSTODIAN SIGNATURE</text><text x="134" y="54" font-size="10" fill="#b8f0e9">KEY + CONTROLLER + NONCE</text>
+<rect x="349" y="10" width="234" height="60" rx="10" fill="#342743" stroke="#b792fc"/><text x="466" y="35" font-size="13" fill="#f1e4ff">AUTHORITY SIGNATURE</text><text x="466" y="54" font-size="10" fill="#dfceff">PINNED BUT NOT INDEPENDENT</text>
+<rect x="188" y="101" width="224" height="40" rx="10" fill="#3b2b39" stroke="#ffb371"/><text x="300" y="127" font-size="12" fill="#ffe6c8">ANCESTRY COMPARISON</text>
+<rect x="152" y="148" width="296" height="39" rx="10" fill="#30253e" stroke="#ffc68b"/><text x="300" y="173" font-size="12" fill="#ffe7be">APPEND-ONLY CONFLICTS · HOLD</text></g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Each prior external-control claim, source receipt and controller fingerprint remains linked to its original epoch</small></div>
+<div class="cell"><b>PRESENT · CHALLENGES</b><small>Check both signatures on one domain-separated claim, fresh nonce, acquisition and claimed operator identity</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Detect renamed keys, reused controllers and changed operator ancestry without declaring independent control</small></div></div>
+<p>Static protocol diagram. No actual custodian identity, independently operated infrastructure or real-world control is certified here.</p>
+</div><p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust058-custodian-highwater.html">RUST-058 signed highwater</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p><small>.dlw · Source ancestry is not independent just because signatures differ. Original 5×2 arena and 256 cards remain unchanged.</small></main></html>
