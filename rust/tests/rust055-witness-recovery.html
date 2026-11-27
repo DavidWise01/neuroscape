@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-055 · Witness Recovery Quarantine</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 52% 0%,#452657,#0b1320 78%);color:#f6f8ff;font:15px system-ui,sans-serif}
+main{max-width:1140px;margin:auto;padding:28px}h1{color:#ffc791;text-shadow:0 0 26px #ff7736;font-size:clamp(26px,4vw,44px);letter-spacing:.04em}
+.panel{padding:25px;background:#151d31;border:1px solid #b38eff;border-radius:20px;box-shadow:0 0 38px #9a59f84d}.status{color:#ffc385;font-weight:800;font-size:22px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:23px 0}.cell{border:1px solid #34d5cb;border-radius:12px;padding:18px;min-height:119px;box-shadow:inset 0 0 20px #31d5cc1e}.cell:nth-child(2){border-color:#ffad69}.cell:nth-child(3){border-color:#b58cfa}b{display:block;margin-bottom:9px}p,small{color:#bdcddd;line-height:1.55}a{color:#a0ffec}svg{display:block;width:100%;height:auto;max-height:230px}@media(max-width:700px){.grid{grid-template-columns:1fr}}
+</style>
+<main><h1>RUST-055 · WITNESS RECOVERY QUARANTINE</h1>
+<p>Revoked witness → dual-signed replacement proposal → controller ancestry check → permanent HOLD.</p>
+<div class="panel">
+<div class="status">HOLD · Replacement witness does not regain custody authority</div>
+<svg viewBox="0 0 600 203" role="img" aria-label="Revoked original key, signed replacement proposal, and independent controller ancestry screening converge on a permanent quarantine result">
+<g fill="none" stroke="#b790fa" stroke-width="2.5"><path d="M168 55 H226 M374 55 H433 M300 95 V141"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="20" y="10" width="148" height="85" rx="11" fill="#183139" stroke="#30d4c8"/><text x="94" y="32" fill="#d3fffa" font-size="12">REVOKED WITNESS</text><text x="94" y="52" fill="#b8eee7" font-size="10">KEY FINGERPRINT</text><text x="94" y="68" fill="#b8eee7" font-size="10">HISTORY PRESERVED</text>
+<rect x="226" y="10" width="148" height="85" rx="11" fill="#3b2939" stroke="#ffac70"/><text x="300" y="32" fill="#ffe4c7" font-size="12">REPLACEMENT</text><text x="300" y="52" fill="#ffd4b2" font-size="10">TWO SIGNATURES</text><text x="300" y="68" fill="#ffd4b2" font-size="10">FRESH CHALLENGE</text>
+<rect x="433" y="10" width="147" height="85" rx="11" fill="#322743" stroke="#b890ff"/><text x="507" y="32" fill="#f2e4ff" font-size="12">CONTROLLER CHECK</text><text x="507" y="52" fill="#d9c7ff" font-size="10">SAME ROOT?</text><text x="507" y="68" fill="#d9c7ff" font-size="10">CUSTODY UNPROVEN</text>
+<rect x="140" y="141" width="320" height="45" rx="11" fill="#302438" stroke="#ffc186"/><text x="300" y="159" fill="#ffe4c2" font-size="13">APPEND-ONLY RECOVERY RECORD</text><text x="300" y="175" fill="#ffc383" font-size="11">NO AUTOMATIC GRADUATION · HOLD</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Revoked signing keys, claimed controlling roots and historic conflicts remain retained</small></div>
+<div class="cell"><b>PRESENT · CHECKS</b><small>Require distinct successor and authority signatures, domain-separated payload and fresh nonce</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>New key and new root claims are not proof of independent custody; quarantine persists</small></div>
+</div>
+<p>Static protocol visualization. No real-world witness has been independently recovered or authorized by this page.</p>
+</div>
+<p><a href="../../index.html">Neuroscape Arcade</a> · <a href="rust054-witness-revocation.html">RUST-054 witness revocation</a> · <a href="rust053-challenge-highwater.html">RUST-053 signed sessions</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · One key is not one independent controller. 5×2 arena, 256-card deck, and WASM gameplay remain untouched.</small>
+</main></html>
