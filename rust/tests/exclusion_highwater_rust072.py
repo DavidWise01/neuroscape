@@ -106,12 +106,12 @@ def audit(previous,current,checkpoint,key,signature,signer_pin,floor,
         if pin in prior_candidates and origin not in prior_candidates[pin]:
             conflicts.append({"reason":"SAME_SIGNER_CHANGED_DENIAL_ANCESTRY",
                               "pin":pin,"independent_custody_verified":False})
-        previous=prior_controllers.get(claim["controller_sha256"],set())
-        if previous and pin not in previous:
+        prior_controller_pins=prior_controllers.get(claim["controller_sha256"],set())
+        if prior_controller_pins and pin not in prior_controller_pins:
             conflicts.append({"reason":"RENAMED_SIGNER_SHARED_PRIOR_CONTROLLER",
                               "pin":pin,"independent_custody_verified":False})
-        previous=prior_acquisitions.get(claim["acquisition_sha256"],set())
-        if previous and pin not in previous:
+        prior_acquisition_pins=prior_acquisitions.get(claim["acquisition_sha256"],set())
+        if prior_acquisition_pins and pin not in prior_acquisition_pins:
             conflicts.append({"reason":"RENAMED_SIGNER_SHARED_PRIOR_ACQUISITION",
                               "pin":pin,"independent_custody_verified":False})
         reviewed.append({"denial_entry_sha256":event["entry_sha256"],
