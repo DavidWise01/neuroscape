@@ -251,6 +251,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_denial_custody_highwater_rust074.py' -v
       - name: RUST-075 preserve custody forks and reject false branch reconciliation
         run: python3 -m unittest discover -s rust/tests -p 'test_custody_fork_rust075.py' -v
+      - name: RUST-076 preserve signed custody fork highwater and reject fabricated mergers
+        run: python3 -m unittest discover -s rust/tests -p 'test_custody_fork_highwater_rust076.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -573,6 +575,11 @@ jobs:
           python3 rust/tests/custody_fork_rust075.py \
             --output rust/tests/.rust075-custody-fork.json \
             --allow-hold-record
+      - name: RUST-076 archive missing independent custody fork highwater HOLD
+        run: |
+          python3 rust/tests/custody_fork_highwater_rust076.py \
+            --output rust/tests/.rust076-custody-fork-highwater.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -642,6 +649,7 @@ jobs:
             rust/tests/.rust073-denial-custody.json
             rust/tests/.rust074-denial-highwater.json
             rust/tests/.rust075-custody-fork.json
+            rust/tests/.rust076-custody-fork-highwater.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
