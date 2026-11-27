@@ -217,6 +217,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_recovery_custody_rust057.py' -v
       - name: RUST-058 reject renamed custodians and stale signed challenge highwaters
         run: python3 -m unittest discover -s rust/tests -p 'test_custodian_highwater_rust058.py' -v
+      - name: RUST-059 reject custodian-control identity replay and hidden ancestry conflicts
+        run: python3 -m unittest discover -s rust/tests -p 'test_external_control_rust059.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -454,6 +456,11 @@ jobs:
           python3 rust/tests/custodian_highwater_rust058.py \
             --output rust/tests/.rust058-custodian-highwater.json \
             --allow-hold-record
+      - name: RUST-059 archive unauthenticated external controller custody HOLD
+        run: |
+          python3 rust/tests/external_control_rust059.py \
+            --output rust/tests/.rust059-external-control.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -506,6 +513,7 @@ jobs:
             rust/tests/.rust056-recovery-highwater.json
             rust/tests/.rust057-recovery-custody.json
             rust/tests/.rust058-custodian-highwater.json
+            rust/tests/.rust059-external-control.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
