@@ -3487,3 +3487,56 @@ combat engine are retained.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-086 — Cross-custodian control highwater & permanent quarantine retention
+
+\`rust/tests/custodian_quarantine_highwater_rust086.py\` compares two
+receipt-checked RUST-085 custodian control/quarantine registries,
+requiring a strict append-only extension of the exact historical
+event list and SHA-256 predecessor heads. All prior witness
+claims, quarantined independence assertions, custody conflicts,
+exclusion snapshots and denied recovery histories must remain
+unchanged in their original chronological order.
+
+The signed, domain-separated
+\`CROSS_CUSTODIAN_QUARANTINE_HIGHWATER_V1\` checkpoint binds the
+predecessor RUST-085 receipt, event count, terminal chain head,
+complete event digest and separate hashes for every retained
+claim, quarantine, conflict, exclusion and denial collection.
+Neither a recorded custody witness, excluded custodian, nor
+previous control registrar may sign the checkpoint. A separately
+supplied retention-floor claim must equal a precise successor
+SHA-256 history prefix; it is *not* an independent authenticated
+clock or globally latest floor.
+
+For each appended RUST-085 epoch, one RUST-086 observation binds
+the exact event hash, dual-witness claims digest, quarantine
+digest and exclusion/denial snapshot digests, alongside a fresh
+nonce. Changed or missing historical quarantines, reintroduced
+previously quarantined signers, renamed controllers reusing
+earlier source/root/acquisition ancestry, and nonce replay
+are preserved as contradictions or rejected. No observed
+lack of overlap establishes independence.
+
+**Trust boundary:** Cryptographically valid locally submitted
+checkpoint signatures, fingerprints, and claimed retention floors
+cannot prove physical custody, external byte acquisition or
+global anti-rollback. Structural success remains
+\`HOLD_CROSS_CUSTODIAN_QUARANTINE_HIGHWATER\`; missing
+evidence emits
+\`HOLD_MISSING_CROSS_CUSTODIAN_QUARANTINE_HIGHWATER\`.
+Neither custody independence, recovery, fork selection, release
+nor live-gameplay authority is granted.
+
+Twenty-five adversarial tests have been authored and configured
+in the GitHub Actions predeployment gate, alongside an
+archivable missing-evidence HOLD record. No changes were made
+to the 5×2 arena, 256-card catalog, neon gameplay or native
+Rust WASM combat engine.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-086 neon quarantine highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust086-custodian-quarantine-highwater.html) ·
+[RUST-085 control quarantine](https://davidwise01.github.io/neuroscape/rust/tests/rust085-cross-custodian-control.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
