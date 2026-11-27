@@ -47,9 +47,22 @@ class CustodyForkHighwaterTests(unittest.TestCase):
     def test_historical_fork_heads_distinct(self):
         for pair in run()["current_fork_pairs_preserved"]:
             self.assertNotEqual(pair[0],pair[1])
-    def test_repeated_fork_pair_recorded(self):
+    def test_new_fork_pair_not_misclassified_as_replay(self):
+        self.assertNotIn("REPEATED_FORK_PAIR_NEW_EPOCH",
+                         [x["reason"] for x in run()["cross_epoch_conflicts"]])
+    def test_repeated_fork_pair_is_recorded(self):
+        first=fork_run()
+        material=sample("second")
+        material[3]=sample()[3]
+        second=fork_run(material,history=first)
+        args=fixture()
+        args[1]=second
+        new_event=second["events"][-1]
+        args[4][0]["fork_entry_sha256"]=new_event["entry_sha256"]
+        args[4][0]["branch_b_head_sha256"]=new_event["branch_b_head_sha256"]
+        result=run(args)
         self.assertIn("REPEATED_FORK_PAIR_NEW_EPOCH",
-                      [x["reason"] for x in run()["cross_epoch_conflicts"]])
+                      [x["reason"] for x in result["cross_epoch_conflicts"]])
     def test_reused_source_ancestry_recorded(self):
         self.assertIn("REUSED_CUSTODY_ANCESTRY_WITH_NEW_FORK",
                       [x["reason"] for x in run()["cross_epoch_conflicts"]])
