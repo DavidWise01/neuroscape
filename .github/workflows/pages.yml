@@ -269,6 +269,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_exclusion_custody_rust083.py' -v
       - name: RUST-084 preserve signed dual custody highwater and witness ancestry
         run: python3 -m unittest discover -s rust/tests -p 'test_dual_custody_highwater_rust084.py' -v
+      - name: RUST-085 quarantine cross-custodian control claims and preserve denials
+        run: python3 -m unittest discover -s rust/tests -p 'test_cross_custodian_control_rust085.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -636,6 +638,11 @@ jobs:
           python3 rust/tests/dual_custody_highwater_rust084.py \
             --output rust/tests/.rust084-dual-custody-highwater.json \
             --allow-hold-record
+      - name: RUST-085 archive missing independent control HOLD
+        run: |
+          python3 rust/tests/cross_custodian_control_rust085.py \
+            --output rust/tests/.rust085-cross-custodian-control.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -714,6 +721,7 @@ jobs:
             rust/tests/.rust082-controller-exclusion-highwater.json
             rust/tests/.rust083-exclusion-custody.json
             rust/tests/.rust084-dual-custody-highwater.json
+            rust/tests/.rust085-cross-custodian-control.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
