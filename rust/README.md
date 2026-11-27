@@ -2216,3 +2216,53 @@ default missing-custody HOLD record. The original 5×2 arena,
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-061 — Persistent reconciliation ledger and third-party retention challenge
+
+\`rust/tests/reconciliation_retention_rust061.py\` records every
+RUST-060 two-branch reconciliation in a distinct SHA-256-linked,
+append-only evidence ledger. It checks the RUST-060 source receipt,
+requires unchanged HOLD authority, and stores the complete original
+left and right branch histories, exact branch head fingerprints,
+retained control conflicts and reconciliation disagreements in every
+new entry. No winner is elected; conflicting branch evidence does
+not disappear in later epochs.
+
+Each entry binds a proposed outside retention witness signature to a
+domain-separated \`RECONCILIATION_RETENTION_CHALLENGE_V1\` containing
+both branch histories' SHA-256 digests, both heads, the unresolved
+disagreement digest, the source reconciliation receipt, prior RUST-061
+ledger head, fresh nonce, and *claimed* custodian, acquisition, and
+operator fingerprints. The proposed retention signer may not be the
+original RUST-060 highwater signer. Repeated source receipts or
+retention nonces are rejected. Historical retention ledger entries
+are revalidated from genesis and must preserve both branches and
+their ordered disputes; an optional externally supplied retention
+floor must match the exact earlier RUST-061 prefix.
+
+Different signer pins claiming the same retention root or operator
+are explicitly recorded as cross-epoch conflicts. Reusing a pin while
+declaring a changed retained root is refused rather than accepted as
+independent custody. There is no independent network verification of
+the retention service or real-world operating organization.
+
+**Authority boundary:** An independently supplied *claim* and a
+valid pinned signature do not prove independently operated storage,
+global latest custody, anti-rollback, or actual source control.
+Output remains \`HOLD_RECONCILIATION_RETENTION\` or, without
+external materials, \`HOLD_MISSING_EXTERNAL_RECONCILIATION_RETENTION\`.
+The \`winner_selected\`, \`fork_resolved\`,
+\`independent_retention_verified\`, \`release_authorized\` and
+\`live_gameplay_authority\` flags remain false.
+
+Seventeen regression cases are configured in the GitHub Actions
+predeployment gate. The workflow archives the default missing-evidence
+HOLD receipt. The original 5×2 arena, 256-card catalog, neon gameplay
+and Rust WASM combat core remain unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-061 neon reconciliation retention](https://davidwise01.github.io/neuroscape/rust/tests/rust061-reconciliation-retention.html) ·
+[RUST-060 two-branch reconciliation](https://davidwise01.github.io/neuroscape/rust/tests/rust060-control-reconciliation.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
