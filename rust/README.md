@@ -1981,3 +1981,51 @@ or neon game visuals.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-056 — Quarantined recovery highwater and successor witness continuity
+
+\`rust/tests/recovery_highwater_rust056.py\` extends RUST-055 witness
+recovery quarantine across strictly later observations. It reads two
+complete RUST-055 append-only histories and their paired RUST-054
+witness-revocation registries, recalculates the exact SHA-256 chains
+and requires the predecessor recovery and revocation entries and all
+prefix heads to be retained without editing, dropping or substituting
+historical evidence.
+
+A nonempty previous recovery history is bound into the domain-separated
+\`RECOVERY_QUARANTINE_HIGHWATER_V1\` signing payload. It includes the
+old recovery count, terminal head, full recovery-history digest,
+recovery receipt and referenced revocation receipt/head. Its signature
+is checked against a separately provided signer pin, never one of
+the revoked witness keys. An externally *presented* floor must
+cover at least the earlier recovery count and must agree with the
+exact corresponding prefix of the new history.
+
+Every new recovery event needs a separate successor observation
+identifying that exact event's SHA-256 digest, the current RUST-054
+revocation receipt, a new observation nonce, and its existing claimed
+controller. The module detects repeated nonces, substituted claimed
+controllers, reappearance of revoked witness keys, and dropped
+historic revocations. Controller claims matching a revoked root
+remain explicit; they never imply a successful recovery.
+
+**Security boundary:** A correctly signed checkpoint does not
+prove independent external storage, operator identity, latest global
+highwater, or permission to activate a candidate. The output status
+is always \`HOLD_RECOVERY_QUARANTINE_HIGHWATER_UNVERIFIED\` or, with
+missing materials, \`HOLD_MISSING_RECOVERY_HIGHWATER_CUSTODY\`.
+\`independent_external_custody_verified\`,
+\`globally_latest_highwater_verified\`, \`fork_resolved\`,
+\`release_authorized\` and \`live_gameplay_authority\` remain false.
+
+Sixteen regression tests are configured before GitHub Pages deployment
+and the default missing-evidence HOLD record is archived. This
+is Python evidence verification, not an alteration to the Rust WASM
+game engine, 5×2 arena, 256-card catalog or neon gameplay.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-056 neon recovery highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust056-recovery-highwater.html) ·
+[RUST-055 quarantine](https://davidwise01.github.io/neuroscape/rust/tests/rust055-witness-recovery.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
