@@ -2513,3 +2513,57 @@ and Rust WASM combat remain intact.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-067 — Quarantined successor recovery attempts and independent custody challenges
+
+\`rust/tests/successor_recovery_rust067.py\` consumes an intact
+RUST-066 successor-quarantine highwater receipt and the exact
+RUST-065 revoked-witness ledger that receipt binds. Every newly
+quarantined replacement is recorded as a distinct recovery attempt
+in a SHA-256 predecessor-linked, append-only RUST-067 history.
+Each attempted successor remains tied to the original revocation
+entry hash, revoked signer/controller history, and declared
+replacement key, controller, source-root and acquisition ancestry.
+
+Each attempt requires three separately signed, domain-separated
+\`ff/cf/rr\` challenges. The messages bind the RUST-066 receipt,
+original revocation entry, prior recovery-chain head, replacement
+signing pin, claimed witness controller/source/acquisition fingerprints,
+and fresh nonces. A revoked signer, a quarantined successor signer,
+or the RUST-066 highwater signer cannot attest independently.
+Replay of revocation or previous witness nonces, forged signatures,
+missing roles, duplicate pins, modified old events and source
+substitution are rejected. Witnesses sharing claimed controller,
+source root or acquisition paths, or reusing a compromised controller
+or candidate acquisition path, produce persistent ancestry conflict
+records rather than a release decision.
+
+The complete RUST-067 history is validated before each append,
+including exact event hashes, custody-witness digests, predecessor
+links, source bindings and ordered conflicts. A separately supplied
+retained floor must match its historical prefix. No release mechanism
+is provided: the only structural result is
+\`HOLD_QUARANTINED_RECOVERY_ATTEMPTS\`, with
+\`HOLD_MISSING_INDEPENDENT_SUCCESSOR_CUSTODY\` as the
+missing-evidence default.
+
+**Trust boundary:** Three pinned signatures establish only that
+configured cryptographic signing checks were satisfied. They cannot
+prove independently operated real-world custody or sufficient
+recovery authority. \`independent_custody_verified\`,
+\`recovery_authorized\`, \`release_authorized\`, \`fork_resolved\`
+and \`live_gameplay_authority\` remain false. External custody and
+globally latest highwater remain unverified.
+
+Twenty regression cases are configured in the GitHub Actions
+predeployment gate, and the explicit default missing-evidence HOLD
+receipt is included in the Actions evidence archive. The original
+5×2 arena, 256 cards, neon artwork, gameplay and Rust WASM
+combat core remain unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-067 neon successor recovery](https://davidwise01.github.io/neuroscape/rust/tests/rust067-successor-recovery.html) ·
+[RUST-066 revocation highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust066-revocation-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
