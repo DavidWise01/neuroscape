@@ -2126,3 +2126,48 @@ Rust WASM combat engine.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-059 — Custodian identity continuity and external control challenge
+
+\`rust/tests/external_control_rust059.py\` consumes a receipt-checked
+RUST-058 custody-highwater assessment and appends domain-separated,
+dual-signed custodian control challenges to a separate immutable
+RUST-059 SHA-256 chain. Each new challenge binds the prior RUST-059
+head, its specific RUST-058 source receipt, a fresh nonce, claimed
+custodian signing-key pin, controlling organization fingerprint,
+operator-control fingerprint, acquisition fingerprint and claimed
+external evidence digest. The custodian and separately pinned
+authority must sign exactly the same canonical challenge payload.
+A custodian or previously recorded custodian may not self-attest
+as independent control authority.
+
+The verifier records discrepancies when the same signer pin later
+claims a changed controller, operator, or acquisition ancestry, or
+when a renamed signer declares an existing controller or operator.
+Earlier custody conflicts and source-ancestry contradictions are
+retained; historical control events must preserve their exact
+predecessor hash links, entry digests and ordered conflict record.
+Replayed source receipts, nonces, forged historical authority flags,
+or mismatched supplied retention floors fail closed.
+
+**Trust boundary:** An authority signature, source fingerprint,
+claimed organizational identity, and an exact externally supplied
+floor do not establish that distinct people, systems or custody
+operators control the evidence. RUST-059 does not make network
+requests to an independent external identity service. The result
+always remains \`HOLD_EXTERNAL_CONTROL_CONTINUITY\` or, without
+external materials, \`HOLD_MISSING_EXTERNAL_CONTROL_CHALLENGE\`.
+\`independent_external_control_verified\`, \`fork_resolved\`,
+\`release_authorized\`, and gameplay authority stay false.
+
+Sixteen regression cases are configured in the predeployment Actions
+gate and the workflow archives the missing-control-evidence HOLD
+record. The 5×2 arena, 256-card catalog, existing neon gameplay and
+Rust WASM combat core remain unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-059 neon external control](https://davidwise01.github.io/neuroscape/rust/tests/rust059-external-control.html) ·
+[RUST-058 signed custodian highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust058-custodian-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
