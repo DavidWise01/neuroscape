@@ -2465,3 +2465,51 @@ Rust WASM combat engine remain unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-066 — Signed revocation highwater and successor custody quarantine
+
+\`rust/tests/revocation_highwater_rust066.py\` compares complete
+RUST-065 witness-revocation registries. It recomputes their linked
+SHA-256 histories, requires strict successor extension, and preserves
+prior revoked pins, compromised controller roots and every rotation
+conflict as exact historical prefixes.
+
+Its domain-separated \`REVOCATION_SUCCESSOR_HIGHWATER_V1\` checkpoint
+binds the predecessor event count, terminal head, event-history hash,
+revoked-key hash, revoked-controller hash, conflict-list hash and
+RUST-065 receipt. The signer must not be a revoked key, quarantined
+replacement, or earlier revocation authority. A separately supplied
+retained-floor claim must cover the preceding event count and agree
+with the exact successor-prefix head; this does not establish
+independent external custody.
+
+Every appended revocation requires a fresh RUST-066 observation bound
+to that revocation's exact entry hash, its declared successor controller
+and acquisition path. Old revocation nonces cannot be reused, nor
+may an observation declare recovery/release authority. The verifier
+labels proposed successor reuse of earlier controlling roots, source
+roots or acquisition paths; it also compares repeated successor signing
+pins whose declared ancestry changes across epochs. A distinct key
+never graduates a witness from quarantine.
+
+**Trust boundary:** All structurally valid results remain
+\`HOLD_REVOCATION_SUCCESSOR_QUARANTINE_HIGHWATER\`, and missing evidence
+produces \`HOLD_MISSING_REVOCATION_SUCCESSOR_HIGHWATER\`.
+Independent custody, global latest highwater, anti-rollback,
+fork resolution, live gameplay authority and release authorization
+are not certified. Production signatures must be checked with
+the existing pinned cryptographic verifier; tests use a synthetic
+verifier stub and are not external witness evidence.
+
+Twenty regression cases are authored for the GitHub Actions
+predeployment gate, with the missing-external-evidence HOLD JSON
+included in its artifact collection. This phase modifies no
+gameplay code: the original 5×2 arena, 256 cards, neon visuals
+and Rust WASM combat remain intact.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-066 neon revocation highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust066-revocation-highwater.html) ·
+[RUST-065 witness rotation](https://davidwise01.github.io/neuroscape/rust/tests/rust065-witness-rotation.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
