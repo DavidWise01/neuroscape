@@ -2171,3 +2171,48 @@ Rust WASM combat core remain unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-060 — Signed external-control highwater and custody reconciliation
+
+\`rust/tests/control_reconciliation_rust060.py\` validates two complete
+RUST-059 external-controller claim histories before any comparison.
+The separately pinned highwater signer must verify a domain-separated
+signature binding the left branch's exact count, terminal SHA-256 head,
+ordered control-history digest, retained conflict digest and its
+RUST-059 source receipt. A separately supplied retained floor must
+match the left history's exact prefix at its count. Signers already
+named as custodians in either history cannot self-sign this
+highwater.
+
+The reconciliation compares exact historical prefixes to locate the
+longest shared ancestry and records incompatible branch heads
+without selecting a winner. Both complete branches, their source
+receipts, counts, terminal hashes and all historical conflict
+records are preserved in the resulting evidence receipt. The
+verifier records when a key declares conflicting controller/operator/
+acquisition ancestry across branches, a different key declares an
+existing controlling root, or independently *claimed* custody sources
+share a root, acquisition path, or organizational operator.
+A duplicate externally claimed control nonce fails closed.
+
+**Boundary:** Neither a valid pinned signature, distinct claimed
+custodians, a retained floor, nor an absence of detected disagreement
+establishes independent operator custody, global latest highwater,
+global anti-rollback or authority. Reconciliation always returns
+\`HOLD_EXTERNAL_CONTROL_RECONCILIATION\`; without external material
+it records \`HOLD_MISSING_INDEPENDENT_CONTROL_CUSTODY\`.
+\`winner_selected\`, \`independent_custodians_authenticated\`,
+\`fork_resolved\`, \`release_authorized\` and
+\`live_gameplay_authority\` remain false.
+
+Sixteen adversarial/structural regression cases are committed to
+GitHub Actions before Pages deployment. The workflow archives the
+default missing-custody HOLD record. The original 5×2 arena,
+256-card deck, neon gameplay and Rust WASM core remain unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-060 neon reconciliation observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust060-control-reconciliation.html) ·
+[RUST-059 external control](https://davidwise01.github.io/neuroscape/rust/tests/rust059-external-control.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
