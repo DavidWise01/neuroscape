@@ -1932,3 +1932,52 @@ existing neon gameplay.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-055 — Revoked witness recovery quarantine and controller independence
+
+\`rust/tests/witness_recovery_rust055.py\` consumes an intact RUST-054
+witness-revocation registry and maintains a separate append-only
+RUST-055 quarantine ledger for proposed replacement keys. It
+recalculates the RUST-054 history and exact SHA-256 predecessor heads
+before considering recovery, and preserves all earlier revoked signing
+keys, claimed controllers, and ancestry conflicts.
+
+A candidate payload binds the original revoked signing pin,
+new replacement pin, claimed controller and source roots, acquisition
+fingerprint, external recovery-authority root, incident evidence,
+fresh nonce, RUST-054 receipt, and previous recovery-head digest.
+Both the candidate signing key and a separately pinned recovery
+authority must sign the same domain-separated payload. Old or
+already revoked keys cannot self-recover; an authority controlled
+by the same claimed compromised controller is rejected.
+A new key that claims an already revoked controller is recorded
+as \`reuses_revoked_controller: true\` and remains quarantined.
+All successor evidence remains appended even when the claimed
+controller differs.
+
+The ledger checks historic SHA-256 entry digests, exact predecessor
+links, replayed candidate nonces and repeated compromised-to-successor
+pairs. An optional separately supplied retained floor must match
+the exact earlier RUST-055 prefix head. Neither that floor nor the
+two signature fingerprints independently proves real-world
+custodian identity, external source ancestry, or latest global state.
+
+**All structural results remain**
+\`HOLD_WITNESS_RECOVERY_QUARANTINE\`; no successful signature
+promotes \`independent_custody_verified\`, \`fork_resolved\`,
+\`release_authorized\`, \`recovery_authorized\`, or
+\`live_gameplay_authority\`. Missing external recovery materials
+produce \`HOLD_MISSING_INDEPENDENT_RECOVERY_CUSTODY\`.
+
+Sixteen adversarial tests are committed to the GitHub Actions
+predeployment gate; the default HOLD record is archived.
+This remains Python verification infrastructure and does not
+modify the original Rust WASM gameplay, 5×2 arena, 256 cards
+or neon game visuals.
+
+[Launch Neuroscape](https://davidwise01.github.io/neuroscape/) ·
+[RUST-055 neon recovery quarantine](https://davidwise01.github.io/neuroscape/rust/tests/rust055-witness-recovery.html) ·
+[RUST-054 witness revocation](https://davidwise01.github.io/neuroscape/rust/tests/rust054-witness-revocation.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
