@@ -3279,3 +3279,53 @@ neon interface and Rust WASM combat.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-082 — Controller exclusion highwater & permanent reentry denial
+
+\`rust/tests/controller_exclusion_highwater_rust082.py\` checks a
+**strictly extended** RUST-081 controller exclusion ledger and its
+SHA-256 predecessor heads, preserving in exact historical order all
+previously excluded signing pins, controller roots, source roots,
+acquisition paths, denied reentries and custody conflicts.
+
+Its signed, domain-separated \`CONTROLLER_EXCLUSION_HIGHWATER_V1\`
+checkpoint binds the predecessor receipt, event count, terminal
+head, complete event digest, four full exclusion-list digests and
+the denial/conflict digests. Neither an excluded custodian nor a
+prior denial registrar may sign the checkpoint. The separately
+presented retained floor must match the successor ledger's exact
+prefix and cannot predate the signed predecessor.
+
+Every new RUST-081 denial event requires a RUST-082 observation
+bound to its exact event SHA-256, denial-row digest, excluded
+controller digest, excluded acquisition digest and a fresh nonce.
+Attempts to clear any historical reentry denial, rewrite excluded
+roots, replay a prior nonce, invent independent custody or grant
+recovery/release authority fail closed. A renamed signing key
+reusing an earlier excluded controller, source or acquisition
+fingerprint produces \`REENTRY_MATCHES_SIGNED_PRIOR_EXCLUSION\`;
+a new key with no matching prior fingerprint still receives
+\`UNQUALIFIED_REENTRY_DENIED_WITHOUT_PRIOR_MATCH\`.
+
+**Trust boundary:** Signed snapshots, retention floors and declared
+control fingerprints are locally checkable structural evidence,
+not independent physical custody, authenticated globally latest
+state or global anti-rollback. Accepted results remain
+\`HOLD_CONTROLLER_EXCLUSION_HIGHWATER_REENTRY_DENIAL\`; missing
+material emits \`HOLD_MISSING_CONTROLLER_EXCLUSION_HIGHWATER\`.
+Both branches remain unselected and all recovery, release and
+live gameplay authority stays false.
+
+Twenty-five adversarial tests are authored in the GitHub Actions
+predeployment gate. The workflow archives a missing-evidence HOLD
+JSON, with live run success and Pages deployment subject to
+independent verification. This phase adds no gameplay modifications:
+the original 5×2 arena, 256 cards, neon UI and Rust WASM combat
+remain intact.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-082 neon exclusion highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust082-controller-exclusion-highwater.html) ·
+[RUST-081 exclusion registry](https://davidwise01.github.io/neuroscape/rust/tests/rust081-controller-exclusion.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
