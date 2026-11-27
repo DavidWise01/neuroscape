@@ -3436,3 +3436,54 @@ and Rust WASM combat engine are untouched.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-085 — Cross-custodian control registry and independent evidence quarantine
+
+\`rust/tests/cross_custodian_control_rust085.py\` binds a receipt-checked
+RUST-084 custody highwater to the complete, intact RUST-083 dual-witness
+custody history. It requires the exact latest observed custody event,
+retains both original left/right witness rows, and extracts their
+signer pins, signed message hashes, controller fingerprints, source
+roots and acquisition paths without changing past evidence.
+
+Each RUST-085 \`CROSS_CUSTODIAN_CONTROL_CHALLENGE_V1\` statement binds
+the RUST-084 and RUST-083 receipts, previous RUST-085 chain head,
+current custody-event hash, original paired-witness digest,
+full exclusion/denial snapshot hashes, registrar key and fresh nonce.
+A source custodian, previously excluded witness or RUST-084 signer
+cannot act as the new registrar. Repeated source receipts, replayed
+nonces, tampered custody events and mismatched retention floors are
+rejected.
+
+Every branch's claim receives a permanently retained
+\`custody_independence_quarantined=true\` row even where no overlapping
+fingerprint is visible. New left/right witnesses sharing controller,
+source-root or acquisition ancestry are flagged as
+\`CURRENT_CUSTODIANS_SHARE_CLAIMED_CONTROL\`. Renamed signers reusing
+earlier ancestry are flagged as
+\`RENAMED_CUSTODIAN_REUSES_CONTROL_ANCESTRY\`, and existing keys
+changing claimed ancestry as
+\`CUSTODIAN_PIN_CHANGED_DECLARED_CONTROL\`. All previous claims,
+quarantine rows, SHA-256-linked events, exclusions, denials and
+contradictions survive as exact append-only historical prefixes.
+
+**Trust boundary:** No self-reported control fingerprint, locally
+verified signature, witness count, or caller-supplied floor is proof
+of independent real-world custody or globally latest state.
+Structurally accepted results remain
+\`HOLD_CROSS_CUSTODIAN_CONTROL_QUARANTINE\`; missing evidence yields
+\`HOLD_MISSING_CROSS_CUSTODIAN_CONTROL\`. Neither witness gains release,
+recovery, independent custody or fork-resolution authority.
+
+Twenty-four adversarial regression cases are authored for the
+predeployment GitHub Actions gate, with default missing-evidence HOLD
+JSON configured for archival. No gameplay source is changed:
+the original 5×2 arena, 256-card catalog, neon visuals and Rust WASM
+combat engine are retained.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-085 neon control quarantine](https://davidwise01.github.io/neuroscape/rust/tests/rust085-cross-custodian-control.html) ·
+[RUST-084 dual-custody highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust084-dual-custody-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
