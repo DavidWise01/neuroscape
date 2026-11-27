@@ -3329,3 +3329,55 @@ remain intact.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-083 — Dual exclusion custody witnessing & cross-epoch denial preservation
+
+\`rust/tests/exclusion_custody_rust083.py\` consumes a receipt-checked
+RUST-082 controller-exclusion highwater and its exact RUST-081
+exclusion ledger. It binds two separately signed \`left/right\`
+custody claims to the same full set of excluded signer pins,
+controllers, source roots, acquisition paths, denied reentries and
+custody conflicts. Each domain-separated
+\`EXCLUSION_CUSTODY_WITNESS_V1\` message binds the RUST-082 receipt,
+RUST-081 receipt and head, preceding RUST-083 head, complete
+exclusion and denial digests, fresh nonce, signing pin and
+declared controller/source/acquisition ancestry.
+
+Neither signer may be an excluded RUST-081 signing key, a
+RUST-081 registrar, the RUST-082 checkpoint signer or the
+other claimed custodian. Replayed RUST-082 sources, missing
+signatures, reused challenge nonces, forged release claims and
+incompatible custody retention floors fail closed. Across later
+epochs the complete exclusions and denial/conflict histories
+must survive as exact ordered prefixes, and every earlier
+RUST-083 event and predecessor hash is retained.
+
+Shared claimed controller, source-root or acquisition ancestry
+across the two witnesses produces \`SHARED_CUSTODY_CLAIM_ANCESTRY\`.
+Different signing keys that reuse historical controlling/source/
+acquisition fingerprints produce
+\`RENAMED_CUSTODY_WITNESS_REUSED_ANCESTRY\`;
+an existing signing key changing its declared ancestry produces
+\`EXISTING_CUSTODY_PIN_CHANGED_ANCESTRY\`. Conflicts remain
+append-only evidence, never a vote to release either branch.
+
+**Trust boundary:** Two signed custody statements are not independent
+third-party byte acquisition, physical-custody proof or globally
+authenticated highwater. A structurally valid record remains
+\`HOLD_DUAL_EXCLUSION_CUSTODY\`, while missing external claims emit
+\`HOLD_MISSING_DUAL_EXCLUSION_CUSTODY\`. Independent custody, fork
+resolution, globally latest state, anti-rollback certification,
+recovery, release and live-gameplay authority remain unverified
+or false.
+
+Twenty-four adversarial regression tests are authored and configured
+in the GitHub Actions predeployment gate. The workflow archives the
+default missing-evidence HOLD JSON. The 5×2 arena, 256-card catalog,
+neon gameplay and Rust WASM combat core are unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-083 neon exclusion custody](https://davidwise01.github.io/neuroscape/rust/tests/rust083-exclusion-custody.html) ·
+[RUST-082 signed exclusion highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust082-controller-exclusion-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
