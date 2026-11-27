@@ -3024,3 +3024,52 @@ Rust WASM combat core remain intact.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-077 — Fork branch custody challenges and independent ancestry claims
+
+\`rust/tests/fork_branch_custody_rust077.py\` consumes a receipt-checked
+RUST-076 signed custody-fork highwater and the exact RUST-075 fork
+ledger bound by that highwater. Every new fork entry still holds
+two different original RUST-073 branch heads and inherited custody
+conflicts. RUST-077 requires **two fresh, separately signed and
+domain-separated custody challenges**, one bound to branch A and the
+other bound to branch B. Each challenge pins its original RUST-075
+fork event, RUST-076 highwater receipt, preceding RUST-077 ledger
+head, own branch head, signing pin, nonce and claimed controller,
+source-root and acquisition fingerprints.
+
+A branch claimant cannot reuse a source fork witness or RUST-076
+highwater signer. Both challenge signing pins must differ, and
+nonces cannot repeat an earlier RUST-077 nonce or RUST-075 fork
+witness nonce. A claimed winner, fork resolution, release authority
+or recovery clearance fails closed. The resulting SHA-256 predecessor-
+linked ledger preserves every original fork pair, signature digest,
+prior custody assertion, ancestry disagreement and new conflict.
+Shared controller/source/acquisition fingerprints between A/B claims
+are recorded as \`BRANCH_WITNESSES_SHARE_ANCESTRY\`.
+Reused historical signing keys and renamed custodians repeating
+earlier controlling or acquisition fingerprints remain explicit
+conflicts, not proofs of custodian independence.
+
+**Trust boundary:** Two distinct pinned signing keys do not prove
+separate real-world custody, independent organization control,
+a globally latest highwater or physical anti-rollback. Every
+structurally valid record remains
+\`HOLD_FORK_BRANCH_CUSTODY_CHALLENGES\`, and the missing-evidence
+default is \`HOLD_MISSING_FORK_BRANCH_CUSTODY_CHALLENGES\`.
+\`fork_resolved\`, \`winner_selected\`,
+\`independent_custody_verified\`, \`recovery_authorized\`,
+\`release_authorized\` and live gameplay authority are always false.
+
+Twenty-four authored adversarial tests are configured in the
+predeployment GitHub Actions gate, with the missing-evidence HOLD
+JSON configured for artifact archival. This phase changes no game
+source: the existing 5×2 arena, 256 cards, neon interface and
+Rust WASM combat core remain intact.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-077 neon branch custody](https://davidwise01.github.io/neuroscape/rust/tests/rust077-fork-branch-custody.html) ·
+[RUST-076 fork highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust076-custody-fork-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
