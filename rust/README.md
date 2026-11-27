@@ -2673,3 +2673,52 @@ neon visuals and Rust WASM combat core are preserved.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-070 — Recovery witness revocation highwater & cross-epoch custodian exclusion
+
+\`rust/tests/witness_exclusion_rust070.py\` checks the complete
+RUST-069 recovery witness revocation ledger before comparing a strictly
+extended successor. Every prior entry, SHA-256 predecessor link,
+revoked witness pin, declared compromised controller root and custody
+conflict must remain in its exact historical position. It refuses
+truncation and conflicting earlier prefix heads.
+
+The domain-separated \`RECOVERY_WITNESS_REVOCATION_HIGHWATER_V1\`
+checkpoint binds the predecessor event count, head, event digest,
+revoked signing-pin list digest, revoked controller list digest,
+conflict digest and RUST-069 receipt. A separately pinned signer
+may not be a revoked or historically recorded witness. A separately
+presented floor must match the exact retained successor prefix at
+its declared count and cannot precede the signed history.
+
+Each appended revocation requires an RUST-070 epoch observation tied to
+the precise new revocation event, with fresh nonce and declared
+custodian signing pin, controller, source-root and acquisition
+fingerprints. Attempts to release quarantine fail closed. Revoked
+signer re-entry is recorded as \`REVOKED_SIGNER_REENTRY\`; a renamed
+signer claiming a compromised controller is recorded as
+\`RENAMED_KEY_REVOKED_CONTROLLER\`. Reuse of previously observed
+controllers and acquisition paths is recorded as a cross-epoch
+custody ancestry contradiction.
+
+**Boundary:** Observations are claims. A matching signature and
+retained floor do not establish real-world custody independence,
+global latest history, or global anti-rollback. Every structural
+review remains \`HOLD_REVOCATION_HIGHWATER_CUSTODIAN_EXCLUSION\`.
+Without independent material the tool archives
+\`HOLD_MISSING_WITNESS_REVOCATION_HIGHWATER\`. Recovery authorization,
+release authorization and live gameplay authority always remain
+false. No quorum of claimed custodians elects an authorized branch.
+
+Twenty-one adversarial regression cases are committed to the
+GitHub Actions predeployment gate, together with the explicit
+default missing-evidence HOLD JSON archive. Gameplay source is
+not modified; the original 5×2 arena, 256-card catalog, neon
+graphics and Rust WASM combat are unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-070 neon custodian exclusion](https://davidwise01.github.io/neuroscape/rust/tests/rust070-witness-exclusion.html) ·
+[RUST-069 recovery revocation](https://davidwise01.github.io/neuroscape/rust/tests/rust069-witness-revocation.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
