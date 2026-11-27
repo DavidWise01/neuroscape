@@ -3121,3 +3121,55 @@ are preserved.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-079 — Cross-epoch custodian ancestry registry and control contradictions
+
+\`rust/tests/custodian_ancestry_rust079.py\` binds an intact
+RUST-078 branch-custody highwater to the complete RUST-077
+custody ledger. It requires exactly one new observed custody event
+and extracts both original branch A/B witness claim rows, including
+their signing-pin fingerprints, controller-root claims, source-root
+claims, acquisition-path claims, witness-signature hashes, distinct
+branch heads and custody-event SHA-256.
+
+The \`CROSS_EPOCH_ANCESTRY_OBSERVATION_V1\` challenge binds the
+RUST-078 receipt, RUST-077 receipt, prior RUST-079 registry head,
+precise new fork custody event, both branch claims digest, registrar
+signing pin and fresh nonce. The registrar may not be an existing
+RUST-077 custodian or the RUST-078 highwater signer. Replayed
+highwater sources, reused custody nonces, mismatched exact retention
+floors, altered source receipts and promoted release authority
+are rejected.
+
+The SHA-256 predecessor-linked RUST-079 ancestry ledger preserves
+all historical per-branch claims and accumulated contradictions
+without edits or deletions. A repeated signing pin that changes
+claimed controller/source/acquisition ancestry becomes
+\`SAME_SIGNER_CHANGED_ANCESTRY\`. A different signing pin that
+reuses an existing controller, source root or acquisition path
+becomes \`RENAMED_SIGNER_SHARED_ANCESTRY\`. Shared ancestry between
+competing branch A/B witnesses becomes
+\`COMPETING_BRANCHES_SHARE_ANCESTRY\`. Every finding remains
+observational: no conflicting branch is chosen by quorum.
+
+**Trust boundary:** Fingerprints and cryptographic signatures do not
+independently establish physical custody, operator identity or
+separate organizational control. The structurally accepted status
+is \`HOLD_CROSS_EPOCH_CUSTODIAN_ANCESTRY\`, and absent source
+material yields \`HOLD_MISSING_CUSTODIAN_ANCESTRY_EVIDENCE\`.
+Fork resolution, independent custody, global anti-rollback,
+recovery, release and live gameplay authority remain unverified
+or false.
+
+Twenty-two adversarial tests are authored for the GitHub Actions
+predeployment gate and the missing-evidence HOLD JSON archive is
+configured. Existing game files and source assets remain
+unchanged: the 5×2 arena, 256 cards, neon gameplay and Rust WASM
+combat core are preserved.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-079 neon custodian ancestry](https://davidwise01.github.io/neuroscape/rust/tests/rust079-custodian-ancestry.html) ·
+[RUST-078 branch highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust078-branch-custody-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
