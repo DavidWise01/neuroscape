@@ -2266,3 +2266,53 @@ and Rust WASM combat core remain unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-062 — Third-party retention highwater and cross-custodian fork persistence
+
+\`rust/tests/retention_highwater_rust062.py\` verifies an entire prior
+and successor RUST-061 reconciliation-retention ledger, requiring
+exact preservation of all earlier SHA-256-linked events, complete
+left/right branch evidence and unresolved historical disagreements.
+The domain-separated \`RETENTION_HIGHWATER_V1\` checkpoint signs the
+previous ledger count, head, ordered event digest, dispute digest,
+and original RUST-061 receipt. The pinned highwater signer may not
+be a retained-custody signer already represented in the compared
+histories. A separately supplied retention floor must agree with
+the exact successor head at its claimed count and may not be older
+than the signed predecessor history.
+
+Two separately signed custody challenges must cover the current
+RUST-061 receipt, previous retention head, full ordered pair of
+branch fingerprints and fresh custodian nonces. They record claimed
+source-root, acquisition and operator-control fingerprints.
+Duplicate signers, replayed nonces, reused original retention
+nonces and assertions that a fork has been cleared fail closed.
+Shared claimed roots, acquisition paths or controlling operators
+remain explicit ancestry alerts, not an independence vote.
+
+The output retains every earlier fork fingerprint, every current
+fork fingerprint, historical disputes and all currently recorded
+disputes. A later observation cannot silently eliminate prior
+branch evidence. The structural result remains
+\`HOLD_CROSS_CUSTODY_RETENTION_HIGHWATER\`; missing external
+materials produce \`HOLD_MISSING_CROSS_CUSTODY_RETENTION\`.
+
+**Trust boundary:** Two verified signatures and a matching,
+separately supplied highwater do not establish independent physical
+custody, globally latest history, or global anti-rollback.
+\`independent_custodians_authenticated\`,
+\`globally_latest_highwater_verified\`, \`winner_selected\`,
+\`fork_resolved\`, \`release_authorized\` and
+\`live_gameplay_authority\` remain false.
+
+Eighteen regression cases are configured before deployment in
+GitHub Actions and the default missing-evidence HOLD JSON is
+archived. The original 5×2 arena, 256-card catalog, neon gameplay
+and Rust WASM combat remain unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-062 neon retention highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust062-retention-highwater.html) ·
+[RUST-061 reconciliation retention](https://davidwise01.github.io/neuroscape/rust/tests/rust061-reconciliation-retention.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
