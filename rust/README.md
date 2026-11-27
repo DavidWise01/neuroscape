@@ -2871,3 +2871,52 @@ JSON is configured for archiving. Existing 5×2 arena geometry,
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-074 — Denial custody highwater and independent snapshot replay
+
+\`rust/tests/denial_custody_highwater_rust074.py\` consumes complete,
+receipt-verified RUST-073 dual-custodian custody ledgers and requires a
+strict successor extension. The full earlier custody events, prefix
+head hashes, excluded witness keys, excluded controller claims, denied
+recovery records, and conflicts must remain exact ordered prefixes.
+No historical snapshot may be rewritten or used to clear recovery HOLD.
+
+The separately signed \`DENIAL_CUSTODY_HIGHWATER_V1\` checkpoint binds
+the predecessor event count, terminal head, all event digests, the
+latest denial/excluded-key/excluded-controller digests, custody
+conflict digest, and RUST-073 receipt. The checkpoint signer must be
+distinct from recorded custody witnesses and excluded signers.
+A separately presented retained floor must match the exact
+successor-custody chain prefix at its claimed event count.
+
+Each subsequent RUST-073 custody epoch requires a new RUST-074
+observation bound to the exact entry SHA-256, complete denial digest,
+fresh nonce, and claimed controller/acquisition fingerprints. Reused
+custody nonces, conflicting retention heads, omitted denials,
+modified historical snapshots, and attempted recovery/release claims
+fail closed. A new custody entry with an unchanged denial digest
+records \`STALE_DENIAL_SNAPSHOT_DIGEST\`. Renamed signing keys
+reusing historic controllers or acquisition claims and existing
+signers changing claimed ancestry become persistent conflict records.
+
+**Trust boundary:** A separately signed checkpoint and claimed
+external snapshot do not authenticate physical custody, operator
+independence, globally latest state, or global anti-rollback.
+Every structurally valid outcome stays
+\`HOLD_DENIAL_CUSTODY_HIGHWATER_REPLAY\`; missing external evidence
+produces \`HOLD_MISSING_DENIAL_CUSTODY_HIGHWATER\`. Independent
+custody, recovery authorization, release authorization and live
+gameplay authority remain false.
+
+Twenty adversarial tests are authored in the GitHub Actions
+predeployment gate. The workflow is configured to archive
+the default missing-evidence HOLD record. This phase adds no
+gameplay changes: the existing 5×2 arena, 256-card catalog,
+neon visuals and Rust WASM core remain intact.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-074 neon custody highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust074-denial-highwater.html) ·
+[RUST-073 denial custody](https://davidwise01.github.io/neuroscape/rust/tests/rust073-denial-custody.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
