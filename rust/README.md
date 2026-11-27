@@ -2364,3 +2364,52 @@ combat core are unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-064 — Fork registry highwater and cross-epoch witness continuity
+
+\`rust/tests/fork_highwater_rust064.py\` compares complete predecessor
+and successor RUST-063 cross-custody fork registries, recalculates their
+SHA-256 predecessor links, and requires a strictly extended successor.
+Both the historical \`fork_keys\` and ordered \`custody_conflicts\` must
+remain exact prefixes. Prior witness signatures and the full historic
+registry cannot be rewritten, truncated, or replaced by an older valid
+snapshot.
+
+The domain-separated \`FORK_REGISTRY_HIGHWATER_V1\` checkpoint binds
+the predecessor count, terminal head, event-history digest, fork-key
+digest, custody-conflict digest and RUST-063 receipt. Its pinned signer
+must be distinct from every recorded challenge witness. The separately
+supplied retained floor cannot precede the signed history or outrun
+the successor, and its claimed head must match the exact SHA-256
+prefix at the declared event count.
+
+Every new registry event requires its own RUST-064 epoch observation
+with a fresh nonce, exact fork-event hash, claimed controller and
+acquisition fingerprints, and explicit denial of fork resolution.
+Replayed historical witness nonces and falsified resolution/release
+flags are refused. A same-key changed ancestry claim produces
+\`SIGNER_CLAIMED_ANCESTRY_CHANGED\`; a new signing pin reusing a
+previously claimed controller produces
+\`RENAMED_CUSTODIAN_REUSED_CONTROL_ROOT\`. Both remain evidence
+of *claims*, not independently established source ownership.
+
+**Authority boundary:** Even a valid signed checkpoint and supplied
+external retention floor do not establish independent custody,
+global latest state, physical controlling identity, or global
+anti-rollback. Every structurally valid review remains
+\`HOLD_FORK_REGISTRY_HIGHWATER_CONTINUITY\`; missing external material
+produces \`HOLD_MISSING_FORK_REGISTRY_HIGHWATER\`. Independence, winner
+selection, fork resolution, release authorization and gameplay
+authority remain false.
+
+Eighteen regression cases are configured before the GitHub Pages
+deployment step; Actions archives an explicit missing-evidence HOLD
+JSON. The existing 5×2 game arena, 256 cards, neon layout and Rust
+WASM combat engine remain unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-064 neon highwater observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust064-fork-highwater.html) ·
+[RUST-063 fork registry](https://davidwise01.github.io/neuroscape/rust/tests/rust063-fork-registry.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
