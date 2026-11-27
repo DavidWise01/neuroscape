@@ -2029,3 +2029,48 @@ game engine, 5×2 arena, 256-card catalog or neon gameplay.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-057 — Cross-epoch recovery custody challenges and controller separation
+
+\`rust/tests/recovery_custody_rust057.py\` imports the complete
+RUST-054 witness-revocation registry, append-only RUST-055 recovery
+quarantine, and RUST-056 signed recovery-highwater receipt. It verifies
+the exact receipts and source ancestry before checking any new custody
+claims. Every quarantined recovery candidate gets three separately
+signed, domain-separated \`ff/cf/rr\` challenges binding its recovery
+entry hash, the predecessor custody registry head, signer pin, claimed
+source root, claimed controlling operator, acquisition path and nonce.
+
+Previously revoked signer pins and the recovery candidate's own signer
+cannot serve as separate custodial witnesses. Replayed nonces,
+duplicate signer pins, modified historical challenge receipts, and
+rewritten ancestry prefixes fail closed. Shared claimed source roots,
+acquisition paths, common controlling operators, source-root changes
+under an existing signer, and claimed overlap with a revoked or
+candidate controller remain visible as ordered custody-conflict
+records. New records extend an immutable RUST-057 SHA-256 predecessor
+chain. An optional externally supplied retention floor must agree
+with the exact recorded history at its event count.
+
+**Trust boundary:** Multiple valid signatures, distinct keys or
+different claimed operator identifiers cannot prove independently
+controlled physical or external custody. This phase does not
+re-verify all historical RUST-056 signatures from their original
+key files: it validates the previously issued RUST-056 receipt and
+RUST-054/RUST-055 ancestry. Even structurally valid new challenges
+remain \`HOLD_RECOVERY_CUSTODY_CHALLENGES\`. Missing external challenge
+materials produce \`HOLD_MISSING_RECOVERY_CUSTODIAN_CHALLENGES\`.
+No global latest highwater, independent operator authority, fork
+resolution, or release authorization is claimed.
+
+Sixteen structural/adversarial tests are configured before the GitHub
+Pages deployment step; the default missing-material HOLD record is
+archived. The original 5×2 arena, 256 cards, neon gameplay and Rust
+WASM combat engine remain unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-057 neon recovery custody](https://davidwise01.github.io/neuroscape/rust/tests/rust057-recovery-custody.html) ·
+[RUST-056 recovery highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust056-recovery-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
