@@ -100,7 +100,7 @@ def checked_history(h):
             h.get("receipt_sha256"),"revocation ledger receipt changed")
     return events,heads
 
-def challenge(source,entry,head,revocation_nonce,claim,nonce):
+def challenge(source,recovery_event,compromised,head,revocation_nonce,claim,nonce):
     check_sha(revocation_nonce,"revocation nonce missing")
     check_sha(nonce,"custodian nonce missing")
     require(isinstance(claim,dict) and claim.get("role") in ROLES,"custodian role missing")
@@ -109,8 +109,8 @@ def challenge(source,entry,head,revocation_nonce,claim,nonce):
     return {"phase":"RUST-069","kind":"INDEPENDENT_RECOVERY_REVOCATION_CHALLENGE_V1",
             "source_rust068_receipt_sha256":source["receipt_sha256"],
             "prior_revocation_head_sha256":head,
-            "compromised_recovery_entry_sha256":entry["entry_sha256"],
-            "compromised_pin":entry["pin"],
+            "compromised_recovery_entry_sha256":recovery_event["entry_sha256"],
+            "compromised_pin":compromised["pin"],
             "revocation_nonce_sha256":revocation_nonce,
             "role":claim["role"],"signer_pin":claim["signer_pin"],
             **{k:claim[k] for k in ORIGINS},"nonce_sha256":nonce,
@@ -156,7 +156,7 @@ def audit(source,recovery,history,compromised_pin,revocation_nonce,
     previous_origins=[w for _,w in historic_claims]
     claim_rows=[]; conflicts=[]; seen_pins=set()
     for w,nonce in zip(witnesses,nonces):
-        msg=challenge(source,compromised,heads[-1],revocation_nonce,w,nonce)
+        msg=challenge(source,event,compromised,heads[-1],revocation_nonce,w,nonce)
         pin=msg["signer_pin"]
         require(pin not in seen_pins and pin not in witness_pins and
                 pin not in candidate_pins and
