@@ -267,6 +267,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_controller_exclusion_highwater_rust082.py' -v
       - name: RUST-083 dual-witness exclusion custody and permanent denial retention
         run: python3 -m unittest discover -s rust/tests -p 'test_exclusion_custody_rust083.py' -v
+      - name: RUST-084 preserve signed dual custody highwater and witness ancestry
+        run: python3 -m unittest discover -s rust/tests -p 'test_dual_custody_highwater_rust084.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -629,6 +631,11 @@ jobs:
           python3 rust/tests/exclusion_custody_rust083.py \
             --output rust/tests/.rust083-exclusion-custody.json \
             --allow-hold-record
+      - name: RUST-084 archive missing independent dual-custody highwater HOLD
+        run: |
+          python3 rust/tests/dual_custody_highwater_rust084.py \
+            --output rust/tests/.rust084-dual-custody-highwater.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -706,6 +713,7 @@ jobs:
             rust/tests/.rust081-controller-exclusion.json
             rust/tests/.rust082-controller-exclusion-highwater.json
             rust/tests/.rust083-exclusion-custody.json
+            rust/tests/.rust084-dual-custody-highwater.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
