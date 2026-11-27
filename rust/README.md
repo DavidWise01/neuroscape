@@ -2074,3 +2074,55 @@ WASM combat engine remain unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-058 — Custodian challenge highwater and cross-epoch independence persistence
+
+\`rust/tests/custodian_highwater_rust058.py\` consumes two complete
+RUST-057 recovery-custodian challenge histories, rechecks every
+SHA-256 predecessor link and preserved source conflict, and refuses
+a successor that does not strictly extend the earlier ledger.
+Its domain-separated \`RECOVERY_CUSTODY_HIGHWATER_V1\` signing
+payload binds the prior challenge count, terminal head, ordered
+challenge-history digest, custody-conflict digest and previous
+RUST-057 receipt. The checkpoint is verified against a separately
+supplied signing-key pin, which cannot itself be a signer recorded
+in the compared custodian challenges.
+
+The externally *presented* retention floor must cover at least
+the signed predecessor count and match the exact current history
+prefix at its claimed count. A missing history tail, competing
+prefix head, or edited earlier conflict fails closed. Every new
+RUST-057 event requires a separately supplied, fresh epoch
+observation bound to its exact event SHA-256 fingerprint; nonce
+replay and authority escalation are rejected.
+
+Ancestry comparison detects \`SIGNER_ANCESTRY_CHANGED_ACROSS_EPOCHS\`
+when the same signing pin later declares a new source/controller/
+acquisition triple, and \`RENAMED_CUSTODIAN_SAME_CLAIMED_CONTROLLER\`
+when a new signing pin reuses an earlier declared controller.
+These are *claimed* ancestry matches, not proof of real-world
+operator identity. Historical custody conflicts remain intact,
+and no accumulation of signers becomes an authorization vote.
+
+**Trust boundary:** The signed checkpoint, nonces and supplied
+floor cannot prove independent external custody, global latest
+highwater, or physical controlling identity. All successful
+structural results are
+\`HOLD_CUSTODIAN_HIGHWATER_INDEPENDENCE_UNVERIFIED\`; missing
+external evidence yields
+\`HOLD_MISSING_CUSTODIAN_CHALLENGE_HIGHWATER\`. Independent
+custody, global anti-rollback, fork resolution, gameplay authority
+and release authorization remain false.
+
+Seventeen regression cases are configured before GitHub Pages
+deployment. GitHub Actions archives the default missing-evidence
+HOLD JSON. The phase adds Python verification files without
+altering the original 5×2 arena, 256 cards, neon gameplay or
+Rust WASM combat engine.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-058 neon highwater observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust058-custodian-highwater.html) ·
+[RUST-057 custody challenges](https://davidwise01.github.io/neuroscape/rust/tests/rust057-recovery-custody.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
