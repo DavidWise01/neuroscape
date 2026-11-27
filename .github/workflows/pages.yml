@@ -263,6 +263,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_ancestry_highwater_rust080.py' -v
       - name: RUST-081 reject controller reentry and historical exclusion loss
         run: python3 -m unittest discover -s rust/tests -p 'test_controller_exclusion_rust081.py' -v
+      - name: RUST-082 retain controller exclusion highwater and deny false reentry
+        run: python3 -m unittest discover -s rust/tests -p 'test_controller_exclusion_highwater_rust082.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -615,6 +617,11 @@ jobs:
           python3 rust/tests/controller_exclusion_rust081.py \
             --output rust/tests/.rust081-controller-exclusion.json \
             --allow-hold-record
+      - name: RUST-082 archive missing exclusion highwater HOLD
+        run: |
+          python3 rust/tests/controller_exclusion_highwater_rust082.py \
+            --output rust/tests/.rust082-controller-exclusion-highwater.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -690,6 +697,7 @@ jobs:
             rust/tests/.rust079-custodian-ancestry.json
             rust/tests/.rust080-ancestry-highwater.json
             rust/tests/.rust081-controller-exclusion.json
+            rust/tests/.rust082-controller-exclusion-highwater.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
