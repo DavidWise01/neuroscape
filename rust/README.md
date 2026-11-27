@@ -2773,3 +2773,52 @@ code and a static neon observatory without modifying the existing
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-072 — Signed custodian exclusion highwater and permanent denial
+
+\`rust/tests/exclusion_highwater_rust072.py\` compares a complete prior
+RUST-071 exclusion/recovery-denial registry against its strictly extended
+successor. It recomputes SHA-256 predecessor links and requires exact
+preservation of earlier exclusion pins, excluded controlling roots,
+ordered denial records and all custody conflicts. Every newer exclusion
+ledger must retain its predecessor as an exact immutable prefix.
+
+A separately signed \`EXCLUSION_DENIAL_HIGHWATER_V1\` checkpoint binds
+the predecessor count, terminal chain head, event digest, excluded-key
+digest, excluded-controller digest, denial digest, conflict digest,
+and RUST-071 receipt. The checkpoint signer may not be a previously
+excluded key, a recovery candidate, or an earlier denial challenger.
+The separately presented retained-floor claim must match the exact
+successor prefix at its declared event count and cannot predate the
+signed predecessor history.
+
+Each newly denied recovery attempt requires a fresh RUST-072 observation
+bound to its actual denial-entry hash, candidate key, declared
+controller/source/acquisition ancestry, and nonce. Any substituted
+identity, replayed nonce, or assertion of cleared quarantine is rejected.
+Cross-epoch comparisons record renamed signing keys sharing historic
+controller or acquisition claims, revoked-signing-key reentry, repeated
+signers that changed claimed ancestry, and controllers already on the
+exclusion list. These conflicts are observations about claimed ancestry,
+not proofs of common physical operators.
+
+**Trust boundary:** A pinned signature and matching supplied retention
+floor do not independently certify a globally latest ledger, physical
+custody, global anti-rollback or authority to reinstate a custodian.
+Every structurally accepted result stays
+\`HOLD_EXCLUSION_HIGHWATER_PERMANENT_DENIAL\` and missing external
+evidence produces \`HOLD_MISSING_PERMANENT_DENIAL_HIGHWATER\`.
+All recovery, release and live gameplay authority fields stay false.
+
+Twenty-two regression cases are authored and configured as a
+predeployment GitHub Actions test gate; the default missing-evidence
+HOLD record is included in the Actions artifact archive.
+No gameplay source is changed: the original 5×2 arena, 256-card
+catalog, neon visuals and Rust WASM core remain unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-072 neon exclusion highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust072-exclusion-highwater.html) ·
+[RUST-071 custodian exclusion](https://davidwise01.github.io/neuroscape/rust/tests/rust071-custodian-exclusion.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
