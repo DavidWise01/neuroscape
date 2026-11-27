@@ -2567,3 +2567,52 @@ combat core remain unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-068 — Recovery-attempt highwater and cross-epoch quarantine persistence
+
+\`rust/tests/recovery_highwater_rust068.py\` compares complete RUST-067
+quarantined successor-recovery histories, recalculates their SHA-256
+predecessor links, and requires a strictly extended successor ledger.
+Every old recovery candidate, original revocation-entry reference,
+full witness cohort and historical custody conflict must persist as
+an unchanged prefix. All candidates stay quarantined.
+
+Its domain-separated \`RECOVERY_QUARANTINE_HIGHWATER_V1\` checkpoint
+binds the previous event count, terminal head, ordered event digest,
+quarantined candidate identities, conflict digest and RUST-067 receipt.
+The checkpoint signer must be distinct from all recorded recovery
+candidates and witness signers. The separately *claimed* retention floor
+must match the exact successor-ledger SHA-256 prefix at its count
+and cannot be older than the predecessor history.
+
+Each new recovery attempt receives a separately supplied fresh epoch
+observation bound to the original recovery entry, candidate pin,
+revocation event, controller and acquisition path. Replayed witness
+nonces, substituted controller/acquisition ancestry, changed candidate
+references and any claimed release or graduation are rejected.
+Cross-epoch comparisons report \`SAME_WITNESS_PIN_CHANGED_ANCESTRY\`,
+\`RENAMED_WITNESS_SHARED_CONTROLLER\`, and
+\`RENAMED_WITNESS_SHARED_ACQUISITION\`; these classify *claims*
+rather than prove operator identity.
+
+**Boundary:** Neither a valid pinned highwater signature nor a
+separately presented retention floor establishes independently operated
+custody, globally latest evidence or global anti-rollback. A valid
+structural assessment remains
+\`HOLD_RECOVERY_HIGHWATER_QUARANTINE_PERSISTENCE\`; absent external
+evidence is recorded as \`HOLD_MISSING_RECOVERY_HIGHWATER_EVIDENCE\`.
+\`independent_custody_verified\`, \`recovery_authorized\`,
+\`release_authorized\`, \`fork_resolved\` and gameplay authority stay
+false.
+
+Twenty regression tests are configured in the predeployment GitHub
+Actions gate. The workflow archives the default missing-evidence HOLD
+record. Gameplay files are untouched: the original 5×2 arena,
+256-card catalog, neon visuals and Rust WASM combat remain intact.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-068 neon highwater observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust068-recovery-highwater.html) ·
+[RUST-067 successor recovery](https://davidwise01.github.io/neuroscape/rust/tests/rust067-successor-recovery.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
