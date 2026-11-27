@@ -239,6 +239,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_recovery_highwater_rust068.py' -v
       - name: RUST-069 reject compromised recovery witness resurrection and ancestry replay
         run: python3 -m unittest discover -s rust/tests -p 'test_recovery_witness_revocation_rust069.py' -v
+      - name: RUST-070 enforce signed recovery revocation highwater and custodian exclusion
+        run: python3 -m unittest discover -s rust/tests -p 'test_witness_exclusion_rust070.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -531,6 +533,11 @@ jobs:
           python3 rust/tests/recovery_witness_revocation_rust069.py \
             --output rust/tests/.rust069-witness-revocation.json \
             --allow-hold-record
+      - name: RUST-070 archive missing externally retained witness exclusion highwater HOLD
+        run: |
+          python3 rust/tests/witness_exclusion_rust070.py \
+            --output rust/tests/.rust070-witness-exclusion.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -594,6 +601,7 @@ jobs:
             rust/tests/.rust067-successor-recovery.json
             rust/tests/.rust068-recovery-highwater.json
             rust/tests/.rust069-witness-revocation.json
+            rust/tests/.rust070-witness-exclusion.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
