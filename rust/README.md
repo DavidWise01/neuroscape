@@ -2722,3 +2722,54 @@ graphics and Rust WASM combat are unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-071 — Custodian exclusion ledger and cross-epoch recovery denial
+
+\`rust/tests/custodian_exclusion_rust071.py\` consumes an intact
+RUST-070 signed witness-revocation highwater, checks its RUST-070
+receipt and HOLD invariants, and appends denied recovery attempts
+to a separate SHA-256-linked RUST-071 ledger. Each entry retains
+the complete revoked witness pin and claimed controlling-root
+snapshots; a later epoch must preserve the earlier snapshots as
+exact prefixes and may not erase previous recovery-denial records
+or recorded ancestry conflicts.
+
+The domain-separated \`EXCLUDED_CUSTODIAN_RECOVERY_DENIAL_V1\`
+challenge binds the RUST-070 receipt, prior RUST-071 chain head,
+candidate signing key, claimed controller/source/acquisition roots,
+fresh nonce and explicit recovery denial. Its externally supplied
+signer pin must be neither a revoked witness nor the recovery
+candidate. Replayed highwaters and nonces, changed historical
+events, incompatible retained floors and authority claims fail
+closed. The candidate may have new apparent ancestry but remains
+denied: signature checks never authorize recovery.
+
+If a candidate matches a previously revoked key the event records
+\`EXCLUDED_SIGNER_REENTRY\`. Reuse of a compromised controlling root
+is recorded as \`RENAMED_SIGNER_REUSES_EXCLUDED_CONTROLLER\`;
+a repeated signing key claiming a different controller is recorded
+as \`SAME_SIGNER_CHANGED_CLAIMED_CONTROLLER\`. Renamed signing keys
+claiming an earlier candidate's acquisition fingerprint produce
+\`RENAMED_SIGNER_SHARED_ACQUISITION\`. These are claimed-ancestry
+conflicts, not independently authenticated organizational identity.
+
+**Authority boundary:** Every structural success stays
+\`HOLD_CUSTODIAN_EXCLUSION_RECOVERY_DENIAL\`, with missing
+independent custody material represented by
+\`HOLD_MISSING_CUSTODIAN_EXCLUSION_EVIDENCE\`. Independence, global
+latest state, anti-rollback, gameplay release and recovery
+authorization remain unverified or false. External custody and
+a trusted physical time authority were not established.
+
+Twenty-one regression cases are authored for the GitHub Actions
+predeployment gate, and the missing-evidence HOLD JSON is
+configured for artifact retention. This phase adds verification
+code and a static neon observatory without modifying the existing
+5×2 arena, 256 cards, neon game interface, or Rust WASM combat core.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-071 neon exclusion ledger](https://davidwise01.github.io/neuroscape/rust/tests/rust071-custodian-exclusion.html) ·
+[RUST-070 revocation highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust070-witness-exclusion.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
