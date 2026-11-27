@@ -2972,3 +2972,55 @@ New gameplay files are not modified; the original 5×2 arena,
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-076 — Signed custody fork highwater and cross-epoch branch preservation
+
+\`rust/tests/custody_fork_highwater_rust076.py\` compares complete,
+receipt-checked RUST-075 custody fork registries, requiring strict
+append-only successor extension. Every previously recorded competing
+branch pair, first-divergence record, prior fork event, SHA-256
+predecessor head and custody contradiction must persist unchanged.
+An observation asserting a unified history or electing a winning
+branch is rejected.
+
+The domain-separated \`CUSTODY_FORK_RETENTION_HIGHWATER_V1\`
+checkpoint binds the prior event count, complete fork event digest,
+terminal chain head, fork-pair digest, accumulated conflict digest
+and RUST-075 receipt. A signing pin already used by either custody
+fork witness cannot self-sign the checkpoint. A separately
+presented retained-floor claim must match the successor's precise
+hash-chain prefix at the declared event count, and may not predate
+the signed predecessor.
+
+Each appended fork event requires one fresh RUST-076 observation
+bound to its original event SHA-256, common RUST-073 predecessor,
+both exact custody branch heads and an unused nonce. A switched,
+collapsed or substituted branch, repeated nonce, contradicted
+floor, rewritten previous prefix, or asserted recovery/release
+authority fails closed. Repeated exact fork pairs and new fork
+records reusing earlier ancestry are retained as visible conflicts,
+not interpreted as evidence of custody independence.
+
+**Authority boundary:** The checkpoint signature and supplied
+highwater floor are locally verifiable claims, not globally
+latest authenticated state, independent physical custody or
+global anti-rollback. Every structurally accepted assessment is
+\`HOLD_CUSTODY_FORK_HIGHWATER_RETENTION\`; missing evidence emits
+\`HOLD_MISSING_CUSTODY_FORK_HIGHWATER\`. Branch selection, fork
+resolution, recovery authority, release authority and live gameplay
+authority remain false, with no winner elected by quorum.
+
+Twenty-two adversarial regression cases are authored for the
+predeployment GitHub Actions gate (including a follow-up test
+correction distinguishing a genuinely new fork pair from an
+exact repeated pair). The default missing-evidence HOLD JSON
+is configured for archiving. Gameplay files are unchanged:
+the existing 5×2 arena, 256-card catalog, neon artwork and
+Rust WASM combat core remain intact.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-076 neon fork highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust076-custody-fork-highwater.html) ·
+[RUST-075 fork registry](https://davidwise01.github.io/neuroscape/rust/tests/rust075-custody-fork.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
