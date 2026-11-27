@@ -1890,3 +1890,45 @@ or neon gameplay.
 [Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-054 — Persistent witness revocation and session ancestry fence
+
+\`rust/tests/witness_revocation_rust054.py\` extends RUST-053
+signed challenge highwater receipts into an append-only witness
+revocation registry. Every RUST-053 source is receipt-checked and
+must continue to assert HOLD. The new registry records the complete
+session evidence, historical source-ancestry conflicts, signer
+revocations, exact declared controlling roots and SHA-256 predecessor
+links. It refuses source receipt replay, missing historical events,
+modified chain heads, revocation erasure and authority escalation.
+
+A signed revocation payload binds the source RUST-053 receipt,
+previous RUST-054 registry head, compromised signing-key SPKI
+fingerprint, claimed controller fingerprint, incident evidence hash,
+and a unique nonce. The signer for that revocation must be separately
+pinned and must not be the revoked or previously revoked witness key.
+A reappearance of the revoked key or a distinct key declaring the
+same revoked controller is recorded as a conflict, not treated as
+successful recovery. Historical revoked keys and claimed controllers
+remain in the successor registry without an unrevocation mechanism.
+
+Optional retained-floor evidence must exactly match an inherited
+RUST-054 history prefix. Neither a supplied authority pin nor a
+matching floor establishes real-world independent custody.
+All reports remain \`HOLD_WITNESS_REVOCATION_REGISTRY\`; absent
+external materials, the CI artifact records
+\`HOLD_MISSING_WITNESS_REVOCATION_CUSTODY\`.
+\`independent_custody_verified\`, \`fork_resolved\`,
+\`release_authorized\` and \`live_gameplay_authority\` remain false.
+
+Fifteen structural/adversarial unit tests are configured before
+the Pages deployment step in GitHub Actions. This phase does not
+change the Rust WASM core, 5×2 arena, 256-card catalog or
+existing neon gameplay.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-054 neon witness revocation](https://davidwise01.github.io/neuroscape/rust/tests/rust054-witness-revocation.html) ·
+[RUST-053 highwater sessions](https://davidwise01.github.io/neuroscape/rust/tests/rust053-challenge-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
