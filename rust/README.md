@@ -2822,3 +2822,52 @@ catalog, neon visuals and Rust WASM core remain unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-073 — Independent denial custody and cross-epoch evidence retention
+
+\`rust/tests/denial_custody_rust073.py\` accepts the complete RUST-071
+exclusion/denial history and an exact matching RUST-072 denial-highwater
+assessment. It verifies that RUST-072 is still HOLD, the receipt
+matches, and all candidate denials, excluded witness pins, excluded
+controlling roots and existing custody conflicts match the full
+RUST-071 ledger. It then records two separately signed, nonce-bound
+\`left/right\` custody snapshot claims in an append-only RUST-073
+SHA-256 predecessor-linked history.
+
+Each domain-separated \`DENIAL_CUSTODY_CHALLENGE_V1\` message binds the
+RUST-072 receipt, RUST-071 receipt, previous RUST-073 custody head,
+complete denial digest, excluded-signing-key digest, excluded-controller
+digest, signing pin, fresh nonce, and declared controller/source/
+acquisition ancestry. The signing keys must be different from each
+other and from revoked signers, recovery candidates, recovery-denial
+challengers, and the RUST-072 highwater signer.
+
+Every new snapshot must retain all prior denial entries and excluded
+ancestry as exact ordered prefixes. Reused RUST-072 sources, earlier
+custody nonces, overwritten denial records, changed previous heads,
+and separately supplied retention floors that contradict the complete
+historical hash chain fail closed. Shared claimed ancestry between
+the two custodians and renamed signing keys reusing previous claimed
+controllers or acquisition paths become persistent conflict evidence.
+
+**Trust boundary:** The signatures only demonstrate that configured
+cryptographic checks passed. No independent external acquisition
+or physical third-party custody is established merely by receiving
+two claims. A valid structural record remains
+\`HOLD_INDEPENDENT_DENIAL_CUSTODY\`; missing real-world evidence
+produces \`HOLD_MISSING_INDEPENDENT_DENIAL_CUSTODY\`.
+\`independent_custody_verified\`, \`recovery_authorized\`,
+\`release_authorized\` and live gameplay authority stay false.
+Globally latest history and global anti-rollback are not certified.
+
+Twenty-one regression cases are authored in the GitHub Actions
+predeployment test gate; the default missing-external-custody HOLD
+JSON is configured for archiving. Existing 5×2 arena geometry,
+256-card catalog, neon gameplay and Rust WASM combat core are unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-073 neon denial custody](https://davidwise01.github.io/neuroscape/rust/tests/rust073-denial-custody.html) ·
+[RUST-072 exclusion highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust072-exclusion-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
