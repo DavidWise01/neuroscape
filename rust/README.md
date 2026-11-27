@@ -3173,3 +3173,57 @@ combat core are preserved.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-080 — Custodian ancestry highwater & cross-epoch control exclusion
+
+\`rust/tests/ancestry_highwater_rust080.py\` requires an intact
+RUST-079 custody ancestry predecessor and a strictly extending
+successor. The full earlier event sequence, SHA-256 prefix heads,
+both competing branch ancestry claims, registrar signature claims
+and all historical custody conflicts must survive without
+alteration. A later epoch cannot merge branches or promote recovery.
+
+The separately signed and domain-separated
+\`CUSTODIAN_ANCESTRY_HIGHWATER_V1\` checkpoint binds the prior
+RUST-079 event count, terminal head, complete event digest,
+ordered custodian-claim digest, custody-conflict digest, prior
+RUST-079 receipt, and false authority fields. The highwater
+signing pin must not belong to a recorded custodian or ancestry
+registrar. A separately presented retained-floor claim must match
+the successor's exact SHA-256 prefix and cannot predate the
+signed predecessor.
+
+Every new ancestry event requires a RUST-080 observation tied to
+the exact RUST-079 event entry, complete branch claims digest,
+both unchanged custody branch heads and fresh nonce. Rewritten
+claims, reordered forks, a reused source nonce, mismatched
+retention floor or attempted independent custody / release claim
+are rejected. A prior signing pin that changes declared controller,
+source-root or acquisition ancestry is recorded as
+\`EXCLUDED_SIGNER_CHANGED_CLAIMED_CONTROL\`. A renamed signing pin
+reusing historical custody ancestry is recorded as
+\`RENAMED_SIGNER_REUSES_EXCLUDED_ANCESTRY\`.
+Reentered previously conflicting signers and repeated controller
+or acquisition claims remain explicit exclusion conflicts.
+
+**Trust boundary:** Fingerprints, synthetic witnesses, pinned
+signatures and presented retained floors are not proof of
+independent physical custody or globally latest history.
+Structurally verified output remains
+\`HOLD_CUSTODIAN_ANCESTRY_HIGHWATER_EXCLUSION\`; missing external
+custody yields \`HOLD_MISSING_CUSTODIAN_ANCESTRY_HIGHWATER\`.
+No branch winner, fork resolution, recovery authorization,
+release authorization or gameplay authority is conferred.
+
+Twenty-two adversarial tests have been authored for the
+predeployment GitHub Actions gate. Missing-evidence HOLD output
+is configured in its artifact archive. Existing gameplay source,
+the full 5×2 arena, all 256 cards, neon visual interface and
+Rust WASM combat remain unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-080 neon ancestry highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust080-ancestry-highwater.html) ·
+[RUST-079 ancestry registry](https://davidwise01.github.io/neuroscape/rust/tests/rust079-custodian-ancestry.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
