@@ -3381,3 +3381,58 @@ neon gameplay and Rust WASM combat core are unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-084 — Signed dual-custody highwater and permanent exclusion retention
+
+\`rust/tests/dual_custody_highwater_rust084.py\` compares complete
+receipt-checked RUST-083 dual-witness exclusion custody ledgers.
+The successor must strictly extend the predecessor, retaining each
+earlier event, SHA-256 predecessor head, full left/right witness
+claims, excluded identities and ancestry, denied reentries and
+cumulative custody conflicts as exact immutable prefixes.
+
+The domain-separated signed \`DUAL_EXCLUSION_CUSTODY_HIGHWATER_V1\`
+checkpoint binds the previous RUST-083 receipt, event count, terminal
+head, complete event digest, every ordered witness pair, every
+exclusion and denial snapshot, and the conflict list. No historical
+custody witness or excluded signing pin can sign the highwater.
+A separately presented retention-floor claim must match the
+successor's exact SHA-256 prefix and cannot precede the signed
+predecessor.
+
+Each new custody epoch needs a fresh RUST-084 observation bound to
+the custody event's entry SHA-256, precise pair of original witness
+claims and the exclusion and denial digests. Replayed witness
+nonces, swapped or substituted evidence, erased denials, falsified
+independent control, and recovery/release claims fail closed.
+Cross-epoch renamed keys reusing earlier controller, source-root
+or acquisition ancestry are recorded as
+\`RENAMED_WITNESS_REUSED_PREVIOUS_CONTROL\`.
+A signing pin that changes claimed ancestry is flagged as
+\`SAME_WITNESS_CHANGED_CONTROL_ANCESTRY\`.
+Shared current witness control is flagged as
+\`NEW_PAIR_SHARED_CONTROL_ANCESTRY\`.
+
+**Authority boundary:** Locally verified signatures, SHA-256 evidence
+and user-supplied retention floors do not prove independent physical
+custody, globally latest snapshots or global anti-rollback.
+Structurally valid results always remain
+\`HOLD_DUAL_CUSTODY_HIGHWATER_DENIAL_RETENTION\`;
+missing external evidence produces
+\`HOLD_MISSING_DUAL_CUSTODY_HIGHWATER\`.
+No fork winner, independent custody, recovery, release, or
+live-gameplay authority is granted.
+
+Twenty-six authored adversarial cases are added to the GitHub
+Actions predeployment gate. The workflow archives the default
+missing-evidence HOLD JSON; a successful execution or Pages
+deployment is not inferred merely from the source commit.
+The original 5×2 arena, 256-card catalog, neon display, gameplay,
+and Rust WASM combat engine are untouched.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-084 neon custody highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust084-dual-custody-highwater.html) ·
+[RUST-083 dual exclusion custody](https://davidwise01.github.io/neuroscape/rust/tests/rust083-exclusion-custody.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
