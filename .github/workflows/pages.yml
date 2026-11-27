@@ -211,6 +211,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_witness_revocation_rust054.py' -v
       - name: RUST-055 quarantine revoked-witness successor signatures
         run: python3 -m unittest discover -s rust/tests -p 'test_witness_recovery_rust055.py' -v
+      - name: RUST-056 reject recovery rollback and unauthenticated successor clearance
+        run: python3 -m unittest discover -s rust/tests -p 'test_recovery_highwater_rust056.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -433,6 +435,11 @@ jobs:
           python3 rust/tests/witness_recovery_rust055.py \
             --output rust/tests/.rust055-witness-recovery.json \
             --allow-hold-record
+      - name: RUST-056 archive independently retained recovery-highwater HOLD
+        run: |
+          python3 rust/tests/recovery_highwater_rust056.py \
+            --output rust/tests/.rust056-recovery-highwater.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -482,6 +489,7 @@ jobs:
             rust/tests/.rust053-challenge-highwater.json
             rust/tests/.rust054-witness-revocation.json
             rust/tests/.rust055-witness-recovery.json
+            rust/tests/.rust056-recovery-highwater.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
