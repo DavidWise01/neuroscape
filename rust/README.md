@@ -3073,3 +3073,51 @@ Rust WASM combat core remain intact.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-078 — Fork branch custody highwater and independent ancestry retention
+
+\`rust/tests/fork_branch_highwater_rust078.py\` requires a strictly
+extended RUST-077 dual-branch custody challenge history. Every earlier
+event SHA-256, predecessor head, branch A/B head pair, independently
+claimed witness signature digest and cumulative custody contradiction
+must be retained in exact chronological order. Neither branch can be
+merged, replaced with the other, or declared the winner.
+
+The domain-separated \`FORK_BRANCH_CUSTODY_HIGHWATER_V1\` payload binds
+the predecessor RUST-077 receipt, chain head, event count, event digest,
+ordered branch-pair digest, ordered witness-claims digest and custody
+conflict digest. The separately signed checkpoint rejects a signing
+pin already used by any recorded custody claimant. Its separately
+presented retention-floor claim must match the successor's exact
+SHA-256 prefix and cannot predate the signed predecessor.
+
+Each new RUST-077 custody challenge receives a RUST-078 observation
+tied to the original event SHA-256, both precise branch head hashes,
+the immutable pair-of-witness-claims digest, and a fresh nonce.
+Changed claims, swapped branches, replayed nonces, false fork
+resolution, fabricated recovery clearance and historical conflict
+erasure are rejected. Repetition of an earlier branch pair and
+renamed custodians reusing prior controller or acquisition ancestry
+are retained as explicit conflicts.
+
+**Trust boundary:** A syntactically valid signed highwater, apparent
+witness diversity and an externally *claimed* floor do not establish
+actual independent physical custody, globally latest state or
+global anti-rollback. Every structurally successful assessment remains
+\`HOLD_BRANCH_CUSTODY_HIGHWATER_ANCESTRY\`; absent independently
+acquired material emits \`HOLD_MISSING_BRANCH_CUSTODY_HIGHWATER\`.
+The registry never grants fork resolution, winning-branch selection,
+recovery, release or gameplay authority.
+
+Twenty-three adversarial regression cases are committed and configured
+as a predeployment GitHub Actions gate; missing evidence is recorded
+in a HOLD JSON archive. Gameplay remains unchanged: the original
+5×2 arena, 256-card catalog, neon graphics and Rust WASM combat core
+are preserved.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-078 neon custody highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust078-branch-custody-highwater.html) ·
+[RUST-077 dual branch custody](https://davidwise01.github.io/neuroscape/rust/tests/rust077-fork-branch-custody.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
