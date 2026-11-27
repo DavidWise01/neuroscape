@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-056 · Recovery Highwater & Successor Epoch Continuity</title>
+<style>:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 49% 0%,#47265e,#081321 78%);color:#f5f7ff;font:15px system-ui,sans-serif}main{max-width:1150px;margin:auto;padding:29px}h1{color:#ffc88b;text-shadow:0 0 29px #ff783c;font-size:clamp(24px,4vw,42px);letter-spacing:.05em}.panel{background:#141e32;border:1px solid #b58dfe;border-radius:20px;padding:26px;box-shadow:0 0 39px #a05bf94d}.status{color:#ffc481;font-size:21px;font-weight:800}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin:23px 0}.cell{border:1px solid #32d8cf;border-radius:13px;padding:19px;min-height:123px;box-shadow:inset 0 0 18px #28cec61e}.cell:nth-child(2){border-color:#ffad6f}.cell:nth-child(3){border-color:#b98bfe}b{display:block;margin-bottom:10px}p,small{color:#bdcddd;line-height:1.55}a{color:#9bffec}svg{display:block;width:100%;height:auto;max-height:230px}@media(max-width:700px){.grid{grid-template-columns:1fr}}</style>
+<main><h1>RUST-056 · RECOVERY HIGHWATER CONTINUITY</h1>
+<p>Quarantined past → signed checkpoint → exact retained floor → observed successor → HOLD.</p>
+<div class="panel">
+<div class="status">HOLD · Recovery continuity does not authorize a successor</div>
+<svg viewBox="0 0 600 207" role="img" aria-label="Signed recovery quarantine checkpoint, retained highwater and successor observation form an unbroken history chain while authority remains on hold">
+<g stroke-width="2.5" fill="none"><path d="M168 52 H225 M375 52 H432 M300 94 V143" stroke="#b992fc"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="17" y="9" width="151" height="85" rx="11" stroke="#32d8cc" fill="#163740"/><text x="93" y="33" font-size="12" fill="#dafffb">SIGNED RECOVERY</text><text x="93" y="53" font-size="10" fill="#b7f2ed">PRIOR KEY + CONTROLLER</text><text x="93" y="70" font-size="10" fill="#b7f2ed">QUARANTINE RETAINED</text>
+<rect x="225" y="9" width="150" height="85" rx="11" stroke="#ffae72" fill="#3c2b3a"/><text x="300" y="33" font-size="12" fill="#ffe7c9">EXTERNAL FLOOR</text><text x="300" y="53" font-size="10" fill="#ffd7b7">EXACT COUNT + HEAD</text><text x="300" y="70" font-size="10" fill="#ffd7b7">ROLLBACK DETECTED</text>
+<rect x="432" y="9" width="150" height="85" rx="11" stroke="#b893ff" fill="#342640"/><text x="507" y="33" font-size="12" fill="#f1e5ff">SUCCESSOR EPOCH</text><text x="507" y="53" font-size="10" fill="#decbff">FRESH OBSERVATION</text><text x="507" y="70" font-size="10" fill="#decbff">REVOKED ROOT CHECK</text>
+<rect x="129" y="143" width="342" height="47" rx="11" stroke="#ffc18b" fill="#2e253f"/><text x="300" y="162" font-size="13" fill="#ffe8c4">APPEND-ONLY RECOVERY HIGHWATER</text><text x="300" y="179" font-size="11" fill="#ffc58a">NO REINSTATEMENT · AUTHORITY HOLD</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Every quarantined successor, revocation and controlling-root fingerprint remains part of the exact original prefix</small></div>
+<div class="cell"><b>PRESENT · CHECKS</b><small>Signed highwater and separately provided retained floor reject missing entries or competing historical chain heads</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>New successor observations bind each fresh recovery event to the RUST-054 revocation registry without restoring authority</small></div>
+</div><p>Static design visualization. No independent custody or globally latest highwater has been established by this page.</p>
+</div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust055-witness-recovery.html">RUST-055 recovery quarantine</a> · <a href="rust054-witness-revocation.html">RUST-054 witness revocation</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Key validity is not independent operator control. Original 5×2 arena, 256 cards and Rust WASM combat remain protected.</small>
+</main></html>
