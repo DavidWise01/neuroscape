@@ -231,6 +231,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_fork_highwater_rust064.py' -v
       - name: RUST-065 reject revoked witness rotations and persistent controller reuse
         run: python3 -m unittest discover -s rust/tests -p 'test_witness_rotation_rust065.py' -v
+      - name: RUST-066 reject revoked successor restoration and highwater rollback
+        run: python3 -m unittest discover -s rust/tests -p 'test_revocation_highwater_rust066.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -503,6 +505,11 @@ jobs:
           python3 rust/tests/witness_rotation_rust065.py \
             --output rust/tests/.rust065-witness-rotation.json \
             --allow-hold-record
+      - name: RUST-066 archive missing independently retained revocation highwater HOLD
+        run: |
+          python3 rust/tests/revocation_highwater_rust066.py \
+            --output rust/tests/.rust066-revocation-highwater.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -562,6 +569,7 @@ jobs:
             rust/tests/.rust063-fork-registry.json
             rust/tests/.rust064-fork-highwater.json
             rust/tests/.rust065-witness-rotation.json
+            rust/tests/.rust066-revocation-highwater.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
