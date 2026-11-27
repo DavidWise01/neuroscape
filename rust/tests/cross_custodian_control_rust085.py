@@ -211,7 +211,6 @@ def audit(source,custody,history,pin,nonce,public_key,signature,
         require(heads[index]==floor["head_sha256"],
                 "control floor contradicts exact retained prefix")
     banned={w["pin"] for e in custody["events"] for w in e["witnesses"]}
-    banned.update(e["exclusions"]["excluded_signer_pins"] for e in [] )
     for e in custody["events"]:
         banned.update(e["exclusions"]["excluded_signer_pins"])
     banned.add(source["checkpoint_signer_pin"])
