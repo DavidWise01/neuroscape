@@ -3227,3 +3227,55 @@ Rust WASM combat remain unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-081 — Cross-epoch controller exclusion and custodian reentry denial
+
+\`rust/tests/controller_exclusion_rust081.py\` binds the full RUST-079
+custodian ancestry registry to a receipt-checked RUST-080 highwater.
+Every excluded signer pin, controller fingerprint, source root and
+acquisition path is carried forward as an ordered, deduplicated
+append-only set. Subsequent snapshots must preserve the earlier
+exclusion sets as exact prefixes, together with all prior denied
+reentry records and ancestry contradictions.
+
+A domain-separated \`CONTROLLER_REENTRY_DENIAL_CHALLENGE_V1\` binds
+the precise RUST-080 receipt, complete RUST-079 receipt, predecessor
+RUST-081 registry head, current ancestry event and branch-pair
+claims digest, registrar signing pin, fresh nonce and false release
+authority. The registrar cannot self-attest from any custody signer,
+ancestry registrar, or RUST-080 highwater key. Replayed source
+receipts, reused nonces, changed historical ancestry, incompatible
+retained floors and missing evidence fail closed.
+
+One denial record is retained for each custody branch, even if
+a candidate has no matching earlier excluded fingerprint.
+\`REENTRY_USES_EXCLUDED_SIGNER_PIN\`,
+\`REENTRY_USES_EXCLUDED_CONTROLLER_SHA256\`,
+\`REENTRY_USES_EXCLUDED_SOURCE_ROOT_SHA256\` and
+\`REENTRY_USES_EXCLUDED_ACQUISITION_SHA256\` identify exact
+fingerprint reuse. The absence of such a match is recorded as
+\`NO_INDEPENDENT_CUSTODY_QUALIFICATION\`, never as authorization.
+The cumulative denial ledger cannot be rewritten or shortened.
+Neither competing branch is elected as the winner.
+
+**Trust boundary:** The excluded roots are fingerprints extracted
+from declared ancestry, not independently proven physical control
+or a globally authenticated exclusion oracle. Accepted structural
+records remain \`HOLD_CUSTODIAN_REENTRY_EXCLUSION\`; absent external
+evidence produces \`HOLD_MISSING_CONTROLLER_EXCLUSION_EVIDENCE\`.
+Independent custody, fork resolution, recovery, release and
+live-gameplay authorization remain false; global anti-rollback
+is unverified.
+
+Twenty-one adversarial regression cases are committed and wired
+into the predeployment GitHub Actions test gate. The workflow
+also archives a missing-evidence HOLD JSON. Gameplay files are
+unchanged, preserving the existing 5×2 arena, 256-card catalog,
+neon interface and Rust WASM combat.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-081 neon exclusion observatory](https://davidwise01.github.io/neuroscape/rust/tests/rust081-controller-exclusion.html) ·
+[RUST-080 ancestry highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust080-ancestry-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
