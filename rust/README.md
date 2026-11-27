@@ -2316,3 +2316,51 @@ and Rust WASM combat remain unchanged.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-063 — Cross-custody fork registry and retention challenge replay
+
+\`rust/tests/fork_registry_rust063.py\` consumes a complete, receipt-checked
+RUST-062 cross-custody retention assessment and maintains a separate
+SHA-256-linked append-only registry of its historical fork fingerprints.
+Every entry retains the exact ordered left/right branch hashes and
+disagreement hashes for *all* unresolved forks; later source assessments
+must include all earlier fork keys as the same prefix. It rejects source
+receipt re-use, historical fork disappearance, registry head rewriting
+and attempts to mark a winner or authorize release.
+
+Two distinct, separately pinned proposed retention witnesses each sign
+a new domain-separated challenge over the full fork set, source
+RUST-062 receipt, prior RUST-063 registry head, fresh nonce, and
+claimed controlling root, acquisition and operator fingerprints.
+The verifier refuses replayed old challenge nonces, reused current
+RUST-062 custody nonces, duplicate signers, self-attestation using
+the RUST-062 checkpoint pin, and falsified fork-resolution claims.
+It records shared claimed ancestry and cases where renamed signing
+keys reuse a previously claimed controlling operator.
+
+Every previous event, fork snapshot, witness claim and custody
+disagreement is rechecked against its exact predecessor hash
+before appending. Optional separately presented retained-floor
+evidence must match the exact earlier RUST-063 prefix at its event
+count. The only structural success state is
+\`HOLD_CROSS_CUSTODY_FORK_REGISTRY\`; missing external challenge
+evidence emits \`HOLD_MISSING_FORK_RETENTION_CHALLENGES\`.
+
+**Trust boundary:** A pinned signature demonstrates matching key
+possession, not independent real-world operation. The registry
+does not query an external custody authority and cannot independently
+certify global latest history or rollback resistance. Signatures
+cannot elect a preferred fork; independence, fork resolution,
+release authorization and gameplay authority always remain false.
+
+Eighteen regression cases are committed to the GitHub Actions
+predeployment gate; the missing-custody HOLD JSON is archived.
+The original 5×2 arena, 256 cards, neon gameplay and Rust WASM
+combat core are unchanged.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-063 neon fork registry](https://davidwise01.github.io/neuroscape/rust/tests/rust063-fork-registry.html) ·
+[RUST-062 retention highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust062-retention-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
