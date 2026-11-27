@@ -2920,3 +2920,55 @@ neon visuals and Rust WASM core remain intact.
 [GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
 
 \`.dlw\`
+
+## RUST-075 — Custody snapshot fork registry and retention contradictions
+
+\`rust/tests/custody_fork_rust075.py\` requires a receipt-checked
+RUST-074 denial-custody highwater, its exact RUST-073 shared predecessor,
+and **two distinct, valid RUST-073 custody branch histories**. Both
+branches must extend the same immutable predecessor and diverge at the
+first subsequent custody event. Neither branch may discard inherited
+denials or excluded witness/controller identities. The RUST-074
+assessment remains bound to branch A; branch B is preserved as an
+incompatible independent *claim*, not silently reconciled with A.
+
+The separate RUST-075 SHA-256-linked registry stores both complete
+custody-history digests, both branch receipts, both terminal heads,
+their original predecessor receipt, the exact first divergence
+and the ordered fork pair. Two domain-separated
+\`CUSTODY_FORK_WITNESS_V1\` claims bind the RUST-074 receipt,
+base RUST-073 receipt, respective branch head, preceding RUST-075
+head, fresh nonce and signing pin. A custodian from either competing
+branch or the highwater signer cannot act as an external witness.
+Replayed highwater sources, reused nonces, duplicate signing pins,
+truncated old registries and mismatched retained floors fail closed.
+
+\`INCOMPATIBLE_CUSTODY_BRANCH_HEADS\` preserves incompatible branch
+heads. \`BRANCH_RETENTION_CONTRADICTION\` records differences in
+the branches' current denial or exclusion snapshots while retaining
+both originals. Witnesses sharing claimed controller/acquisition
+ancestry are flagged rather than considered independently controlled.
+No branch can be elected by number of claims or arrival order.
+
+**Trust boundary:** This is a deterministic software fork recorder,
+not independently verified physical custody or a global anti-rollback
+oracle. A structurally accepted record remains
+\`HOLD_CUSTODY_FORK_CONTRADICTIONS\`; missing external evidence
+creates \`HOLD_MISSING_CUSTODY_FORK_EVIDENCE\`. The output never
+authorizes fork resolution, recovery, release or live gameplay.
+
+Twenty adversarial tests are authored for the predeployment GitHub
+Actions gate; the default HOLD JSON is included in the evidence
+artifact archive. A distinct corrective commit
+\`cc93377a47f8a7f98df7bcc01c89c09b298e5790\` fixes an
+RUST-072 variable-shadowing defect discovered during handoff
+review, without altering previous ledger schemas or old records.
+New gameplay files are not modified; the original 5×2 arena,
+256 cards, neon graphics and Rust WASM combat are preserved.
+
+[Neuroscape arcade](https://davidwise01.github.io/neuroscape/) ·
+[RUST-075 neon custody fork registry](https://davidwise01.github.io/neuroscape/rust/tests/rust075-custody-fork.html) ·
+[RUST-074 custody highwater](https://davidwise01.github.io/neuroscape/rust/tests/rust074-denial-highwater.html) ·
+[GitHub Actions](https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml)
+
+\`.dlw\`
