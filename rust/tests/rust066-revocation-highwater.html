@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-066 · Revocation Highwater & Successor Quarantine</title>
+<style>:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0%,#47255e,#091422 80%);color:#f5f8ff;font:15px system-ui,sans-serif}main{max-width:1140px;margin:auto;padding:29px}h1{color:#ffc68b;text-shadow:0 0 27px #ff7135;font-size:clamp(24px,4vw,43px)}.panel{background:#151c2f;border:1px solid #bb92fe;border-radius:19px;padding:26px;box-shadow:0 0 42px #a05bf64b}.status{color:#ffc48b;font-size:21px;font-weight:800}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:23px 0}.cell{padding:18px;border:1px solid #34d7cc;border-radius:12px;min-height:120px;box-shadow:inset 0 0 20px #30d5cc1a}.cell:nth-child(2){border-color:#ffae70}.cell:nth-child(3){border-color:#bc94ff}b{display:block;margin-bottom:9px}p,small{color:#c1ccdf;line-height:1.55}a{color:#a0ffeb}svg{display:block;width:100%;height:auto;max-height:245px}@media(max-width:700px){.grid{grid-template-columns:1fr}}</style>
+<main><h1>RUST-066 · REVOCATION HIGHWATER</h1>
+<p>Revoked history → signed predecessor checkpoint → exact retention floor → successor quarantine.</p>
+<div class="panel"><div class="status">HOLD · A new key does not clear a revoked controller</div>
+<svg viewBox="0 0 600 207" role="img" aria-label="Signed prior witness revocations, retained floor, and successor ancestry analysis continue into permanent quarantine">
+<g stroke-width="2.3" fill="none" stroke="#b28bfa"><path d="M169 54 H224 M376 54 H431 M300 95 V150"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="16" y="10" width="153" height="85" rx="11" fill="#18343c" stroke="#30d8cc"/><text x="92" y="31" font-size="12" fill="#d8fffb">REVOKED PAST</text><text x="92" y="54" font-size="10" fill="#b4f0ea">PINS + ROOTS</text><text x="92" y="71" font-size="10" fill="#b4f0ea">CONFLICTS RETAINED</text>
+<rect x="224" y="10" width="152" height="85" rx="11" fill="#3d2b3b" stroke="#ffb16b"/><text x="300" y="31" font-size="12" fill="#ffe9cd">HIGHWATER</text><text x="300" y="54" font-size="10" fill="#ffdbba">SIGNED PREFIX</text><text x="300" y="71" font-size="10" fill="#ffdbba">RETENTION FLOOR</text>
+<rect x="431" y="10" width="153" height="85" rx="11" fill="#342740" stroke="#bb94ff"/><text x="507" y="31" font-size="12" fill="#f0e5ff">SUCCESSOR</text><text x="507" y="54" font-size="10" fill="#dfccff">CONTROL ROOT?</text><text x="507" y="71" font-size="10" fill="#dfccff">ACQUISITION PATH?</text>
+<rect x="140" y="150" width="320" height="43" rx="11" fill="#30263c" stroke="#ffc58d"/><text x="300" y="168" font-size="13" fill="#ffe9c8">QUARANTINE PERSISTS</text><text x="300" y="184" font-size="11" fill="#ffc88d">NO RECOVERY · NO RELEASE · HOLD</text>
+</g></svg>
+<div class="grid"><div class="cell"><b>PAST · OBSERVES</b><small>Preserve every RUST-065 revocation event, affected signing key, claimed compromised root, and conflict</small></div>
+<div class="cell"><b>PRESENT · CHECKS</b><small>Verify the signed historical checkpoint, exact retained floor, and fresh successor observations</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Flag reused control roots, source roots and acquisition paths; keep every successor quarantined</small></div></div>
+<p>This is a static protocol illustration, not an attestation of independent custody or a live run of GitHub Actions.</p></div>
+<p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust065-witness-rotation.html">RUST-065 witness revocation</a> · <a href="rust064-fork-highwater.html">RUST-064 fork registry highwater</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Immutable freezes. Exact ancestry. No authority from accumulating signatures. Existing 5×2 arena, 256 cards, Rust WASM combat unchanged.</small></main></html>
