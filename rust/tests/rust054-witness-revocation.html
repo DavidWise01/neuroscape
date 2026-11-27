@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RUST-054 · Witness Revocation & Ancestry Fence</title>
+<style>:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0%,#4d2457,#091321 78%);color:#f6f8ff;font:15px system-ui,sans-serif}main{max-width:1140px;margin:auto;padding:28px}h1{color:#ffc58d;text-shadow:0 0 29px #ff773b;font-size:clamp(24px,4vw,43px);letter-spacing:.05em}.panel{background:#141d31;border:1px solid #b18bf8;border-radius:19px;padding:25px;box-shadow:0 0 38px #985df84a}.status{font-size:21px;color:#ffc68a;font-weight:800}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:23px 0}.cell{padding:19px;border:1px solid #34d5ce;border-radius:13px;min-height:120px;box-shadow:inset 0 0 18px #32d1c81b}.cell:nth-child(2){border-color:#ffab67}.cell:nth-child(3){border-color:#b88dff}b{display:block;margin-bottom:9px}p,small{line-height:1.55;color:#bccddd}a{color:#9bffeb}svg{display:block;width:100%;height:auto;max-height:230px}@media(max-width:680px){.grid{grid-template-columns:1fr}}</style>
+<main><h1>RUST-054 · WITNESS REVOCATION FENCE</h1><p>Session ancestry conflict → signed revocation → replacement-key review → permanent HOLD.</p>
+<div class="panel"><div class="status">HOLD · Revocation custody remains independently unverified</div>
+<svg viewBox="0 0 600 192" role="img" aria-label="A conflicting witness identity is revoked, with any replacement key checked against the previously declared controller and never automatically trusted">
+<g fill="none" stroke-width="2.1"><path d="M166 53 H225 M375 53 H433 M300 92 V135" stroke="#bf93fa"/></g>
+<g font-family="system-ui" text-anchor="middle">
+<rect x="20" y="10" width="146" height="82" rx="10" fill="#15383d" stroke="#36d6cc"/><text x="93" y="34" fill="#d2fffb" font-size="12">PAST CONFLICT</text><text x="93" y="53" fill="#b4f2e8" font-size="11">SIGNER ANCESTRY</text><text x="93" y="71" fill="#b4f2e8" font-size="10">IMMUTABLE EVIDENCE</text>
+<rect x="225" y="10" width="150" height="82" rx="10" fill="#3a2a3c" stroke="#ffad72"/><text x="300" y="34" fill="#ffe6c9" font-size="12">REVOCATION</text><text x="300" y="53" fill="#ffd6b8" font-size="11">AUTHORITY SIGNED</text><text x="300" y="71" fill="#ffd6b8" font-size="10">KEY AND ROOT FENCE</text>
+<rect x="433" y="10" width="147" height="82" rx="10" fill="#33283e" stroke="#b992fe"/><text x="507" y="34" fill="#efe5ff" font-size="12">NEW KEY?</text><text x="507" y="53" fill="#decaff" font-size="11">SAME CONTROLLER?</text><text x="507" y="71" fill="#decaff" font-size="10">NO AUTO-RECOVERY</text>
+<rect x="145" y="135" width="310" height="44" rx="10" fill="#2e233d" stroke="#ffc38b"/><text x="300" y="152" fill="#ffe6bf" font-size="12">APPEND-ONLY WITNESS REGISTRY</text><text x="300" y="168" fill="#ffc389" font-size="11">INDEPENDENT CUSTODY · HOLD</text>
+</g></svg>
+<div class="grid">
+<div class="cell"><b>PAST · OBSERVES</b><small>Retain every RUST-053 ancestry conflict and the original signer and controller fingerprints</small></div>
+<div class="cell"><b>PRESENT · FENCES</b><small>Require authority-signed revocation; reject self-issuance, replay and amendment of the retained chain</small></div>
+<div class="cell"><b>FUTURE · RESERVES</b><small>Flag a successor using a revoked key or claimed controller, with no automatic restoration of trust</small></div>
+</div><p>Static architecture display. No real-world witness was revoked by viewing this page; no external operator identity or current custody highwater has been independently authenticated.</p>
+</div><p><a href="../../index.html">Neuroscape arcade</a> · <a href="rust053-challenge-highwater.html">RUST-053 sessions</a> · <a href="rust052-fork-challenge-ledger.html">Witness challenge ledger</a> · <a href="https://github.com/DavidWise01/neuroscape/actions/workflows/pages.yml">GitHub Actions</a></p>
+<small>.dlw · Revocation is observed, not adjudicated. Existing 5×2 arena, 256 cards, and WASM gameplay unchanged.</small>
+</main></html>
