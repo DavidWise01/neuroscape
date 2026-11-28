@@ -293,6 +293,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_quarantine_highwater_rust096.py' -v
       - name: RUST-097 dual external highwater witness and anti-rollback checks
         run: python3 -m unittest discover -s rust/tests -p 'test_external_highwater_witness_rust097.py' -v
+      - name: RUST-098 custody continuity fork and rollback regression gate
+        run: python3 -m unittest discover -s rust/tests -p 'test_highwater_custody_continuity_rust098.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -715,6 +717,11 @@ jobs:
           python3 rust/tests/external_highwater_witness_rust097.py \
             --output rust/tests/.rust097-external-highwater-witness.json \
             --allow-hold-record
+      - name: RUST-098 archive missing highwater continuity HOLD
+        run: |
+          python3 rust/tests/highwater_custody_continuity_rust098.py \
+            --output rust/tests/.rust098-highwater-custody-continuity.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -804,6 +811,7 @@ jobs:
             rust/tests/.rust095-persistent-anti-mirror.json
             rust/tests/.rust096-quarantine-highwater.json
             rust/tests/.rust097-external-highwater-witness.json
+            rust/tests/.rust098-highwater-custody-continuity.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
