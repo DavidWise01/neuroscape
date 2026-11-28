@@ -277,6 +277,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_custody_challenge_replay_rust088.py' -v
       - name: RUST-089 verify cross-run artifact evidence fail-closed
         run: python3 -m unittest discover -s rust/tests -p 'test_cross_run_custody_evidence_rust089.py' -v
+      - name: RUST-090 mock authenticated run artifact acquisition and HOLD
+        run: python3 -m unittest discover -s rust/tests -p 'test_github_artifact_acquisition_rust090.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -659,6 +661,11 @@ jobs:
           python3 rust/tests/cross_run_custody_evidence_rust089.py \
             --output rust/tests/.rust089-cross-run-custody-evidence.json \
             --allow-hold-record
+      - name: RUST-090 archive missing independent artifact acquisition HOLD
+        run: |
+          python3 rust/tests/github_artifact_acquisition_rust090.py \
+            --output rust/tests/.rust090-github-artifact-acquisition.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -740,6 +747,7 @@ jobs:
             rust/tests/.rust085-cross-custodian-control.json
             rust/tests/.rust086-custodian-quarantine-highwater.json
             rust/tests/.rust089-cross-run-custody-evidence.json
+            rust/tests/.rust090-github-artifact-acquisition.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
