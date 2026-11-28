@@ -321,6 +321,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_operator_highwater_rust106.py' -v
       - name: RUST-107 external signed highwater floor and ancestry regression gate
         run: python3 -m unittest discover -s rust/tests -p 'test_external_highwater_floor_rust107.py' -v
+      - name: RUST-108 stale external floor quarantine continuity regression gate
+        run: python3 -m unittest discover -s rust/tests -p 'test_external_floor_quarantine_rust108.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -788,6 +790,11 @@ jobs:
           python3 rust/tests/external_highwater_floor_rust107.py \
             --output rust/tests/.rust107-external-highwater-floor.json \
             --allow-hold-record
+      - name: RUST-108 archive missing external stale-floor continuity HOLD
+        run: |
+          python3 rust/tests/external_floor_quarantine_rust108.py \
+            --output rust/tests/.rust108-external-floor-quarantine.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -887,6 +894,7 @@ jobs:
             rust/tests/.rust105-operator-continuity.json
             rust/tests/.rust106-operator-highwater.json
             rust/tests/.rust107-external-highwater-floor.json
+            rust/tests/.rust108-external-floor-quarantine.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
