@@ -95,7 +95,7 @@ class ContradictionWitnessTests(unittest.TestCase):
         self.reject(lambda h,w: w[1]["control_ancestry"].pop("root"))
     def test_payload_substitution(self):
         self.reject(lambda h,w: w[1]["payload"].update(
-            ledger_head_sha256=h("wrong")))
+            ledger_head_sha256="f"*64))
     def test_forged_release(self):
         self.reject(lambda h,w: w[1]["payload"].update(release_authorized=True))
     def test_false_custody(self):
