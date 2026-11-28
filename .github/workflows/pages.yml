@@ -297,6 +297,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_highwater_custody_continuity_rust098.py' -v
       - name: RUST-099 fork preservation and custody ancestry regression gate
         run: python3 -m unittest discover -s rust/tests -p 'test_fork_preservation_rust099.py' -v
+      - name: RUST-100 century source freeze regression gate
+        run: python3 -m unittest discover -s rust/tests -p 'test_century_source_freeze_rust100.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -729,6 +731,12 @@ jobs:
           python3 rust/tests/fork_preservation_rust099.py \
             --output rust/tests/.rust099-fork-preservation.json \
             --allow-hold-record
+      - name: RUST-100 verify frozen source bytes and archive HOLD checkpoint
+        run: |
+          python3 rust/tests/century_source_freeze_rust100.py \
+            --repo . --verify-source \
+            --output rust/tests/.rust100-century-source-freeze.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -820,6 +828,7 @@ jobs:
             rust/tests/.rust097-external-highwater-witness.json
             rust/tests/.rust098-highwater-custody-continuity.json
             rust/tests/.rust099-fork-preservation.json
+            rust/tests/.rust100-century-source-freeze.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
