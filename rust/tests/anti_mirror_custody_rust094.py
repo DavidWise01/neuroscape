@@ -13,7 +13,7 @@ import hashlib
 import json
 from pathlib import Path
 from cross_run_acquisition_ledger_rust091 import digest, require
-from witness_byte_replay_rust093 import check as check_rust093, HOLD as PRIOR_HOLD
+from witness_byte_replay_rust093 import HOLD as PRIOR_HOLD
 
 DOMAIN = "NEUROSCAPE_RUST094_ANTI_MIRROR_V1"
 HOLD = "HOLD_ANTI_MIRROR_CUSTODY_UNVERIFIED"
