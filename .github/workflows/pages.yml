@@ -313,6 +313,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_archive_acquisition_receipts_rust102.py' -v
       - name: RUST-103 pinned GitHub HTTP archive acquisition regression gate
         run: python3 -m unittest discover -s rust/tests -p 'test_http_archive_acquisition_rust103.py' -v
+      - name: RUST-104 dual response-byte custody and common ancestry regression gate
+        run: python3 -m unittest discover -s rust/tests -p 'test_dual_response_custody_rust104.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -760,6 +762,11 @@ jobs:
           python3 rust/tests/http_archive_acquisition_rust103.py \
             --output rust/tests/.rust103-http-archive-acquisition.json \
             --allow-hold-record
+      - name: RUST-104 archive missing independent HTTP custody HOLD
+        run: |
+          python3 rust/tests/dual_response_custody_rust104.py \
+            --output rust/tests/.rust104-dual-response-custody.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -855,6 +862,7 @@ jobs:
             rust/tests/.rust101-century-archive-replay.json
             rust/tests/.rust102-archive-acquisition-receipts.json
             rust/tests/.rust103-http-archive-acquisition.json
+            rust/tests/.rust104-dual-response-custody.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
