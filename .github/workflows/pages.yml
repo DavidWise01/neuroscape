@@ -49,6 +49,14 @@ jobs:
               exit 1 ;;
           esac
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: RUST-100 verify frozen source bytes and archive HOLD checkpoint
+        run: |
+          python3 rust/tests/century_source_freeze_rust100.py \
+            --repo . --verify-source \
+            --output rust/tests/.rust100-century-source-freeze.json \
+            --allow-hold-record
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.85.1
@@ -730,12 +738,6 @@ jobs:
         run: |
           python3 rust/tests/fork_preservation_rust099.py \
             --output rust/tests/.rust099-fork-preservation.json \
-            --allow-hold-record
-      - name: RUST-100 verify frozen source bytes and archive HOLD checkpoint
-        run: |
-          python3 rust/tests/century_source_freeze_rust100.py \
-            --repo . --verify-source \
-            --output rust/tests/.rust100-century-source-freeze.json \
             --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
