@@ -311,6 +311,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_century_archive_replay_rust101.py' -v
       - name: RUST-102 archive acquisition receipt and provenance regression gate
         run: python3 -m unittest discover -s rust/tests -p 'test_archive_acquisition_receipts_rust102.py' -v
+      - name: RUST-103 pinned GitHub HTTP archive acquisition regression gate
+        run: python3 -m unittest discover -s rust/tests -p 'test_http_archive_acquisition_rust103.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -753,6 +755,11 @@ jobs:
           python3 rust/tests/archive_acquisition_receipts_rust102.py \
             --output rust/tests/.rust102-archive-acquisition-receipts.json \
             --allow-hold-record
+      - name: RUST-103 archive missing independently authenticated HTTP acquisition HOLD
+        run: |
+          python3 rust/tests/http_archive_acquisition_rust103.py \
+            --output rust/tests/.rust103-http-archive-acquisition.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -847,6 +854,7 @@ jobs:
             rust/tests/.rust100-century-source-freeze.json
             rust/tests/.rust101-century-archive-replay.json
             rust/tests/.rust102-archive-acquisition-receipts.json
+            rust/tests/.rust103-http-archive-acquisition.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
