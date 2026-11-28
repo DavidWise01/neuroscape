@@ -283,6 +283,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_cross_run_acquisition_ledger_rust091.py' -v
       - name: RUST-092 contradiction witness ancestry and HOLD regression gate
         run: python3 -m unittest discover -s rust/tests -p 'test_contradiction_witness_rust092.py' -v
+      - name: RUST-093 witness byte replay, shared ancestry and HOLD gate
+        run: python3 -m unittest discover -s rust/tests -p 'test_witness_byte_replay_rust093.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -680,6 +682,11 @@ jobs:
           python3 rust/tests/contradiction_witness_rust092.py \
             --output rust/tests/.rust092-contradiction-witness.json \
             --allow-hold-record
+      - name: RUST-093 archive missing independently acquired witness bytes HOLD
+        run: |
+          python3 rust/tests/witness_byte_replay_rust093.py \
+            --output rust/tests/.rust093-witness-byte-replay.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -764,6 +771,7 @@ jobs:
             rust/tests/.rust090-github-artifact-acquisition.json
             rust/tests/.rust091-cross-run-acquisition-ledger.json
             rust/tests/.rust092-contradiction-witness.json
+            rust/tests/.rust093-witness-byte-replay.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
