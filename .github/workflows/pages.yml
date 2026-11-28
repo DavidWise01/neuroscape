@@ -317,6 +317,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_dual_response_custody_rust104.py' -v
       - name: RUST-105 operator custody continuity and rollback regression gate
         run: python3 -m unittest discover -s rust/tests -p 'test_operator_continuity_rust105.py' -v
+      - name: RUST-106 signed operator highwater continuity regression gate
+        run: python3 -m unittest discover -s rust/tests -p 'test_operator_highwater_rust106.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -774,6 +776,11 @@ jobs:
           python3 rust/tests/operator_continuity_rust105.py \
             --output rust/tests/.rust105-operator-continuity.json \
             --allow-hold-record
+      - name: RUST-106 archive missing independently authenticated highwater HOLD
+        run: |
+          python3 rust/tests/operator_highwater_rust106.py \
+            --output rust/tests/.rust106-operator-highwater.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -871,6 +878,7 @@ jobs:
             rust/tests/.rust103-http-archive-acquisition.json
             rust/tests/.rust104-dual-response-custody.json
             rust/tests/.rust105-operator-continuity.json
+            rust/tests/.rust106-operator-highwater.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
