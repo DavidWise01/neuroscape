@@ -289,6 +289,8 @@ jobs:
         run: python3 -m unittest discover -s rust/tests -p 'test_anti_mirror_custody_rust094.py' -v
       - name: RUST-095 immutable anti-mirror quarantine replay gate
         run: python3 -m unittest discover -s rust/tests -p 'test_persistent_anti_mirror_rust095.py' -v
+      - name: RUST-096 signed quarantine highwater and anti-rollback regression gate
+        run: python3 -m unittest discover -s rust/tests -p 'test_quarantine_highwater_rust096.py' -v
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -701,6 +703,11 @@ jobs:
           python3 rust/tests/persistent_anti_mirror_rust095.py \
             --output rust/tests/.rust095-persistent-anti-mirror.json \
             --allow-hold-record
+      - name: RUST-096 archive missing authenticated highwater HOLD
+        run: |
+          python3 rust/tests/quarantine_highwater_rust096.py \
+            --output rust/tests/.rust096-quarantine-highwater.json \
+            --allow-hold-record
       - name: RUST-015 archive immutable replay acceptance evidence
         uses: actions/upload-artifact@v4
         with:
@@ -788,6 +795,7 @@ jobs:
             rust/tests/.rust093-witness-byte-replay.json
             rust/tests/.rust094-anti-mirror-custody.json
             rust/tests/.rust095-persistent-anti-mirror.json
+            rust/tests/.rust096-quarantine-highwater.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
